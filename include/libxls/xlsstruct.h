@@ -318,4 +318,3 @@ typedef struct xlsWorkSheet
     WORD		maxcol;
 }
 xlsWorkSheet;
-
