@@ -36,7 +36,7 @@ static char* convert(const char* src, int src_len, int *new_len, const char* fro
         int outlen = src_len;
         int inlenleft = src_len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        char* src_ptr = (char*)src;
+        char* src_ptr = (char*) src;
         char* out_ptr = 0;
 
         if(ic != (iconv_t)-1)
@@ -49,7 +49,7 @@ static char* convert(const char* src, int src_len, int *new_len, const char* fro
                 out_ptr = (char*)outbuf;
                 while(inlenleft)
                 {
-                    st = iconv(ic, &src_ptr, &inlenleft, &out_ptr, &outlenleft);
+                    st = iconv(ic,&src_ptr, &inlenleft,&out_ptr,(size_t *) &outlenleft);
                     if(st == -1)
                     {
                         if(errno == E2BIG)
@@ -146,7 +146,7 @@ char*  get_unicode(BYTE *s,BYTE is2)
     }
     else
     {
-        ret=malloc(ln+1);
+        ret=(char *)malloc(ln+1);
         memcpy (ret,(str+ofs),ln);
         *(char*)(ret+ln)=0;
         ofs+=ln;
@@ -375,7 +375,7 @@ extern char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         break;
     }
 
-    out=malloc(strlen(ret)+1);
+    out=(char *)malloc(strlen(ret)+1);
     memcpy(out,ret,strlen(ret)+1);
     return out;
 }
@@ -519,7 +519,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         else
             strcat(ret,buf);
     }
-    out=malloc(strlen(ret)+1);
+    out=(char *)malloc(strlen(ret)+1);
     memcpy(out,ret,strlen(ret)+1);
     return out;
     ;

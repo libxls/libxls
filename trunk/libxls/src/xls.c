@@ -21,7 +21,7 @@ void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
     pWB->sst.lastid=0;
 
     pWB->sst.count = sst->num;
-    pWB->sst.string = malloc (pWB->sst.count * sizeof(struct str_sst_string));
+    pWB->sst.string =(struct str_sst_string *) malloc (pWB->sst.count * sizeof(struct str_sst_string));
     xls_appendSST(pWB,&sst->strings,size-8);
 }
 
@@ -78,13 +78,13 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         {
             if ((ofs+ln)<=size)
             {
-                ret=malloc(ln+1);
+                ret=(char *) malloc(ln+1);
                 memcpy (ret,(buf+ofs),ln);
                 *(char*)(ret+ln)=0;
             }
             else
             {
-                ret=malloc(ln-(ofs+ln-size)+1);
+                ret=(char *) malloc(ln-(ofs+ln-size)+1);
                 memcpy (ret,(buf+ofs),ln-(ofs+ln-size));
                 *(char*)(ret+(ln-(ofs+ln-size)))=0;
             }
@@ -152,11 +152,11 @@ void xls_addSheet(xlsWorkBook* pWB,BYTE* buf)
 
     if (pWB->sheets.count==0)
     {
-        pWB->sheets.sheet=malloc((pWB->sheets.count+1)*sizeof (struct st_sheet_data));
+        pWB->sheets.sheet=(struct st_sheet_data *) malloc((pWB->sheets.count+1)*sizeof (struct st_sheet_data));
     }
     else
     {
-        pWB->sheets.sheet=realloc(pWB->sheets.sheet,(pWB->sheets.count+1)*sizeof (struct st_sheet_data));
+        pWB->sheets.sheet=(struct st_sheet_data *) realloc(pWB->sheets.sheet,(pWB->sheets.count+1)*sizeof (struct st_sheet_data));
     }
     pWB->sheets.sheet[pWB->sheets.count].name=get_unicode(&tmp->name,0);
     pWB->sheets.sheet[pWB->sheets.count].filepos=tmp->filepos;
@@ -188,7 +188,7 @@ void xls_makeTable(xlsWorkSheet* pWS)
     struct st_row_data* tmp;
     verbose ("xls_makeTable");
 
-    pWS->rows.row=malloc((pWS->rows.lastrow+1)*sizeof(struct st_row_data));
+    pWS->rows.row=(struct st_row_data *) malloc((pWS->rows.lastrow+1)*sizeof(struct st_row_data));
 
     for (t=0;t<=pWS->rows.lastrow;t++)
     {
@@ -197,7 +197,7 @@ void xls_makeTable(xlsWorkSheet* pWS)
         tmp->fcell=0;
         tmp->lcell=pWS->rows.lastcol;
 
-        tmp->cells.cell=malloc((pWS->rows.lastcol+1)*sizeof(struct st_cell_data));
+        tmp->cells.cell=(struct st_cell_data *) malloc((pWS->rows.lastcol+1)*sizeof(struct st_cell_data));
 
         for (i=0;i<=pWS->rows.lastcol;i++)
         {
@@ -287,11 +287,11 @@ void xls_addFont(xlsWorkBook* pWB,FONT* font)
     verbose("xls_addFont");
     if (pWB->fonts.count==0)
     {
-        pWB->fonts.font=malloc(sizeof(struct st_font_data));
+        pWB->fonts.font=(struct st_font_data *) malloc(sizeof(struct st_font_data));
     }
     else
     {
-        pWB->fonts.font=realloc(pWB->fonts.font,(pWB->fonts.count+1)*sizeof(struct st_font_data));
+        pWB->fonts.font=(struct st_font_data *) realloc(pWB->fonts.font,(pWB->fonts.count+1)*sizeof(struct st_font_data));
     }
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
@@ -317,11 +317,11 @@ void xls_addXF(xlsWorkBook* pWB,XF* xf)
     verbose("xls_addXF");
     if (pWB->xfs.count==0)
     {
-        pWB->xfs.xf=malloc(sizeof(struct st_xf_data));
+        pWB->xfs.xf=(struct st_xf_data *) malloc(sizeof(struct st_xf_data));
     }
     else
     {
-        pWB->xfs.xf=realloc(pWB->xfs.xf,(pWB->xfs.count+1)*sizeof(struct st_xf_data));
+        pWB->xfs.xf=(struct st_xf_data *) realloc(pWB->xfs.xf,(pWB->xfs.count+1)*sizeof(struct st_xf_data));
     }
 
     tmp=&pWB->xfs.xf[pWB->xfs.count];
@@ -348,11 +348,11 @@ void xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
     verbose("xls_addColinfo");
     if (pWS->colinfo.count==0)
     {
-        pWS->colinfo.col=malloc(sizeof(struct st_colinfo_data));
+        pWS->colinfo.col=(struct st_colinfo_data *) malloc(sizeof(struct st_colinfo_data));
     }
     else
     {
-        pWS->colinfo.col=realloc(pWS->colinfo.col,(pWS->colinfo.count+1)*sizeof(struct st_colinfo_data));
+        pWS->colinfo.col=(struct st_colinfo_data *) realloc(pWS->colinfo.col,(pWS->colinfo.count+1)*sizeof(struct st_colinfo_data));
     }
 
     tmp=&pWS->colinfo.col[pWS->colinfo.count];
@@ -570,7 +570,7 @@ extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
 {
     xlsWorkSheet * pWS;
     verbose ("xls_getWorkSheet");
-    pWS=malloc(sizeof(xlsWorkSheet));
+    pWS=(xlsWorkSheet *) malloc(sizeof(xlsWorkSheet));
     pWS->filepos=pWB->sheets.sheet[num].filepos;
     pWS->workbook=pWB;
     pWS->rows.lastcol=0;

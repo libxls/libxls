@@ -25,4 +25,3 @@ static int get_brbdnum(int id)
     while (brdb[i].opcode!=0xFFF);
     return 0;
 }
-
