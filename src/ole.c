@@ -121,7 +121,7 @@ extern OLE2* ole2_open(char *file) //открытие OLE2 файла
     OLE2* ole;
     OLE2Stream* olest;
     PSS*	pss;
-    char* name;
+    char* name = NULL;
     int count,i;
 
     pss=(PSS*)buf;
@@ -194,7 +194,7 @@ extern OLE2* ole2_open(char *file) //открытие OLE2 файла
         		printf("Start %.4X\n",pss->sstart);
         		printf("size %.4X\n",pss->size);
         		printf("----------------------------------------------\n");*/
-        name=utf8_decode(pss,pss->bsize,NULL,"KOI8-R");
+        name=utf8_decode(pss->name,pss->bsize,NULL,"KOI8-R");
         if (name!=NULL)
         {
             if (ole->files.count==0)
@@ -227,3 +227,4 @@ extern void ole2_fclose(OLE2Stream* ole2st)
 {
 	free(ole2st);
 }
+
