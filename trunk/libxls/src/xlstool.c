@@ -3,7 +3,7 @@
 #include <wchar.h>
 #include <stdio.h>
 #include <iconv.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <memory.h>
 #include <string.h>
 
