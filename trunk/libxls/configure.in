@@ -33,15 +33,16 @@ AC_PROG_INSTALL
 WITH_ICONV=1
 AC_ARG_WITH(iconv,
 [  --with-iconv[[=DIR]]      add ICONV support (on)])
-if test "$with_iconv" = "no" ; then
-    echo Disabling ICONV support
-else
-    if test "$with_iconv" != "yes" -a "$with_iconv" != "" ; then
-	CPPFLAGS="${CPPFLAGS} -I$with_iconv/include"
-	# Export this since our headers include iconv.h
-	XML_INCLUDEDIR="${XML_INCLUDEDIR} -I$with_iconv/include"
-	ICONV_LIBS="-L$with_iconv/lib"
-    fi
+
+if test "$with_iconv" != "yes" -a "$with_iconv" != "" ; then
+    CPPFLAGS="${CPPFLAGS} -I$with_iconv/include"
+    XML_INCLUDEDIR="${XML_INCLUDEDIR} -I$with_iconv/include"
+    ICONV_LIBS="-L$with_iconv/lib"
+else 
+    CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+    XML_INCLUDEDIR="${XML_INCLUDEDIR} -I/usr/local/include"
+    ICONV_LIBS="-L/usr/local/lib"
+fi
 
     AC_CHECK_HEADER(iconv.h,
 	AC_MSG_CHECKING(for iconv)
@@ -71,7 +72,6 @@ iconv (cd, NULL, NULL, NULL, NULL);],[
 		AC_MSG_RESULT(no)
 		LIBS="${_libs}"
 		LDFLAGS="${_ldflags}"])]))
-fi
 
 AC_SUBST(WITH_ICONV)
 
