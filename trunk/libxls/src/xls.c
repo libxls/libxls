@@ -70,7 +70,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             else
                 ret=utf8_decode(buf+ofs,ln*2-(ofs+ln*2-size), &new_len,pWB->charset);
             ofs+=ln*2;
-            ret=realloc(ret,new_len+1);
+            ret = (char *)realloc(ret,new_len+1);
             *(char*)(ret+new_len)=0;
             //		printf("String16: %s(%i)\n",ret,new_len);
         }
@@ -104,7 +104,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         else
         {
             tmp=pWB->sst.string[pWB->sst.lastid-1].str;
-            tmp=realloc(tmp,strlen(tmp)+strlen(ret)+1);
+            tmp=(char *)realloc(tmp,strlen(tmp)+strlen(ret)+1);
             memcpy(tmp+strlen(tmp),ret,strlen(ret)+1);
         }
 
@@ -601,7 +601,8 @@ extern xlsWorkBook* xls_open(char *file,char* charset)
     pWB->sheets.count=0;
     pWB->xfs.count=0;
     pWB->fonts.count=0;
-    pWB->charset=charset;
+    pWB->charset = (char *)malloc(strlen(charset) * sizeof(char));
+    strcpy(pWB->charset,charset);
     xls_parseWorkBook(pWB);
     return(pWB);
 }
