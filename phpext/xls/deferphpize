@@ -1,0 +1,16 @@
+#!/bin/sh
+
+phpize=${phpize:-"/usr/local/bin/phpize"}
+if test -f $phpize; then
+        $phpize
+else
+        echo "You have to make and install php first. Make sure phpize script is located at $phpize"
+        exit 1
+fi
+
+aclocal
+
+CPPFLAGS="-DHAVE_CONFIG_H" ./configure --with-xls=/usr/local/libxls --with-php-config=`dirname $phpize`/php-config
+
+#make && make install
+make
