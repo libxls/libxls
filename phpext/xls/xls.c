@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: xls.c,v 1.1.1.1 2003-09-02 07:21:43 kvmurom Exp $ */
+/* $Id: xls.c,v 1.2 2003-11-14 10:59:45 tony2001 Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -36,15 +36,14 @@ typedef struct {
 	int type;
 } xls_res;
 
-/* If you declare any globals in php_xls.h uncomment this:
-ZEND_DECLARE_MODULE_GLOBALS(xls)
-*/
-
 /* True global resources - no need for thread safety here */
 static int le_xls_wb;
 static int le_xls_ws;
 
 zend_class_entry *xls_class_entry;
+
+/* {{{ xls_find_workbook (pval);
+ */
 
 xlsWorkBook* xls_find_workbook(pval *id TSRMLS_DC)
 {
@@ -66,8 +65,10 @@ xlsWorkBook* xls_find_workbook(pval *id TSRMLS_DC)
 
 	return wb;
 }
+/* }}} */
 
-
+/* {{{ xls_find_worksheet (pval);
+ */
 xlsWorkSheet* xls_find_worksheet(pval *id TSRMLS_DC)
 {
 	int type;
@@ -87,7 +88,7 @@ xlsWorkSheet* xls_find_worksheet(pval *id TSRMLS_DC)
 	} 
 	return ws;
 }
-
+/* }}} */
 
 /* {{{ xls_functions[]
  *
@@ -151,12 +152,14 @@ static void php_xls_init_globals(zend_xls_globals *xls_globals)
 */
 /* }}} */
 
+/* {{{ xls_destructor
+ */
 void xls_destructor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 //	efree(rsrc->ptr);
 //	zend_printf("Destructed resurce #%i\n",rsrc->type);
 }
-
+/* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -183,7 +186,6 @@ PHP_MSHUTDOWN_FUNCTION(xls)
 }
 /* }}} */
 
-/* Remove if there's nothing to do at request start */
 /* {{{ PHP_RINIT_FUNCTION
  */
 PHP_RINIT_FUNCTION(xls)
@@ -192,7 +194,6 @@ PHP_RINIT_FUNCTION(xls)
 }
 /* }}} */
 
-/* Remove if there's nothing to do at request end */
 /* {{{ PHP_RSHUTDOWN_FUNCTION
  */
 PHP_RSHUTDOWN_FUNCTION(xls)
@@ -216,26 +217,27 @@ PHP_MINFO_FUNCTION(xls)
 }
 /* }}} */
 
-
-/* Remove the following function when you have succesfully modified config.m4
-   so that your module can be compiled into PHP, it exists only for testing
-   purposes. */
-
-/* Every user-visible function in PHP should document itself in the source */
-/* {{{ proto string confirm_xls_compiled(string arg)
-   Return a string to confirm that the module is compiled in */
+/* {{{ resource xls_open (string file, string charset);
+   Return a workbook resource  */
 PHP_FUNCTION(xls_open)
 {
-	char *file = NULL;
-	char *charset = NULL;
-	int file_len, charset_len;
-	int id;
+	zval **file = NULL;
+	zval **charset = NULL;
+		int id;
 	xlsWorkBook* pWB;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &file, &file_len, &charset,&charset_len ) == FAILURE) {
-		return;
+	if (zend_get_parameters_ex(2, &file, &charset) == FAILURE) {
+    	WRONG_PARAM_COUNT;
 	}
-	pWB=xls_open(file,charset);
+
+	convert_to_string_ex(file);
+	convert_to_string_ex(charset);
+
+	if (php_check_open_basedir(Z_STRVAL_PP(file) TSRMLS_CC)) {
+		RETURN_FALSE;
+	}
+					
+	pWB=xls_open(Z_STRVAL_PP(file),Z_STRVAL_PP(charset));
 	if (pWB) {
 		id = zend_list_insert(pWB,le_xls_wb);
 		RETURN_RESOURCE(id);
@@ -245,7 +247,10 @@ PHP_FUNCTION(xls_open)
 	}
 
 }
+/* }}} */
 
+/* {{{ string xls_getcharset (resource wb);
+  Return workbook's charset */
 PHP_FUNCTION(xls_getcharset)
 {
 	pval *id;
@@ -262,7 +267,10 @@ PHP_FUNCTION(xls_getcharset)
 	charset=wb->charset;
 	RETURN_STRING(charset,1);
 }
+/* }}} */
 
+/* {{{ int xls_getsheetscount (resource wb);
+ Return number of sheets in the workbook */ 
 PHP_FUNCTION(xls_getsheetscount)
 {
 	pval *id;
@@ -277,7 +285,10 @@ PHP_FUNCTION(xls_getsheetscount)
 
 	RETURN_LONG(wb->sheets.count);
 }
+/* }}} */
 
+/* {{{ string xls_getsheetname (resource wb);
+ Return sheet's name */
 PHP_FUNCTION(xls_getsheetname)
 {
 	pval *id,*sheet;
@@ -288,12 +299,27 @@ PHP_FUNCTION(xls_getsheetname)
 	}
 
 	wb=xls_find_workbook(id TSRMLS_CC);
-	if(wb==NULL) RETURN_FALSE;
+	if(wb == NULL) {
+		//workbook not found
+		RETURN_FALSE;
+	}
 
-    	RETVAL_STRING(wb->sheets.sheet[Z_LVAL_P(sheet)].name,1);
+	if(wb->sheets.count <= Z_LVAL_P(sheet) || wb->sheets.count == 0) {
+		//sheet not found
+		RETURN_FALSE;
+	}
+
+	if (Z_LVAL_P(sheet) < 0) {
+		//sheet can't be less or equal to 0
+		RETURN_FALSE;
+	}
+	
+    RETVAL_STRING(wb->sheets.sheet[Z_LVAL_P(sheet)].name,1);
 }
+/* }}} */
 
-
+/* {{{ resource xls_getworksheet (resource wb, int sheet);
+  Return sheet from the workbook */ 
 PHP_FUNCTION(xls_getworksheet)
 {
 	pval *id,*sheet;
@@ -312,7 +338,10 @@ PHP_FUNCTION(xls_getworksheet)
 
 	RETURN_RESOURCE(zend_list_insert(ws,le_xls_ws));
 }
+/* }}} */
 
+/* {{{ boolean xls_parseworksheet (resource ws);
+  Parses worksheet */
 PHP_FUNCTION(xls_parseworksheet)
 {
 	pval *id;
@@ -326,9 +355,12 @@ PHP_FUNCTION(xls_parseworksheet)
 	if (ws==NULL) RETURN_FALSE;
 
 	xls_parseWorkSheet(ws);
-	RETURN_TRUE
+	RETURN_TRUE;
 }
+/* }}} */
 
+/* {{{ string xls_getcss (resource ws);
+  Return worksheet's */
 PHP_FUNCTION(xls_getcss)
 {
 	pval *id;
@@ -345,7 +377,10 @@ PHP_FUNCTION(xls_getcss)
 	css=xls_getCSS(wb);
 	RETURN_STRING(css,1);
 }
+/* }}} */
 
+/* {{{ xls_fetch_worksheet (resource ws);
+ */
 PHP_FUNCTION(xls_fetch_worksheet)
 {
 	zval *row;
@@ -372,9 +407,9 @@ PHP_FUNCTION(xls_fetch_worksheet)
 	add_property_long(row,"lastcol",ws->rows.lastcol);
 	add_property_long(row,"lastrow",ws->rows.lastrow);
 
-
 	MAKE_STD_ZVAL(arr);
 	array_init(arr);
+	
 	for (i=0;i<=ws->rows.lastrow;i++)	
 	{
 		MAKE_STD_ZVAL(rows);
@@ -430,12 +465,6 @@ PHP_FUNCTION(xls_fetch_worksheet)
 
 
 /* }}} */
-/* The previous line is meant for vim and emacs, so it can correctly fold and 
-   unfold functions in source code. See the corresponding marks just before 
-   function definition, where the functions purpose is also documented. Please 
-   follow this convention for the convenience of others editing your code.
-*/
-
 
 /*
  * Local variables:

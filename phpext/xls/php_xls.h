@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: php_xls.h,v 1.1.1.1 2003-09-02 07:21:43 kvmurom Exp $ */
+/* $Id: php_xls.h,v 1.2 2003-11-14 10:59:45 tony2001 Exp $ */
 
 #ifndef PHP_XLS_H
 #define PHP_XLS_H
@@ -50,25 +50,6 @@ PHP_FUNCTION(xls_getworksheet);
 PHP_FUNCTION(xls_parseworksheet);
 PHP_FUNCTION(xls_getcss);
 PHP_FUNCTION(xls_fetch_worksheet);
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
-
-ZEND_BEGIN_MODULE_GLOBALS(xls)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(xls)
-*/
-
-/* In every utility function you add that needs to use variables 
-   in php_xls_globals, call TSRM_FETCH(); after declaring other 
-   variables used by that function, or better yet, pass in TSRMLS_CC
-   after the last function argument and declare your utility function
-   with TSRMLS_DC after the last declared argument.  Always refer to
-   the globals in your function as XLS_G(variable).  You are 
-   encouraged to rename these macros something shorter, see
-   examples in any other php module directory.
-*/
 
 #ifdef ZTS
 #define XLS_G(v) TSRMG(xls_globals_id, zend_xls_globals *, v)
