@@ -1,0 +1,34 @@
+if test -f Makefile; then
+	make clean
+fi
+rm -f build/*
+rmdir build
+rm -f modules/*
+rmdir modules
+rm -f include/*
+rmdir include
+rm -f acinclude.*
+rm -f scan_*
+rm -f .deps
+rm -f aclocal.*
+rm -f dynlib.*
+rm -f config.h*
+rm -f config.sub
+rm -f config.guess
+rm -f config.status
+rm -f config.cache
+rm -f config.nice
+rm -f config.sub
+rm -f conftest
+rm -f conftest.c
+rm -f config.log
+rm -f config_vars.*
+rm -f configure*
+rm -f libtool
+rm -f ltmain.sh
+rm -f missing
+rm -f mkinstalldirs
+rm -f install-sh
+rm -f Makefile*
+rm -f libs.mk
+rm -f php_config.h*
