@@ -1,4 +1,4 @@
 buildconf
-configure
+configure --with-iconv=/usr/local
 make
 make install
