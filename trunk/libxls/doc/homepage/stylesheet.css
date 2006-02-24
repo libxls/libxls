@@ -1,0 +1,17 @@
+body {
+ margin: 0;
+ font-family: Helvetica
+}
+
+code {
+ font-size: 1em
+}
+
+h1 {
+ background-color: #3399FF;
+ padding: 0.1em;
+}
+
+h2 {
+ color: #FF3300;
+}

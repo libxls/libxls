@@ -1,0 +1,37 @@
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
+<head>
+<title>libxls</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css"> 
+</head>
+<body>
+<h1>libxls</h1>
+<div style="margin: 1em">
+<h2>What is libxls ?</h2>
+<p>libxls is a library which can read Excel (xls) files. It has been tested on Linux x86, but may work on any little-endian system. It is not compatible with big endian systems.</p>
+<p>libxls can read BIFF8 files (the Excel file format since Excel 97)</p>
+<p>libxls cannot write Excel files.</p>
+<p>libxls is also shipped with xls2csv, a tool which converts an xls file to a csv format, more suitable for parsing.</p>
+<p>libxls has been mostly debugged with the help of <a href="http://sc.openoffice.org/excelfileformat.pdf">OpenOffice.org's Documentation of the Microsoft Excel File Format</a>.
+<h2>How to use libxls ?</h2>
+<p>libxls is a C library</p>
+<code>
+#include &lt;stdio.h&gt;
+</code>
+<h2>How to use xls2csv ?</h2>
+<p>xls2csv takes as its first argument the name of an Excel file. It write to standard output the file converted to csv format.</p>
+<p>For example, we can convert the file test.xls into a csv file called test.csv with the following command:</p>
+<code>xls2csv test.xls &gt; test.csv</code>
+<h2>Download</h2>
+<a href="https://sourceforge.net/project/showfiles.php?group_id=85885&package_id=109392&release_id=216638">libxls 0.0.1 beta</a>
+<h2>Bugs corrected since the last version</h2>
+<li>OLE2 file header id is now checked</li>
+<li>Corrected wrong fcell usage which could lead to cell moves on a row</li>
+<li>There was always one more empty cell on the right on each row</li>
+<li>Some formattings in xls_getfcell where incorrects</li>
+<li>Corrected some reading problems with SST having CONTINUE records</li>
+</span>
+</body>
+</html>
