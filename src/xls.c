@@ -1,5 +1,5 @@
 #include <stdio.h>
-//#include <malloc.h>
+#include <stdlib.h>
 #include <memory.h>
 #include <math.h>
 #include <sys/types.h>
@@ -9,6 +9,12 @@
 
 #include <libxls/xls.h>
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
+//#define DEBUG
+
+static char* libxls_version="1.0.0";
+
 extern int xls(void)
 {
     return 1;
@@ -17,8 +23,14 @@ extern int xls(void)
 void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
 {
     verbose("xls_addSST");
-    pWB->sst.lastunc=0;
+#ifdef DEBUG
+    printf("xls_addSST\n");
+#endif
+    pWB->sst.continued=0;
+    pWB->sst.lastln=0;
     pWB->sst.lastid=0;
+    pWB->sst.lastrt=0;
+    pWB->sst.lastsz=0;
 
     pWB->sst.count = sst->num;
     pWB->sst.string =(struct str_sst_string *) malloc (pWB->sst.count * sizeof(struct str_sst_string));
@@ -27,99 +39,179 @@ void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
 
 void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 {
-    DWORD ln;
-    DWORD ofs;
-    DWORD sz;
-    DWORD rt;
-    BYTE flag;
+    DWORD ln; // String character count
+    DWORD ofs; // Current offset in SST buffer
+    DWORD rt; // Count or rich text formatting runs
+    DWORD sz; // Size of asian phonetic settings block
+    BYTE flag; // String flags
 
-    char* tmp;
     char* ret;
-    int new_len = 0;
 
-    verbose("xls_appendSST");
+    verbose("xls_appendSST\n");
+#ifdef DEBUG
+    printf("xls_appendSST %ld\n", size);
+#endif
+
     ofs=0;
 
     while(ofs<size)
     {
-        if (pWB->sst.lastunc)
-            ln=pWB->sst.lastunc;
+        int ln_toread;
+
+        // Restore state when we're in a continue record
+        // or read string length
+        if (pWB->sst.continued)
+        {
+            ln=pWB->sst.lastln;
+            rt=pWB->sst.lastrt;
+            sz=pWB->sst.lastsz;
+        }
         else
         {
             ln=*(WORD*)(buf+ofs);
+            rt = 0;
+            sz = 0;
+
             ofs+=2;
         }
 
-        flag=*(BYTE*)(buf+ofs);
-        ofs++;
-        if (flag&0x8)
-        {
-            rt=*(WORD*)(buf+ofs);
-            ofs+=2;
-        }
-        if (flag&0x4)
-        {
-            sz=*(DWORD*)(buf+ofs);
-            ofs+=4;
-        }
+#ifdef DEBUG
+        printf("ln=%ld\n", ln);
+#endif
 
-        if (flag&0x1)
+        // Read flags
+        if (  (!pWB->sst.continued)
+            ||(  (pWB->sst.continued)
+               &&(ln != 0) ) )
         {
-            if ((ofs+ln*2)<=size)
-                ret=utf8_decode(buf+ofs,ln*2, &new_len,pWB->charset);
-            else
-                ret=utf8_decode(buf+ofs,ln*2-(ofs+ln*2-size), &new_len,pWB->charset);
-            ofs+=ln*2;
-            ret = (char *)realloc(ret,new_len+1);
-            *(char*)(ret+new_len)=0;
-            //		printf("String16: %s(%i)\n",ret,new_len);
+            flag=*(BYTE*)(buf+ofs);
+            ofs++;
+
+            // Count of rich text formatting runs
+            if (flag & 0x8)
+            {
+                rt=*(WORD*)(buf+ofs);
+                ofs+=2;
+            }
+
+            // Size of asian phonetic settings block
+            if (flag & 0x4)
+            {
+                sz=*(DWORD*)(buf+ofs);
+                ofs+=4;
+#ifdef DEBUG
+                printf("sz=%ld\n", sz);
+#endif
+            }
         }
         else
         {
-            if ((ofs+ln)<=size)
+            flag = 0;
+        }
+
+	// Read characters (compressed or not)
+        ln_toread = 0;
+        if (ln > 0)
+        {
+            if (flag & 0x1)
             {
-                ret=(char *) malloc(ln+1);
-                memcpy (ret,(buf+ofs),ln);
-                *(char*)(ret+ln)=0;
+                int new_len = 0;
+                ln_toread = min((size-ofs)/2, ln);
+
+                ret=utf8_decode(buf+ofs,ln_toread*2, &new_len,pWB->charset);
+   
+                if (ret == NULL)
+                {
+                    char *str = "*failed to decode utf16*";
+                    ret = strdup(str);
+                    new_len = strlen(str);
+                }
+
+                ret = (char *)realloc(ret,new_len+1);
+                *(char*)(ret+new_len)=0;
+
+                ln -= ln_toread;
+                ofs+=ln_toread*2;
+#ifdef DEBUG
+                printf("String16: %s(%i)\n",ret,new_len);
+#endif
             }
             else
             {
-                ret=(char *) malloc(ln-(ofs+ln-size)+1);
-                memcpy (ret,(buf+ofs),ln-(ofs+ln-size));
-                *(char*)(ret+(ln-(ofs+ln-size)))=0;
-            }
-            ofs+=ln;
-            //		printf("String8: %s(%i) \n",ret,ln);
-        }
-        if (flag&0x8)
-            ofs+=4*rt;
-        if (flag&0x4)
-            ofs+=sz;
+                ln_toread = min((size-ofs), ln);
 
-        if (!pWB->sst.lastunc)
-        {
-            pWB->sst.lastid++;
-            pWB->sst.string[pWB->sst.lastid-1].str=ret;
+                ret = (char *)malloc(ln_toread + 1);
+                memcpy (ret, (buf+ofs),ln_toread);
+                *(char*)(ret+ln_toread)=0;
+
+                ln -= ln_toread;
+                ofs+=ln_toread;
+#ifdef DEBUG
+                printf("String8: %s(%li) \n",ret,ln);
+#endif
+            }
         }
         else
         {
-            tmp=pWB->sst.string[pWB->sst.lastid-1].str;
-            tmp=(char *)realloc(tmp,strlen(tmp)+strlen(ret)+1);
-            memcpy(tmp+strlen(tmp),ret,strlen(ret)+1);
+         ret = strdup("");
         }
 
-        pWB->sst.lastunc=0;
+        if (  (ln_toread > 0)
+            ||(!pWB->sst.continued) )
+        {
+            // Concat string if it's a continue, or add string in table
+            if (!pWB->sst.continued)
+            {
+                pWB->sst.lastid++;
+                pWB->sst.string[pWB->sst.lastid-1].str=ret;
+            }
+            else
+            {
+                char *tmp;
+                tmp=pWB->sst.string[pWB->sst.lastid-1].str;
+                tmp=(char *)realloc(tmp,strlen(tmp)+strlen(ret)+1);
+                pWB->sst.string[pWB->sst.lastid-1].str=tmp;
+                memcpy(tmp+strlen(tmp),ret,strlen(ret)+1);
+            }
+
+#ifdef DEBUG
+            printf("String % 4ld: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
+#endif
+        }
+
+	// Jump list of rich text formatting runs
+        if (  (ofs < size)
+            &&(rt > 0) )
+          {
+           int rt_toread = min((size-ofs)/4, rt);
+           rt -= rt_toread;
+           ofs += rt_toread*4;
+          }
+
+	// Jump asian phonetic settings block
+        if (  (ofs < size)
+            &&(sz > 0) )
+          {
+           int sz_toread = min((size-ofs), sz);
+           sz -= sz_toread;
+           ofs += sz_toread;
+          }
+
+        pWB->sst.continued=0;
     }
-    if (flag&0x1)
-        pWB->sst.lastunc=(ofs-size)/2;
-    else
-        pWB->sst.lastunc=(ofs-size);
 
-    /*	if (flag&0x1) printf("Diff: %i\n",(ofs-size)/2);
-    	else printf("Diff: %i\n",(ofs-size));
-    	printf("Last id: %i\n",pWB->sst.lastid);
-    	printf("----------------------------------------------\n");
-    */
+    // Save current character count and count of rich text formatting runs and size of asian phonetic settings block
+    if (ln > 0 || rt > 0 || sz > 0)
+      {
+       pWB->sst.continued = 1;
+       pWB->sst.lastln = ln;
+       pWB->sst.lastrt = rt;
+       pWB->sst.lastsz = sz;
+
+#ifdef DEBUG
+       printf("continued: ln=%ld, rt=%ld, sz=%ld\n", ln, rt, sz);
+#endif
+     }
 }
 
 double NumFromRk(BYTE* rk)
@@ -227,7 +319,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     verbose ("xls_addCell");
 
     row=&pWS->rows.row[((COL*)buf)->row];
-    cell=&row->cells.cell[((COL*)buf)->col-row->fcell];
+    cell=&row->cells.cell[((COL*)buf)->col];
 
     cell->id=bof->id;
     cell->xf=((COL*)buf)->xf;
@@ -242,7 +334,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x0BD:	//MULRK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
+            cell=&row->cells.cell[((COL*)buf)->col+i];
             //				col=row->cols[i];
             cell->id=bof->id;
             cell->xf=*((WORD *)(buf+(4+i*6)));
@@ -253,7 +345,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x0BE:	//MULBLANK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
+            cell=&row->cells.cell[((COL*)buf)->col+i];
             //				col=row->cols[i];
             cell->id=bof->id;
             cell->xf=*((WORD *)(buf+(4+i*2)));
@@ -261,8 +353,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         }
         break;
     case 0xFD:	//LABELSST
-        cell->l=*(WORD *)&((LABELSST*)buf)->value;
-        //		cell->str=pWS->workbook->sst.string[cell->l].str;
+        cell->l=*(DWORD *)&((LABELSST*)buf)->value;
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     case 0x27E:	//RK
@@ -277,7 +368,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     }
-    //	xls_showCell(cell);
+    // xls_showCell(cell);
 }
 
 void xls_addFont(xlsWorkBook* pWB,FONT* font)
@@ -308,6 +399,29 @@ void xls_addFont(xlsWorkBook* pWB,FONT* font)
 
     //	xls_showFont(tmp);
     pWB->fonts.count++;
+}
+
+void xls_addFormat(xlsWorkBook* pWB,FORMAT* format)
+{
+    struct st_format_data* tmp;
+
+    verbose("xls_addFormat");
+    if (pWB->formats.count==0)
+    {
+        pWB->formats.format=(struct st_format_data *) malloc(sizeof(struct st_format_data));
+    }
+    else
+    {
+        pWB->formats.format=(struct st_format_data *) realloc(pWB->formats.format,(pWB->formats.count+1)*sizeof(struct st_format_data));
+    }
+
+    tmp=&pWB->formats.format[pWB->formats.count];
+
+    tmp->index=format->index;
+    tmp->value=get_unicode((BYTE*)format + 2,1);
+
+    //	xls_showFormat(tmp);
+    pWB->formats.count++;
 }
 
 void xls_addXF(xlsWorkBook* pWB,XF* xf)
@@ -445,6 +559,10 @@ extern void xls_parseWorkBook(xlsWorkBook* pWB)
             xls_addFont(pWB,(FONT*)buf);
             free(buf);
             break;
+        case 0x41E:	//FORMAT
+            xls_addFormat(pWB,(FORMAT*)buf);
+            free(buf);
+            break;
         default:
             free(buf);
             break;
@@ -478,8 +596,8 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
             xls_addColinfo(pWS,(COLINFO*)buf);
             break;
         case 0x208:	//ROW
-            if (pWS->rows.lastcol<((ROW*)buf)->lcell)
-                pWS->rows.lastcol=((ROW*)buf)->lcell;
+            if (pWS->rows.lastcol<((ROW*)buf)->lcell-1)
+                pWS->rows.lastcol=((ROW*)buf)->lcell-1;
             if (pWS->rows.lastrow<((ROW*)buf)->index)
                 pWS->rows.lastrow=((ROW*)buf)->index;
             break;
@@ -586,12 +704,15 @@ extern xlsWorkBook* xls_open(char *file,char* charset)
 
     pWB=(xlsWorkBook*)malloc(sizeof(xlsWorkBook));
     verbose ("xls_open");
+
+    // open excel file
     if (!(ole=ole2_open(file)))
     {
-        printf("File \"%s\" not found\n",file);
+        printf("Cannot open File \"%s\"",file);
         return(NULL);
     }
 
+    // open Workbook
     if (!(pWB->olest=ole2_fopen(ole,"Workbook")))
     {
         printf("Workbook not found\n");
@@ -616,3 +737,9 @@ extern void xls_close(xlsWorkBook* pWB)
 	ole2_close(ole);
 	free(pWB);
 }
+
+extern const char* xls_getVersion(void)
+{
+    return libxls_version;
+}
+
