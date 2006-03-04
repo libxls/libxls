@@ -1,4 +1,7 @@
-//#include <xlstypes.h>
+#if !defined XLSSTRUCT_H
+#define XLSSTRUCT_H
+
+
 #include <libxls/ole.h>
 
 typedef struct BOF
@@ -155,7 +158,12 @@ typedef struct FONT
 }
 FONT;
 
-
+typedef struct FORMAT
+{
+    WORD	index;
+    BYTE	value[1];
+}
+FORMAT;
 
 //---------------------------------------------------------
 typedef	struct st_sheet
@@ -191,6 +199,17 @@ typedef	struct st_font
 }
 st_font;
 
+typedef struct st_format
+{
+    long count;		//Count of FORMAT's
+    struct st_format_data
+    {
+         WORD index;
+         char *value;
+    }
+    * format;
+}
+st_format;
 
 typedef	struct st_xf
 {
@@ -219,7 +238,10 @@ typedef	struct st_sst
 {
     DWORD count;
     DWORD lastid;
-    DWORD lastunc;
+    DWORD continued;
+    DWORD lastln;
+    DWORD lastrt;
+    DWORD lastsz;
     struct str_sst_string
     {
         //	long len;
@@ -305,6 +327,7 @@ typedef struct xlsWorkBook
     st_sst		sst;		//SST table
     st_xf		xfs;		//XF table
     st_font		fonts;
+    st_format	formats;	//FORMAT table
 }
 xlsWorkBook;
 
@@ -318,3 +341,5 @@ typedef struct xlsWorkSheet
     WORD		maxcol;
 }
 xlsWorkSheet;
+
+#endif
