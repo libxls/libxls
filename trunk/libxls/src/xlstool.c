@@ -2,7 +2,11 @@
 #include <sys/types.h>
 #include <wchar.h>
 #include <stdio.h>
+
+#if HAVE_ICONV
 #include <iconv.h>
+#endif
+
 #include <errno.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -31,6 +35,7 @@ void verbose(char* str)
 
 static char* convert(const char* src, int src_len, int *new_len, const char* from_enc, const char* to_enc)
 {
+#if HAVE_ICONV
     char* outbuf = 0;
 
     if(src && src_len && from_enc && to_enc)
@@ -91,6 +96,17 @@ static char* convert(const char* src, int src_len, int *new_len, const char* fro
         }
     }
     return outbuf;
+#else
+    char* outbuf = malloc(src_len) + 1;
+    memcpy(outbuf, src, src_len);
+
+    if (new_len)
+    {
+        *new_len = src_len;
+    }
+    outbuf[src_len] = 0;
+    return outbuf;
+#endif
 }
 
 

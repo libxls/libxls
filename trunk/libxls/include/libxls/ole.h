@@ -1,6 +1,10 @@
+#if !defined OLE_H
+#define OLE_H
+
 #pragma pack(1)
 #include <stdio.h>
 #include <libxls/xlstypes.h>
+
 typedef struct TIME_T
 {
     DWORD	LowDate;
@@ -104,6 +108,9 @@ PSS;
 extern int ole2_read(void* buf,long size,long count,OLE2Stream* olest);
 extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start);
 extern void ole2_seek(OLE2Stream* olest,DWORD ofs);
-extern OLE2Stream*  ole2_fopen(OLE2* ole,char* file);
+extern OLE2Stream* ole2_fopen(OLE2* ole,char* file);
+extern void ole2_fclose(OLE2Stream* ole2st);
 extern OLE2* ole2_open(char *file);
 extern void ole2_close(OLE2* ole2);
+
+#endif

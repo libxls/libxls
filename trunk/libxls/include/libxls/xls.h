@@ -1,8 +1,4 @@
 #include <libxls/xlstool.h>
-//#include "xlstypes.h"
-
-
-static char* libxls_version="1.0.0";
 
 extern int xls(void);
 void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size);

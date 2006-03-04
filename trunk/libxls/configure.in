@@ -1,4 +1,5 @@
-AC_INIT([test/test.c])
+AC_INIT
+AC_CONFIG_SRCDIR([test/test.c])
 PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=1
@@ -16,7 +17,7 @@ AC_SUBST(LIBXLS_MICRO_VERSION)
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
 
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_PREFIX_DEFAULT(/usr/local/libxls)
 AC_PROG_INSTALL
 
@@ -30,19 +31,27 @@ AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 
 AC_PROG_INSTALL	        
 
-WITH_ICONV=1
-AC_ARG_WITH(iconv,
-[  --with-iconv[[=DIR]]      add ICONV support (on)])
+AC_CHECK_FUNCS([pow])
+AC_CHECK_FUNCS([strdup])
+AC_CHECK_HEADERS([netinet/in.h])
+AC_CHECK_HEADERS([wchar.h])
+AC_C_CONST
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_PROG_RANLIB
+AC_TYPE_SIZE_T
 
-if test "$with_iconv" != "yes" -a "$with_iconv" != "" ; then
-    CPPFLAGS="${CPPFLAGS} -I$with_iconv/include"
-    XML_INCLUDEDIR="${XML_INCLUDEDIR} -I$with_iconv/include"
-    ICONV_LIBS="-L$with_iconv/lib"
-else 
-    CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
-    XML_INCLUDEDIR="${XML_INCLUDEDIR} -I/usr/local/include"
-    ICONV_LIBS="-L/usr/local/lib"
-fi
+WITH_ICONV=0
+AC_ARG_WITH(iconv, [  --with-iconv[=DIR]        add ICONV support (on)])
+if test "$with_iconv" = "no" ; then
+    echo Disabling ICONV support
+else
+    if test "$with_iconv" != "yes" -a "$with_iconv" != "" ; then
+	CPPFLAGS="${CPPFLAGS} -I$with_iconv/include"
+	# Export this since our headers include iconv.h
+	XML_INCLUDEDIR="${XML_INCLUDEDIR} -I$with_iconv/include"
+	ICONV_LIBS="-L$with_iconv/lib"
+    fi
 
     AC_CHECK_HEADER(iconv.h,
 	AC_MSG_CHECKING(for iconv)
@@ -72,6 +81,11 @@ iconv (cd, NULL, NULL, NULL, NULL);],[
 		AC_MSG_RESULT(no)
 		LIBS="${_libs}"
 		LDFLAGS="${_ldflags}"])]))
+fi
+
+if test "$WITH_ICONV" = "1"; then
+    AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
+fi
 
 AC_SUBST(WITH_ICONV)
 
@@ -79,4 +93,5 @@ LIBXLS_LIBS="-lxls $ICONV_LIBS $LIBS"
 
 AC_SUBST(LIBXLS_LIBS)
 
-AC_OUTPUT(Makefile include/Makefile include/libxls/Makefile src/Makefile test/Makefile)
+AC_CONFIG_FILES([Makefile include/Makefile include/libxls/Makefile src/Makefile test/Makefile])
+AC_OUTPUT
