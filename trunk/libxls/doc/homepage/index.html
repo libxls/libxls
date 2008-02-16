@@ -4,39 +4,46 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
 <head>
 <title>libxls</title>
-<link rel="stylesheet" type="text/css" href="stylesheet.css"> 
+<link rel="stylesheet" type="text/css" href="stylesheet.css" /> 
 </head>
 <body style="padding-left: 200px; padding-right: 200px">
-<h1>libxls</h1>
-<div style="margin: 1em">
-<p>Project hosted by <a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=85885&amp;type=1" width="88" height="31" border="0" alt="SourceForge.net Logo" /></a></p>
-<h2>What is libxls ?</h2>
-<p>libxls is a <span style="font-weight: bold"/>C library</span> which can <span style="font-weight: bold"/>read Excel (xls) files</span>. It has been tested on Linux x86 and Cygwin but may work on any little-endian system. It is <span style="font-weight: bold"/>not compatible with big endian systems</span>.</p>
-<p>libxls <span style="font-weight: bold"/>can read excel files since Excel 97</span> (the BIFF8 format)</p>
-<p>libxls <span style="font-weight: bold"/>cannot write</span> Excel files.</p>
-<p>libxls is also shipped with <span style="font-weight: bold"/>xls2csv</span>, a tool which <span style="font-weight: bold"/>converts an xls file to a csv format</span>, more suitable for parsing.</p>
-<p>The <a href="http://sc.openoffice.org/excelfileformat.pdf">OpenOffice.org's Documentation of the Microsoft Excel File Format</a> and <a href="http://sc.openoffice.org/compdocfileformat.pdf">OpenOffice.org's Coumpound Document file format</a> were of much help to correct bugs in libxls.
-<h2>Download</h2>
-<h3>Current version</h3>
-<a href="https://sourceforge.net/project/showfiles.php?group_id=85885&package_id=109392&release_id=216638">libxls 0.1.0</a>
-<h3>Previous version (first release)</h3>
-This version contained a php extension to parse XLS files, not included in the automatic build process, and only distributed as a Windows DLL.<br/>
-<a href="https://sourceforge.net/project/showfiles.php?group_id=85885&package_id=109392&release_id=216638">libxls 0.0.1 beta</a>
-<h2>How to use libxls ?</h2>
-<p>libxls is a C library</p>
-<code>
-#include &lt;stdio.h&gt;
-</code>
-<h2>How to use xls2csv ?</h2>
-<p>xls2csv takes as its first argument the name of an Excel file. It write to standard output the file converted to csv format.</p>
-<p>For example, we can convert the file test.xls into a csv file called test.csv with the following command:</p>
-<code>xls2csv test.xls &gt; test.csv</code>
-<h2>Bugs corrected since the last version</h2>
-<li>OLE2 file header id is now checked</li>
-<li>Corrected wrong fcell usage which could lead to cell moves on a row</li>
-<li>There was always one more empty cell on the right on each row</li>
-<li>Some formattings in xls_getfcell where incorrects</li>
-<li>Corrected some reading problems with SST having CONTINUE records</li>
-</span>
+	<h1>libxls</h1>
+	<div style="margin: 1em">
+	<p>Project hosted by <a href="http://sourceforge.net"><img style="vertical-align: middle" src="http://sflogo.sourceforge.net/sflogo.php?group_id=85885&amp;type=1" width="88" height="31" border="0" alt="SourceForge.net Logo" /></a></p>
+
+	<h2>What is libxls ?</h2>
+	<p>libxls is a <span style="font-weight: bold"/>C library</span> which can <span style="font-weight: bold"/>read Excel (xls) files</span>. It has been tested on Linux x86 and Cygwin but may work on any little-endian system. It is <span style="font-weight: bold"/>not compatible with big endian systems</span>.</p>
+	<p>libxls <span style="font-weight: bold"/>can read excel files since Excel 97</span> (the BIFF8 format)</p>
+	<p>libxls <span style="font-weight: bold"/>cannot write</span> Excel files.</p>
+	<p>libxls is also shipped with <span style="font-weight: bold"/>xls2csv</span>, a tool which <span style="font-weight: bold"/>converts an xls file to a csv format</span>, more suitable for parsing.</p>
+	<p>The <a href="http://sc.openoffice.org/excelfileformat.pdf">OpenOffice.org's Documentation of the Microsoft Excel File Format</a> and <a href="http://sc.openoffice.org/compdocfileformat.pdf">OpenOffice.org's Coumpound Document file format</a> were of much help to correct bugs in libxls.
+
+	<h2>Download</h2>
+	<h3>Current version</h3>
+	At the moment, you can only build libxls from sources: <a href="https://sourceforge.net/cvs/?group_id=85885">libxls 0.1.0</a>.
+	<h3>Previous version (first release)</h3>
+	This version contained a php extension to parse XLS files, not included in the automatic build process, and only distributed as a Windows DLL.<br/>
+	<a href="https://sourceforge.net/project/showfiles.php?group_id=85885&package_id=109392&release_id=216638">libxls 0.0.1 beta</a>
+
+	<h2>How to use libxls ?</h2>
+	<p>libxls is a C library</p>
+	<code>
+	#include &lt;stdio.h&gt;<br/>
+	#include &lt;xls.h&gt;
+	</code>
+
+	<h2>How to use xls2csv ?</h2>
+	<p>xls2csv takes as its first argument the name of an Excel file. It write to standard output the file converted to csv format.</p>
+	<p>For example, we can convert the file test.xls into a csv file called test.csv with the following command:</p>
+	<code>xls2csv test.xls &gt; test.csv</code>
+
+	<h2>Bugs corrected since the last version</h2>
+	<ol>
+	<li>OLE2 file header id is now checked</li>
+	<li>Corrected wrong fcell usage which could lead to cell moves on a row</li>
+	<li>There was always one more empty cell on the right on each row</li>
+	<li>Some formattings in xls_getfcell where incorrects</li>
+	<li>Corrected some reading problems with SST having CONTINUE records</li>
+	</ol>
 </body>
 </html>
