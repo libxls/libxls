@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <xls.h>
+#include <libxls/xls.h>
 
 int main(int pintArgc, char *ptstrArgv[])
 {
