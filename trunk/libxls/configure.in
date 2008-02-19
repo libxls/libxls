@@ -1,4 +1,4 @@
-AC_INIT
+AC_INIT([libxls], [1.0.0], [cleit@users.sourceforge.net])
 AC_CONFIG_SRCDIR([test/test.c])
 PACKAGE=libxls
 
@@ -38,7 +38,7 @@ AC_CHECK_HEADERS([wchar.h])
 AC_C_CONST
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_PROG_RANLIB
+AC_PROG_LIBTOOL
 AC_TYPE_SIZE_T
 
 WITH_ICONV=0
