@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir) -I../include
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir) -I../include
 
 noinst_PROGRAMS = test
 test_LDADD = $(top_builddir)/src/libxls.la $(LIBXLS_LIBS) -L$(top_builddir)/src -lxls
