@@ -184,6 +184,9 @@ test_SOURCES = \
 	test.c
 
 test_LDADD = $(top_builddir)/src/libxls.la $(LIBXLS_LIBS) -L$(top_builddir)/src -lxls
+
+# Extra files to distribute
+EXTRA_DIST = files/test2.xls
 all: all-am
 
 .SUFFIXES:
@@ -316,6 +319,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/files
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
