@@ -8,3 +8,4 @@ config.status
 .project
 stamp-h1
 .settings
+build
