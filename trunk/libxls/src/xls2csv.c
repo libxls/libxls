@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <libxls/xls.h>
 
-int main(int pintArgc, char *ptstrArgv[])
+int main(int argc, char *argv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
@@ -14,18 +14,18 @@ int main(int pintArgc, char *ptstrArgv[])
     WORD t,tt;
 
     // open workbook, choose standard conversion
-    pWB=xls_open(ptstrArgv[1], "iso-8859-15//TRANSLIT");
+    pWB=xls_open(argv[1], "iso-8859-15//TRANSLIT");
 
     // process workbook if found
     if (pWB!=NULL)
     {
         // check if the requested sheet (if any) exists
-        if (  (pintArgc >= 3)
-            &&(strcmp(ptstrArgv[2], "-l") != 0) )
+        if (  (argc >= 3)
+            &&(strcmp(argv[2], "-l") != 0) )
           {
            for (i=0;i<pWB->sheets.count;i++)
               {
-               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) == 0)
+               if (strcmp(argv[2], pWB->sheets.sheet[i].name) == 0)
                  {
                   break;
                  }
@@ -44,14 +44,14 @@ int main(int pintArgc, char *ptstrArgv[])
             int lineWritten = 0;
 
             // check if this is a requested sheet
-            if (pintArgc >= 3)
+            if (argc >= 3)
               {
-               if (strcmp(ptstrArgv[2], "-l") == 0)
+               if (strcmp(argv[2], "-l") == 0)
                  {
                   printf("%s\n", pWB->sheets.sheet[i].name);
                   continue;
                  }
-               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) != 0)
+               if (strcmp(argv[2], pWB->sheets.sheet[i].name) != 0)
                  {
                   continue;
                  }
