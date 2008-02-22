@@ -4,9 +4,8 @@
 #include <ctype.h>
 #include <libxls/xls.h>
 
-int main()
+int main(int argc, char *argv[])
 {
-
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
     FILE *f;
