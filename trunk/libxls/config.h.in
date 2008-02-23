@@ -53,6 +53,15 @@
 /* Define to 1 if you have the <wchar.h> header file. */
 #undef HAVE_WCHAR_H
 
+/* Major version */
+#undef LIBXLS_MAJOR_VERSION
+
+/* Micro version */
+#undef LIBXLS_MICRO_VERSION
+
+/* Minor version */
+#undef LIBXLS_MINOR_VERSION
+
 /* Name of package */
 #undef PACKAGE
 
