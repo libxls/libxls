@@ -4,16 +4,16 @@ bin_PROGRAMS = xls2csv
 
 lib_LTLIBRARIES = libxls.la
 
-xls2csv_sources =       \
+xls2csv_SOURCES =       \
 	xls2csv.c
 
-libxls_sources =	\
+libxls_la_SOURCES =	\
 	xlstool.c	\
 	ole.c		\
-	xls.c		
-
-LDADD = $(LIBXLS_LIBS)
+	xls.c		\
+	version.c
 
 libxls_la_LDFLAGS = -version-info $(VERSION_INFO)
 
-libxls_la_SOURCES = $(libxls_sources) version.c
+LDADD = $(LIBXLS_LIBS)
+
