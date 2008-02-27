@@ -1,6 +1,29 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * This file is part of libxls -- A multiplatform, C library
+ * for parsing Excel(TM) files.
+ *
+ * libxls is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libxls is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2004 Komarov Valery
+ * Copyright 2006 Christophe Leitienne
+ * Copyright 2008 David Hoerl
+ */
+
 #include <libxls/xlsstruct.h>
 
-static const int colors[] =
+static const u_int32_t colors[] =
     {
         0x000000,
         0xFFFFFF,
@@ -62,8 +85,8 @@ static const int colors[] =
 
 void dumpbuf(char* fname,long size,BYTE* buf);
 void verbose(char* str);
-char* utf8_decode(const char *s, int len, int *newlen, const char* encoding);
-char*  get_unicode(BYTE *s,BYTE is2);
+char* utf8_decode(const BYTE *s, int len, int *newlen, const char* encoding);
+char*  get_unicode(BYTE *s,BYTE is2, BYTE fmt, char *charset);
 DWORD xls_getColor(const WORD color,WORD def);
 
 extern void xls_showBookInfo(xlsWorkBook* pWB);
@@ -71,7 +94,7 @@ extern void xls_showROW(struct st_row_data* row);
 extern void xls_showColinfo(struct st_colinfo_data* col);
 extern void xls_showCell(struct st_cell_data* cell);
 extern void xls_showFont(struct st_font_data* font);
-extern void xls_showFormat(struct st_format_data* format);
 extern void xls_showXF(struct st_xf_data* xf);
 extern char* xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell);
 extern char* xls_getCSS(xlsWorkBook* pWB);
+extern void xls_showBOF(BOF* bof);

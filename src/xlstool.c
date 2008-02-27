@@ -1,26 +1,41 @@
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * This file is part of libxls -- A multiplatform, C library
+ * for parsing Excel(TM) files.
+ *
+ * libxls is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libxls is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2004 Komarov Valery
+ * Copyright 2006 Christophe Leitienne
+ * Copyright 2008 David Hoerl
+ */
 
 #include <math.h>
 #include <sys/types.h>
 #include <wchar.h>
 #include <stdio.h>
-
-#if HAVE_ICONV
 #include <iconv.h>
-#endif
-
-#include <errno.h>
 #include <stdlib.h>
+#include <iconv.h>
+#include <errno.h>
 #include <memory.h>
 #include <string.h>
 
-
-#include <libxls/xlstool.h>
+#include <libxls/xls.h>
 #include <libxls/brdb.h>
 
-static int xls_debug=0;
+static void xls_showBOUNDSHEET(void* bsheet);
 
 void dumpbuf(char* fname,long size,BYTE* buf)
 {
@@ -33,37 +48,35 @@ void dumpbuf(char* fname,long size,BYTE* buf)
 void verbose(char* str)
 {
     if (xls_debug)
-        printf("xlslib: %s\n",str);
+        printf("libxls : %s\n",str);
 }
 
 
-static char* convert(const char* src, int src_len, int *new_len, const char* from_enc, const char* to_enc)
+static char* convert(const BYTE* src, int src_len, int *new_len, const char* from_enc, const char* to_enc)
 {
-#if HAVE_ICONV
     char* outbuf = 0;
 
     if(src && src_len && from_enc && to_enc)
     {
-        int outlenleft = src_len;
+        size_t outlenleft = src_len;
         int outlen = src_len;
-        int inlenleft = src_len;
+        size_t inlenleft = src_len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        const char* src_ptr = (char*) src;
+        char* src_ptr = (char*) src;
         char* out_ptr = 0;
 
         if(ic != (iconv_t)-1)
         {
-            size_t st;
+            size_t st; 
             outbuf = (char*)malloc(outlen + 1);
 
-            if(outbuf)
+			if(outbuf)
             {
                 out_ptr = (char*)outbuf;
                 while(inlenleft)
                 {
-                    st = iconv(ic, &src_ptr, &inlenleft, &out_ptr, (size_t *) &outlenleft);
-
-                    if(st == -1)
+                    st = iconv(ic,&src_ptr, &inlenleft,&out_ptr,(size_t *) &outlenleft);
+                    if(st == (size_t)(-1))
                     {
                         if(errno == E2BIG)
                         {
@@ -79,8 +92,7 @@ static char* convert(const char* src, int src_len, int *new_len, const char* fro
                         }
                         else
                         {
-                            free(outbuf);
-                            outbuf = 0;
+                            free(outbuf), outbuf = NULL;
                             break;
                         }
                     }
@@ -100,26 +112,15 @@ static char* convert(const char* src, int src_len, int *new_len, const char* fro
         }
     }
     return outbuf;
-#else
-    char* outbuf = malloc(src_len) + 1;
-    memcpy(outbuf, src, src_len);
-
-    if (new_len)
-    {
-        *new_len = src_len;
-    }
-    outbuf[src_len] = 0;
-    return outbuf;
-#endif
 }
 
 
-char* utf8_decode(const char *s, int len, int *newlen, const char* encoding)
+char* utf8_decode(const BYTE *s, int len, int *newlen, const char* encoding)
 {
-    return convert(s, len, newlen,"UTF-16LE",encoding);
+    return convert(s, len, newlen, "UTF-16LE", encoding);
 }
 
-char*  get_unicode(BYTE *s,BYTE is2)
+char*  get_unicode(BYTE *s, BYTE is2, BYTE fmt, char *charset)
 {
     WORD ln;
     DWORD ofs;
@@ -127,11 +128,11 @@ char*  get_unicode(BYTE *s,BYTE is2)
     WORD rt;
     BYTE flag;
     BYTE* str;
-
     char* ret;
-
-    int new_len = 0;
-
+    int new_len;
+	
+	new_len = 0;
+	flag = 0;
     str=s;
 
 
@@ -148,9 +149,10 @@ char*  get_unicode(BYTE *s,BYTE is2)
         ofs++;
     }
 
-    flag=*(BYTE*)(str+ofs);
-    ofs++;
-
+	if(fmt) {
+		flag=*(BYTE*)(str+ofs);
+		ofs++;
+	}
     if (flag&0x8)
     {
         rt=*(WORD*)(str+ofs);
@@ -164,17 +166,15 @@ char*  get_unicode(BYTE *s,BYTE is2)
 
     if (flag&0x1)
     {
-        ret=utf8_decode(str+ofs,ln*2, &new_len,"KOI8-R");
+        ret=utf8_decode(str+ofs,ln*2, &new_len,charset); // "KOI8-R"
         ofs+=ln*2;
-        //		printf("String16: %s(%i)\n",ret,ln);
-    }
-    else
-    {
+        // printf("String16: %s(%i)\n",ret,ln);
+    } else {
         ret=(char *)malloc(ln+1);
         memcpy (ret,(str+ofs),ln);
         *(char*)(ret+ln)=0;
         ofs+=ln;
-        //		printf("String8: %s(%i) \n",ret,ln);
+        // printf("String8: %s(%i) \n",ret,ln);
     }
 
     if (flag&0x8)
@@ -190,19 +190,19 @@ DWORD xls_getColor(const WORD color,WORD def)
     int cor=8;
     int size = 64 - cor;
     int max = size;
-    WORD index=color;
-    if( index >= cor)
-        index -= cor;
-    if( index < max )
+    WORD idx=color;
+    if( idx >= cor)
+        idx -= cor;
+    if( idx < max )
     {
-        return colors[index];
+        return colors[idx];
     }
     else
         return colors[def];
 }
 
 
-extern void xls_showBookInfo(xlsWorkBook* pWB)
+void xls_showBookInfo(xlsWorkBook* pWB)
 {
     verbose("BookInfo");
     printf("  is5ver: %i\n",pWB->is5ver);
@@ -229,19 +229,20 @@ extern void xls_showBookInfo(xlsWorkBook* pWB)
         printf("BIFF4W Workbook globals\n");
         break;
     }
-    printf("----------------------------------------------\n");
+    printf("------------------- END BOOK INFO---------------------------\n");
 }
 
 
 void xls_showBOF(BOF* bof)
 {
-    verbose("BOF");
-    printf("     ID: %.4Xh %s (%s)\n",bof->id,brdb[get_brbdnum(bof->id)].name,brdb[get_brbdnum(bof->id)].desc);
-    printf("   Size: %i\n",bof->size);
     printf("----------------------------------------------\n");
+    verbose("BOF");
+    printf("   ID: %.4Xh %s (%s)\n",bof->id,brdb[get_brbdnum(bof->id)].name,brdb[get_brbdnum(bof->id)].desc);
+    printf("   Size: %i\n",bof->size);
 }
 
-void xls_showBOUNDSHEET(BOUNDSHEET* bsheet)
+#if 0
+static void xls_showBOUNDSHEET(BOUNDSHEET* bsheet)
 {
     switch (bsheet->type & 0x000f)
     {
@@ -264,12 +265,13 @@ void xls_showBOUNDSHEET(BOUNDSHEET* bsheet)
     default:
         break;
     }
-    printf("    Pos: %lXh\n",bsheet->filepos);
+    printf("    Pos: %Xh\n",bsheet->filepos);
     printf("  flags: %.4Xh\n",bsheet->type);
     //	printf("   Name: [%i] %s\n",bsheet->len,bsheet->name);
 }
+#endif
 
-extern void xls_showROW(struct st_row_data* row)
+void xls_showROW(struct st_row_data* row)
 {
     verbose("ROW");
     printf("    Index: %i \n",row->index);
@@ -281,7 +283,7 @@ extern void xls_showROW(struct st_row_data* row)
     printf("----------------------------------------------\n");
 }
 
-extern void xls_showColinfo(struct st_colinfo_data* col)
+void xls_showColinfo(struct st_colinfo_data* col)
 {
     verbose("COLINFO");
     printf("First col: %i \n",col->first);
@@ -299,19 +301,22 @@ extern void xls_showColinfo(struct st_colinfo_data* col)
     printf("----------------------------------------------\n");
 }
 
-extern void xls_showCell(struct st_cell_data* cell)
+void xls_showCell(struct st_cell_data* cell)
 {
-    printf("     ID: %.4Xh %s (%s)\n",cell->id,brdb[get_brbdnum(cell->id)].name,brdb[get_brbdnum(cell->id)].desc);
+	if(cell->id == 0x0201) return;
+
+    printf("  -----------\n");
+    printf("     ID: %.4Xh %s (%s)\n",cell->id, brdb[get_brbdnum(cell->id)].name, brdb[get_brbdnum(cell->id)].desc);
     printf("   Cell: %c%i\n",cell->col+65,cell->row+1);
     printf("     xf: %i\n",cell->xf);
     printf(" double: %f\n",cell->d);
-    printf("   long: %li\n",cell->l);
+    printf("   long: %i\n",cell->l);
     if (cell->str!=NULL)
         printf("    str: %s\n",cell->str);
 }
 
 
-extern void xls_showFont(struct st_font_data* font)
+void xls_showFont(struct st_font_data* font)
 {
 
     printf("      name: %s\n",font->name);
@@ -326,14 +331,7 @@ extern void xls_showFont(struct st_font_data* font)
 
 }
 
-extern void xls_showFormat(struct st_format_data* format)
-{
-
-    printf("     index: %d\n",format->index);
-    printf("     value: %s\n",format->value);
-}
-
-extern void xls_showXF(struct st_xf_data* xf)
+void xls_showXF(struct st_xf_data* xf)
 {
     printf("       Font: %i\n",xf->font);
     printf("     Format: %i\n",xf->format);
@@ -342,12 +340,12 @@ extern void xls_showXF(struct st_xf_data* xf)
     printf("   Rotation: %i\n",xf->rotation);
     printf("      Ident: %i\n",xf->ident);
     printf("   UsedAttr: %i\n",xf->usedattr);
-    printf("  LineStyle: %li\n",xf->linestyle);
-    printf("  Linecolor: %li\n",xf->linecolor);
+    printf("  LineStyle: %i\n",xf->linestyle);
+    printf("  Linecolor: %i\n",xf->linecolor);
     printf("GroundColor: %i\n",xf->groundcolor);
 }
 
-extern char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
+char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 {
     struct st_xf_data*  xf;
     char ret[10240];
@@ -359,41 +357,33 @@ extern char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     switch (cell->id)
     {
     case 0x0FD:
-        if (cell->l < pWB->sst.lastid)
-          {
-           snprintf(ret,sizeof(ret),"%s",pWB->sst.string[cell->l].str);
-          }
-        else
-          {
-           snprintf(ret,sizeof(ret),"*cellid %ld not found (max %ld)*", cell->l, pWB->sst.lastid-1);
-          }
+        sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
     case 0x201:
-        sprintf(ret,"%s", "");
+        sprintf(ret,"&nbsp;");
         break;
     case 0x0BE:
-        sprintf(ret,"%s", "");
+        sprintf(ret,"&nbsp;");
         break;
-
         //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 )
     default:
         switch (xf->format)
         {
         case 0:
-            sprintf(ret,"%.0f",cell->d);
+            sprintf(ret,"%i",(int)cell->d);
             break;
         case 1:
-            sprintf(ret,"%.0f",cell->d);
+            sprintf(ret,"%i",(int)cell->d);
             break;
         case 2:
-            sprintf(ret,"%.2f",cell->d);
+            sprintf(ret,"%.1f",cell->d);
             break;
 
         case 9:
-            sprintf(ret,"%.f%%",cell->d);
+            sprintf(ret,"%i%",(int)cell->d);
             break;
         case 10:
-            sprintf(ret,"%.2f%%",cell->d);
+            sprintf(ret,"%.2f%",cell->d);
             break;
         case 11:
             sprintf(ret,"%.1e",cell->d);
@@ -405,8 +395,8 @@ extern char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
                 break;
             }
             break;
-            //		    default:  sprintf(ret,"%.4.2f (%i)",cell->d,xf->format);break;
         default:
+			// sprintf(ret,"%.4.2f (%i)",cell->d,xf->format);break;
             sprintf(ret,"%.2f",cell->d);
             break;
         }
@@ -418,7 +408,7 @@ extern char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     return out;
 }
 
-extern char* xls_getCSS(xlsWorkBook* pWB)
+char* xls_getCSS(xlsWorkBook* pWB)
 {
     char ret[65535];
     char buf[65535];
@@ -479,7 +469,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f)
         {
         case 0:
-            sprintf(borderleft,"%s","");
+            sprintf(borderleft,"\0");
             break;
         default:
             sprintf(borderleft,"border-left: 1px solid black;");
@@ -489,7 +479,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f0)
         {
         case 0:
-            sprintf(borderright,"%s","");
+            sprintf(borderright,"\0");
             break;
         default:
             sprintf(borderright,"border-right: 1px solid black;");
@@ -499,7 +489,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f00)
         {
         case 0:
-            sprintf(bordertop,"%s","");
+            sprintf(bordertop,"\0");
             break;
         default:
             sprintf(bordertop,"border-top: 1px solid black;");
@@ -509,7 +499,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f000)
         {
         case 0:
-            sprintf(borderbottom,"%s","");
+            sprintf(borderbottom,"\0");
             break;
         default:
             sprintf(borderbottom,"border-bottom: 1px solid Black;");
@@ -517,24 +507,24 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
         }
 
         if (xf->font)
-            sprintf(color,"color:#%.6lX;",xls_getColor(pWB->fonts.font[xf->font-1].color,0));
+            sprintf(color,"color:#%.6X;",xls_getColor(pWB->fonts.font[xf->font-1].color,0));
         else
-            sprintf(color,"%s","");
+            sprintf(color,"\0");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].flag & 2))
             sprintf(italic,"font-style: italic;");
         else
-            sprintf(italic,"%s","");
+            sprintf(italic,"\0");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].bold>400))
             sprintf(bold,"font-weight: bold;");
         else
-            sprintf(bold,"%s","");
+            sprintf(bold,"\0");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].underline))
             sprintf(underline,"text-decoration: underline;");
         else
-            sprintf(underline,"%s","");
+            sprintf(underline,"\0");
 
         if (xf->font)
             size=pWB->fonts.font[xf->font-1].height/20;
@@ -549,7 +539,7 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
             sprintf(fontname,"Arial");
 
         background=xls_getColor((WORD)(xf->groundcolor & 0x7f),1);
-        sprintf(buf,".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6lX;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
+        sprintf(buf,".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6X;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
                 i,size,fontname,background,align,valign,borderleft,borderright,bordertop,borderbottom,color,italic,bold,underline);
 
         if (i==0)
@@ -560,5 +550,4 @@ extern char* xls_getCSS(xlsWorkBook* pWB)
     out=(char *)malloc(strlen(ret)+1);
     memcpy(out,ret,strlen(ret)+1);
     return out;
-    ;
 }
