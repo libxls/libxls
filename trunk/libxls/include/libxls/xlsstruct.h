@@ -1,7 +1,27 @@
-#if !defined XLSSTRUCT_H
-#define XLSSTRUCT_H
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * This file is part of libxls -- A multiplatform, C library
+ * for parsing Excel(TM) files.
+ *
+ * libxls is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libxls is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2004 Komarov Valery
+ * Copyright 2006 Christophe Leitienne
+ * Copyright 2008 David Hoerl
+ */
 
-
+//#include <xlstypes.h>
 #include <libxls/ole.h>
 
 typedef struct BOF
@@ -23,12 +43,26 @@ typedef struct BIFF
 }
 BIFF;
 
+typedef struct WIND1
+{
+    WORD xWn;
+    WORD yWn;
+    WORD dxWn;
+    WORD dyWn;
+    WORD grbit;
+    WORD itabCur;
+    WORD itabFirst;
+    WORD ctabSel;
+    WORD wTabRatio;
+}
+WIND1;
+
 typedef struct BOUNDSHEET
 {
     DWORD	filepos;
-    BYTE	visibility;
     BYTE	type;
-    char	name;
+    BYTE	visible;
+    BYTE	name[];
 }
 BOUNDSHEET;
 
@@ -98,8 +132,20 @@ typedef struct SST
 }
 SST;
 
+typedef struct XF5
+{
+    WORD	font;
+    WORD	format;
+    WORD	type;
+    WORD	align;
+    WORD	color;
+    WORD	fill;
+    WORD	border;
+    WORD	linestyle;
+}
+XF5;
 
-typedef struct XF
+typedef struct XF8
 {
     WORD	font;
     WORD	format;
@@ -112,7 +158,7 @@ typedef struct XF
     DWORD	linecolor;
     WORD	groundcolor;
 }
-XF;
+XF8;
 
 typedef struct BR_NUMBER
 {
@@ -154,16 +200,11 @@ typedef struct FONT
     BYTE	family;
     BYTE	charset;
     BYTE	notused;
-    char	name;
+    BYTE	name;
 }
 FONT;
 
-typedef struct FORMAT
-{
-    WORD	index;
-    BYTE	value[1];
-}
-FORMAT;
+
 
 //---------------------------------------------------------
 typedef	struct st_sheet
@@ -199,17 +240,6 @@ typedef	struct st_font
 }
 st_font;
 
-typedef struct st_format
-{
-    long count;		//Count of FORMAT's
-    struct st_format_data
-    {
-         WORD index;
-         char *value;
-    }
-    * format;
-}
-st_format;
 
 typedef	struct st_xf
 {
@@ -238,10 +268,7 @@ typedef	struct st_sst
 {
     DWORD count;
     DWORD lastid;
-    DWORD continued;
-    DWORD lastln;
-    DWORD lastrt;
-    DWORD lastsz;
+    DWORD lastunc;
     struct str_sst_string
     {
         //	long len;
@@ -313,7 +340,7 @@ st_colinfo;
 typedef struct xlsWorkBook
 {
     //FILE*		file;		//
-    OLE2Stream*	olest;
+    OLE2Stream*	olestr;
     long		filepos;	//position in file
 
     //From Header (BIFF)
@@ -327,7 +354,6 @@ typedef struct xlsWorkBook
     st_sst		sst;		//SST table
     st_xf		xfs;		//XF table
     st_font		fonts;
-    st_format	formats;	//FORMAT table
 }
 xlsWorkBook;
 
@@ -341,5 +367,3 @@ typedef struct xlsWorkSheet
     WORD		maxcol;
 }
 xlsWorkSheet;
-
-#endif

@@ -1,0 +1,16 @@
+libxls NEWS
+------------------
+CVS ID: $Id: TODO,v 1.1 2008-02-27 04:26:52 dhoerl Exp $
+
+
+Date 2008-02-25
+Summary: libxls release 1.0.0
+-----------------------------------------------------------
+- Big Endian machines
+- 32/64 bit buildable
+- make clean works better
+- fix lots of leaks
+- decompiler for formulas
+
+
+
