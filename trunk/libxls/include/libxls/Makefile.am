@@ -2,8 +2,8 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-includedir = $(prefix)/include/libxlsreader
+includedir = $(prefix)/include/libxls
 
-include_HEADERS = ole.h xls.h xlsstruct.h xlstypes.h xlstool.h
+include_HEADERS = brdb.h ole.h xls.h xlsstruct.h xlstypes.h xlstool.h
 
 
