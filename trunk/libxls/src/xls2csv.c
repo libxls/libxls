@@ -1,10 +1,33 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * This file is part of libxls -- A multiplatform, C library
+ * for parsing Excel(TM) files.
+ *
+ * libxls is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libxls is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2004 Christophe Leitienne
+ * Copyright 2008 David Hoerl
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
 #include <libxls/xls.h>
 
-int main(int argc, char *argv[])
+int main(int pintArgc, char *ptstrArgv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
@@ -13,19 +36,24 @@ int main(int argc, char *argv[])
     struct st_row_data* row;
     WORD t,tt;
 
+	if(pintArgc != 2) {
+		printf("Need file arg\n");
+		exit(1);
+	}
+
     // open workbook, choose standard conversion
-    pWB=xls_open(argv[1], "iso-8859-15//TRANSLIT");
+    pWB=xls_open(ptstrArgv[1], "iso-8859-15//TRANSLIT");
 
     // process workbook if found
     if (pWB!=NULL)
     {
         // check if the requested sheet (if any) exists
-        if (  (argc >= 3)
-            &&(strcmp(argv[2], "-l") != 0) )
+        if (  (pintArgc >= 3)
+            &&(strcmp(ptstrArgv[2], "-l") != 0) )
           {
            for (i=0;i<pWB->sheets.count;i++)
               {
-               if (strcmp(argv[2], pWB->sheets.sheet[i].name) == 0)
+               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) == 0)
                  {
                   break;
                  }
@@ -33,7 +61,7 @@ int main(int argc, char *argv[])
 
            if (i == pWB->sheets.count)
              {
-              printf("Feuille non trouv‚e");
+              printf("Feuille non trouvée");
               return EXIT_FAILURE;
              }
           }
@@ -44,14 +72,14 @@ int main(int argc, char *argv[])
             int lineWritten = 0;
 
             // check if this is a requested sheet
-            if (argc >= 3)
+            if (pintArgc >= 3)
               {
-               if (strcmp(argv[2], "-l") == 0)
+               if (strcmp(ptstrArgv[2], "-l") == 0)
                  {
                   printf("%s\n", pWB->sheets.sheet[i].name);
                   continue;
                  }
-               if (strcmp(argv[2], pWB->sheets.sheet[i].name) != 0)
+               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) != 0)
                  {
                   continue;
                  }
