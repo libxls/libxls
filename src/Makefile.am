@@ -1,14 +1,18 @@
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-libxls_sources =	\
-	xlstool.c	\
-	ole.c		\
-	xls.c		
+bin_PROGRAMS = xls2csv
 
 lib_LTLIBRARIES = libxlsreader.la
 
-LDADD = $(LIBXLS_LIBS)
+xls2csv_SOURCES =       \
+	xls2csv.c
+
+libxlsreader_la_SOURCES =	\
+	xlstool.c	\
+	ole.c		\
+	xls.c		\
+	version.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO)
 
-libxlsreader_la_SOURCES = $(libxls_sources) version.c
+LDADD = $(LIBXLS_LIBS)
