@@ -67,7 +67,7 @@ int main()
                         fprintf(f," rowspan=%i",row->cells.cell[tt].rowspan);
                     fprintf(f," class=xf%i",row->cells.cell[tt].xf);
                     fprintf(f,">");
-                    if (row->cells.cell[tt].str!=NULL)
+                    if (row->cells.cell[tt].str!=NULL && row->cells.cell[tt].str[0]!='\0')
                         fprintf(f,"%s",row->cells.cell[tt].str);
                     else
                         fprintf(f,"%s","&nbsp;");

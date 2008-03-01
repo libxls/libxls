@@ -360,10 +360,10 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
     case 0x201:
-        sprintf(ret,"&nbsp;");
+        sprintf(ret,"");
         break;
     case 0x0BE:
-        sprintf(ret,"&nbsp;");
+        sprintf(ret,"");
         break;
         //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 )
     default:
