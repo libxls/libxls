@@ -1,9 +1,10 @@
 #! /bin/sh 
 
 # Note:  on OSX, change libtoolize to glibtoolize
-glibtoolize --force \
-&& aclocal \
-&& autoconf  \
-&& automake -a
+set -x
 
-
+aclocal --force \
+&& libtoolize --copy --force \
+&& autoconf --force \
+&& autoheader --force \
+&& automake --add-missing --copy --force-missing

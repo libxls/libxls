@@ -1,4 +1,4 @@
-buildconf
-configure --with-iconv=/usr/local
+./bootstrap
+./configure
 make
 make install
