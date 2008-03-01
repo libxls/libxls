@@ -21,7 +21,6 @@
  * Copyright 2008 David Hoerl
  */
 
-//#include <xlstypes.h>
 #include <libxls/ole.h>
 
 typedef struct BOF
