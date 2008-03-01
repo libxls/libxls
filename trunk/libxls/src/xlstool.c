@@ -62,7 +62,7 @@ static char* convert(const BYTE* src, int src_len, int *new_len, const char* fro
         int outlen = src_len;
         size_t inlenleft = src_len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        char* src_ptr = (char*) src;
+        const char* src_ptr = (char*) src;
         char* out_ptr = 0;
 
         if(ic != (iconv_t)-1)
@@ -75,7 +75,7 @@ static char* convert(const BYTE* src, int src_len, int *new_len, const char* fro
                 out_ptr = (char*)outbuf;
                 while(inlenleft)
                 {
-                    st = iconv(ic,&src_ptr, &inlenleft,&out_ptr,(size_t *) &outlenleft);
+                    st = iconv(ic, &src_ptr, &inlenleft, &out_ptr,(size_t *) &outlenleft);
                     if(st == (size_t)(-1))
                     {
                         if(errno == E2BIG)
