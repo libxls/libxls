@@ -341,7 +341,7 @@ OLE2* ole2_open(char *file, char *charset)
             ole->files.count++;
 			
 			if(pss->sstart == ENDOFCHAIN) {
-				printf("END OF CHAIN\n");
+				if (xls_debug) verbose("END OF CHAIN\n");
 			} else
 			if(pss->type == PS_USER_STREAM) {
 				if(xls_debug) {
