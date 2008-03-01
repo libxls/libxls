@@ -22,9 +22,6 @@
  */
 
 #include <libxls/xlstool.h>
-//#include "xlstypes.h"
-
-//static char* libxls_version="1.0.0"; NOT USED ANYWHERE
 
 extern int xls_debug;
 
