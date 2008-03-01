@@ -7,12 +7,12 @@ lib_LTLIBRARIES = libxlsreader.la
 xls2csv_SOURCES =       \
 	xls2csv.c
 
+xls2csv_LDADD = libxlsreader.la
+
 libxlsreader_la_SOURCES =	\
 	xlstool.c	\
 	ole.c		\
 	xls.c		\
 	version.c
 
-libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO)
-
-LDADD = $(LIBXLS_LIBS)
+libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
