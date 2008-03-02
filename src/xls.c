@@ -30,7 +30,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <wchar.h>
-#include <iconv.h>
 
 #include <libxls/xls.h>
 
