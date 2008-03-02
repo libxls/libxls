@@ -12,7 +12,6 @@ xls2csv_LDADD = libxlsreader.la
 libxlsreader_la_SOURCES =	\
 	xlstool.c	\
 	ole.c		\
-	xls.c		\
-	version.c
+	xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
