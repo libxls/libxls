@@ -59,7 +59,7 @@ typedef struct OLE2Header
     DWORD		sfatstart;		// first short-sector or EOC
     DWORD		csfat;			// count short sectors
     DWORD		difstart;		// first sector master sector table or EOC
-    DWORD		cdif;			// totoal count
+    DWORD		cdif;			// total count
     DWORD		MSAT[109];		// First 109 MSAT
 }
 OLE2Header;

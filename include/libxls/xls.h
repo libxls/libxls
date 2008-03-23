@@ -23,6 +23,8 @@
 
 #include <libxls/xlstool.h>
 
+extern const char* xls_getVersion(void);
+
 extern int xls_debug;
 
 extern int xls(void);
@@ -30,6 +32,7 @@ extern int xls(void);
 extern void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size);
 extern void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size);
 
+extern void xls_addFormat(xlsWorkBook* pWB,FORMAT* format);
 extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 
