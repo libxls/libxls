@@ -6,7 +6,13 @@ make install
 To build a native Win32 library under cygwin, use this configure:
 CC='gcc -mno-cygwin' ./configure --host=mingw32 --build=mingw32 --with-iconv=no
 
-If you're a package maintainer, do this before:
+The following is for maintainers:
+
+Do this when you update configure.in:
 ./bootstrap
 or:
 autoreconf -v --install --force
+
+To build a binary distribution, use the following commands:
+DESTDIR="$PWD/libxls-<version>-<arch>" make install
+tar cvzf libxls-<version>-<arch>.tar.gz libxls-<version>-<arch>
