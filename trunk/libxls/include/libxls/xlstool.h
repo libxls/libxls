@@ -23,7 +23,7 @@
 
 #include <libxls/xlsstruct.h>
 
-static const u_int32_t colors[] =
+static const DWORD colors[] =
     {
         0x000000,
         0xFFFFFF,
@@ -85,8 +85,8 @@ static const u_int32_t colors[] =
 
 void dumpbuf(char* fname,long size,BYTE* buf);
 void verbose(char* str);
-char* utf8_decode(const BYTE *s, int len, int *newlen, const char* encoding);
-char*  get_unicode(BYTE *s,BYTE is2, BYTE fmt, char *charset);
+char* unicode_decode(const BYTE *s, int len, int *newlen, const char* encoding);
+char* get_string(BYTE *s,BYTE is2, BYTE fmt, char *charset);
 DWORD xls_getColor(const WORD color,WORD def);
 
 extern void xls_showBookInfo(xlsWorkBook* pWB);

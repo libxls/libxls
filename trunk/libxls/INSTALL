@@ -1,4 +1,12 @@
-./bootstrap
+To build and installt, for most environments:
 ./configure
 make
 make install
+
+To build a native Win32 library under cygwin, use this configure:
+CC='gcc -mno-cygwin' ./configure --host=mingw32 --build=mingw32 --with-iconv=no
+
+If you're a package maintainer, do this before:
+./bootstrap
+or:
+autoreconf -v --install --force

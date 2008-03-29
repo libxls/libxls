@@ -21,13 +21,19 @@
  * Copyright 2008 David Hoerl
  */
 
+#include <config.h>
 #include <math.h>
 #include <sys/types.h>
 #include <wchar.h>
 #include <stdio.h>
+
+#ifdef HAVE_ICONV
 #include <iconv.h>
+#else
+#include <locale.h>
+#endif
+
 #include <stdlib.h>
-#include <iconv.h>
 #include <errno.h>
 #include <memory.h>
 #include <string.h>
@@ -45,24 +51,28 @@ void dumpbuf(char* fname,long size,BYTE* buf)
 
 }
 
+// Display string if in debug mode
 void verbose(char* str)
 {
     if (xls_debug)
         printf("libxls : %s\n",str);
 }
 
-
-static char* convert(const BYTE* src, int src_len, int *new_len, const char* from_enc, const char* to_enc)
+// Convert unicode string to to_enc encoding
+char* unicode_decode(const BYTE *s, int len, int *newlen, const char* to_enc)
 {
+#if HAVE_ICONV
+	// Do iconv conversion
+    const char *from_enc = "UTF-16LE";
     char* outbuf = 0;
-
-    if(src && src_len && from_enc && to_enc)
+    
+    if(s && len && from_enc && to_enc)
     {
-        size_t outlenleft = src_len;
-        int outlen = src_len;
-        size_t inlenleft = src_len;
+        size_t outlenleft = len;
+        int outlen = len;
+        size_t inlenleft = len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        char* src_ptr = (char*) src;
+        char* src_ptr = (char*) s;
         char* out_ptr = 0;
 
         if(ic != (iconv_t)-1)
@@ -102,9 +112,9 @@ static char* convert(const BYTE* src, int src_len, int *new_len, const char* fro
         }
         outlen -= outlenleft;
 
-        if(new_len)
+        if (newlen)
         {
-            *new_len = outbuf ? outlen : 0;
+            *newlen = outbuf ? outlen : 0;
         }
         if(outbuf)
         {
@@ -112,15 +122,37 @@ static char* convert(const BYTE* src, int src_len, int *new_len, const char* fro
         }
     }
     return outbuf;
+#else
+	// Do wcstombs conversion
+	char *converted = NULL;
+	int count, count2;
+
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		printf("setlocale failed: %d\n", errno);
+		return "*null*";
+	}
+
+	count = wcstombs(NULL, (wchar_t*)s, 0);
+	if (count <= 0) {
+		if (newlen) *newlen = 0;
+		return NULL;
+	}
+
+	converted = calloc(count+1, sizeof(char));
+	count2 = wcstombs(converted, (wchar_t*)s, count+1);
+	if (count2 <= 0) {
+		printf("wcstombs failed (%d)\n", len);
+		if (newlen) *newlen = 0;
+		return converted;
+	} else {
+		if (newlen) *newlen = count2;
+		return converted;
+	}
+#endif
 }
 
-
-char* utf8_decode(const BYTE *s, int len, int *newlen, const char* encoding)
-{
-    return convert(s, len, newlen, "UTF-16LE", encoding);
-}
-
-char*  get_unicode(BYTE *s, BYTE is2, BYTE fmt, char *charset)
+// Read and decode string
+char* get_string(BYTE *s, BYTE is2, BYTE fmt, char *charset)
 {
     WORD ln;
     DWORD ofs;
@@ -164,17 +196,14 @@ char*  get_unicode(BYTE *s, BYTE is2, BYTE fmt, char *charset)
         ofs+=4;
     }
 
-    if (flag&0x1)
-    {
-        ret=utf8_decode(str+ofs,ln*2, &new_len,charset); // "KOI8-R"
+    if (flag&0x1) {
+        ret=unicode_decode(str+ofs,ln*2, &new_len,charset);
         ofs+=ln*2;
-        // printf("String16: %s(%i)\n",ret,ln);
     } else {
         ret=(char *)malloc(ln+1);
         memcpy (ret,(str+ofs),ln);
         *(char*)(ret+ln)=0;
         ofs+=ln;
-        // printf("String8: %s(%i) \n",ret,ln);
     }
 
     if (flag&0x8)

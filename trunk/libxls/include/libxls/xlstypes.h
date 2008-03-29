@@ -21,14 +21,15 @@
  * Copyright 2008 David Hoerl
  */
 
-#include <sys/types.h>
+#include <stdint.h>
 
 #ifndef XLS_TYPES_INC
 #define XLS_TYPES_INC
 
 #pragma pack(1)
+
 typedef unsigned char		BYTE;//  __attribute__ ((aligned (1)));	// 1 bytes
-typedef u_int16_t			WORD;// __attribute__ ((aligned (1)));	// 2 bytes
-typedef u_int32_t           DWORD;//  __attribute__ ((aligned (1)));	// 4 bytes
+typedef uint16_t			WORD;// __attribute__ ((aligned (1)));	// 2 bytes
+typedef uint32_t			DWORD;//  __attribute__ ((aligned (1)));	// 4 bytes
 
 #endif

@@ -57,17 +57,14 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libxls_la_LIBADD =
-am__objects_1 = xlstool.lo ole.lo xls.lo
-am_libxls_la_OBJECTS = $(am__objects_1) version.lo
-libxls_la_OBJECTS = $(am_libxls_la_OBJECTS)
+libxlsreader_la_LIBADD =
+am_libxlsreader_la_OBJECTS = xlstool.lo ole.lo xls.lo
+libxlsreader_la_OBJECTS = $(am_libxlsreader_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-xls2csv_SOURCES = xls2csv.c
-xls2csv_OBJECTS = xls2csv.$(OBJEXT)
-xls2csv_LDADD = $(LDADD)
-am__DEPENDENCIES_1 =
-xls2csv_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_xls2csv_OBJECTS = xls2csv.$(OBJEXT)
+xls2csv_OBJECTS = $(am_xls2csv_OBJECTS)
+xls2csv_DEPENDENCIES = libxlsreader.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -79,8 +76,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libxls_la_SOURCES) xls2csv.c
-DIST_SOURCES = $(libxls_la_SOURCES) xls2csv.c
+SOURCES = $(libxlsreader_la_SOURCES) $(xls2csv_SOURCES)
+DIST_SOURCES = $(libxlsreader_la_SOURCES) $(xls2csv_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -195,18 +192,17 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-lib_LTLIBRARIES = libxls.la
-xls2csv_sources = \
+lib_LTLIBRARIES = libxlsreader.la
+xls2csv_SOURCES = \
 	xls2csv.c
 
-libxls_sources = \
+xls2csv_LDADD = libxlsreader.la
+libxlsreader_la_SOURCES = \
 	xlstool.c	\
 	ole.c		\
-	xls.c		
+	xls.c
 
-LDADD = $(LIBXLS_LIBS)
-libxls_la_LDFLAGS = -version-info $(VERSION_INFO)
-libxls_la_SOURCES = $(libxls_sources) version.c
+libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -220,9 +216,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/Makefile
+	  $(AUTOMAKE) --foreign  src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -267,8 +263,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libxls.la: $(libxls_la_OBJECTS) $(libxls_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libxls_la_LDFLAGS) $(libxls_la_OBJECTS) $(libxls_la_LIBADD) $(LIBS)
+libxlsreader.la: $(libxlsreader_la_OBJECTS) $(libxlsreader_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libxlsreader_la_LDFLAGS) $(libxlsreader_la_OBJECTS) $(libxlsreader_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
@@ -308,7 +304,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ole.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls2csv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xlstool.Plo@am__quote@
