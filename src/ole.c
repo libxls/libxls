@@ -21,7 +21,6 @@
  * Copyright 2008 David Hoerl
  */
  
-//#include <malloc.h>
 #include <memory.h>
 #include <math.h>
 #include <string.h>
@@ -336,7 +335,7 @@ OLE2* ole2_open(char *file, char *charset)
     {
         ole2_read(pss,1,sizeof(PSS),olest);
 
-        name=utf8_decode(pss->name, pss->bsize, 0, charset);
+        name=unicode_decode(pss->name, pss->bsize, 0, charset);
         if (pss->type == PS_USER_ROOT || pss->type == PS_USER_STREAM) // (name!=NULL) // 
         {
             if (ole->files.count==0)
@@ -415,7 +414,6 @@ static int sector_pos(OLE2* ole2, int sid)
 {
     return 512 + sid * ole2->lsector;
 }
-
 // Read one sector from its sid
 static int sector_read(OLE2* ole2, BYTE *buffer, int sid)
 {

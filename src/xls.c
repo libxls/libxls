@@ -157,7 +157,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 int new_len = 0;
                 ln_toread = min((size-ofs)/2, ln);
 
-                ret=utf8_decode(buf+ofs,ln_toread*2, &new_len,pWB->charset);
+                ret=unicode_decode(buf+ofs,ln_toread*2, &new_len,pWB->charset);
    
                 if (ret == NULL)
                 {
@@ -255,21 +255,25 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 
 static double NumFromRk(BYTE* rk)
 {
-    double num;
+    volatile double num; // volatile necessary at least for Cygwin GCC 3.4.4
     DWORD drk;
     drk=*(DWORD*)rk;
 
-    if(drk & 0x02)
-    {
+	// What kind of value is this ?
+    if (drk & 0x02) {
+    	// Floating point value;
         num = (double)(drk >> 2);
-    }
-    else
-    {
-        *((DWORD *)&num+1) = drk & 0xfffffffc;
+    } else {
+    	// Integer value
+        *(1+(DWORD *)&num) = drk & 0xfffffffc;
         *((DWORD *)&num) = 0;
     }
-    if(drk & 0x01)
-        num /= 100;
+    
+    // Is value multiplied by 100 ?
+    if (drk & 0x01) {
+        num = num / 100.0;
+    }
+    
     return num;
 }
 
@@ -291,7 +295,7 @@ char* xls_addSheet(xlsWorkBook* pWB,BOUNDSHEET *bs)
 	}
 	// printf("charset=%s uni=%d\n", pWB->charset, unicode);
 	// printf("bs name %.*s\n", bs->name[0], bs->name+1);
-	name=get_unicode(bs->name,unicode,0,pWB->charset);	// TODO: unicode relevant here?
+	name=get_string(bs->name,unicode,0,pWB->charset);	// TODO: unicode relevant here?
 	// printf("name=%s\n", name);
 
 	if(xls_debug) {
@@ -451,7 +455,10 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     }
-    //	xls_showCell(cell);
+    
+    if (xls_debug) {
+    	xls_showCell(cell);
+    }
 }
 
 char *xls_addFont(xlsWorkBook* pWB,FONT* font)
@@ -470,7 +477,7 @@ char *xls_addFont(xlsWorkBook* pWB,FONT* font)
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
 
-    tmp->name=get_unicode((BYTE*)&font->name,0,0,pWB->charset);	// TODO: unicode relevant here?
+    tmp->name=get_string((BYTE*)&font->name,0,0,pWB->charset);	// TODO: unicode relevant here?
     tmp->height=font->height;
     tmp->flag=font->flag;
     tmp->color=font->color;
@@ -503,7 +510,7 @@ void xls_addFormat(xlsWorkBook* pWB,FORMAT* format)
     tmp=&pWB->formats.format[pWB->formats.count];
 
     tmp->index=format->index;
-    tmp->value=get_unicode((BYTE*)format + 2,0,1,pWB->charset);	// TODO: unicode relevant here?
+    tmp->value=get_string((BYTE*)format + 2,0,1,pWB->charset);	// TODO: unicode relevant here?
 
     //	xls_showFormat(tmp);
     pWB->formats.count++;
