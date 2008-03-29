@@ -21,6 +21,8 @@
  * Copyright 2008 David Hoerl
  */
 
+#include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -36,9 +38,6 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
 int xls_debug=0;	// now global, so users can turn it on
-//#define DEBUG
-
-static char* libxls_version="0.2.0";
 
 static double NumFromRk(BYTE* rk);
 extern char* xls_addSheet(xlsWorkBook* pWB,BOUNDSHEET* bs);
@@ -942,5 +941,5 @@ void xls_close(xlsWorkBook* pWB)
 
 extern const char* xls_getVersion(void)
 {
-    return libxls_version;
+    return PACKAGE_VERSION;
 }
