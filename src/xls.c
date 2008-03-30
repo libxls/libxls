@@ -62,9 +62,7 @@ int xls(void)
 void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
 {
     verbose("xls_addSST");
-#ifdef DEBUG
-    printf("xls_addSST\n");
-#endif
+
     pWB->sst.continued=0;
     pWB->sst.lastln=0;
     pWB->sst.lastid=0;
@@ -85,14 +83,14 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
     BYTE flag; // String flags
     char* ret;
 
-    verbose("xls_appendSST\n");
-#ifdef DEBUG
-    printf("xls_appendSST %ld\n", size);
-#endif
+    if (xls_debug) {
+	    printf("xls_appendSST %ld\n", size);
+    }
+
 	sz = rt = ln = 0;	// kch
     ofs=0;
 
-    while(ofs<size)
+	while(ofs<size)
     {
         int ln_toread;
 
@@ -113,9 +111,9 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             ofs+=2;
         }
 
-#ifdef DEBUG
-        printf("ln=%ld\n", ln);
-#endif
+		if (xls_debug) {
+        	printf("ln=%ld\n", ln);
+		}
 
         // Read flags
         if (  (!pWB->sst.continued)
@@ -137,9 +135,10 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             {
                 sz=*(DWORD*)(buf+ofs);
                 ofs+=4;
-#ifdef DEBUG
-                printf("sz=%ld\n", sz);
-#endif
+
+				if (xls_debug) {
+					printf("sz=%ld\n", sz);
+				}
             }
         }
         else
@@ -147,7 +146,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             flag = 0;
         }
 
-	// Read characters (compressed or not)
+		// Read characters (compressed or not)
         ln_toread = 0;
         if (ln > 0)
         {
@@ -170,9 +169,10 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 
                 ln -= ln_toread;
                 ofs+=ln_toread*2;
-#ifdef DEBUG
-                printf("String16: %s(%i)\n",ret,new_len);
-#endif
+                
+                if (xls_debug) {
+	                printf("String16: %s(%i)\n",ret,new_len);
+                }
             }
             else
             {
@@ -184,9 +184,10 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 
                 ln -= ln_toread;
                 ofs+=ln_toread;
-#ifdef DEBUG
-                printf("String8: %s(%li) \n",ret,ln);
-#endif
+                
+                if (xls_debug) {
+                	printf("String8: %s(%li) \n",ret,ln);
+                }
             }
         }
         else
@@ -212,12 +213,12 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 memcpy(tmp+strlen(tmp),ret,strlen(ret)+1);
             }
 
-#ifdef DEBUG
-            printf("String % 4ld: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
-#endif
+			if (xls_debug) {
+	            printf("String % 4ld: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
+			}
         }
 
-	// Jump list of rich text formatting runs
+		// Jump list of rich text formatting runs
         if (  (ofs < size)
             &&(rt > 0) )
           {
@@ -226,7 +227,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
            ofs += rt_toread*4;
           }
 
-	// Jump asian phonetic settings block
+		// Jump asian phonetic settings block
         if (  (ofs < size)
             &&(sz > 0) )
           {
@@ -239,17 +240,16 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
     }
 
     // Save current character count and count of rich text formatting runs and size of asian phonetic settings block
-    if (ln > 0 || rt > 0 || sz > 0)
-      {
-       pWB->sst.continued = 1;
-       pWB->sst.lastln = ln;
-       pWB->sst.lastrt = rt;
-       pWB->sst.lastsz = sz;
+	if (ln > 0 || rt > 0 || sz > 0) {
+		pWB->sst.continued = 1;
+		pWB->sst.lastln = ln;
+		pWB->sst.lastrt = rt;
+		pWB->sst.lastsz = sz;
 
-#ifdef DEBUG
-       printf("continued: ln=%ld, rt=%ld, sz=%ld\n", ln, rt, sz);
-#endif
-     }
+		if (xls_debug) {
+			printf("continued: ln=%ld, rt=%ld, sz=%ld\n", ln, rt, sz);
+		}
+	}
 }
 
 static double NumFromRk(BYTE* rk)
