@@ -18,7 +18,7 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
 
 #include <libxls/xlstool.h>
@@ -39,3 +39,6 @@ extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 extern xlsWorkBook* xls_open(char *file,char* charset);
 extern void xls_close(xlsWorkBook* pWB);
 extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
+
+extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
+extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);

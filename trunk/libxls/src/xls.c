@@ -53,9 +53,6 @@ extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_preparseWorkSheet(xlsWorkSheet* pWS);
 extern void xls_formatColumn(xlsWorkSheet* pWS);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
-
-extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
-extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);
 extern void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo	*pSI);
 
 typedef struct {
