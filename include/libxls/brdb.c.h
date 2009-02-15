@@ -42,7 +42,7 @@
 { 0x1B, "HORIZONTALPAGEBREAKS",	"Explicit Row Page Breaks" },
 { 0x1C, "NOTE",	"Comment Associated with a Cell" },
 { 0x1D, "SELECTION",	"Current Selection" },
-{ 0x22, "1904",	"1904 Date System" },
+{ 0x22, "DATEMODE",	"1904 Date System" },
 { 0x26, "LEFTMARGIN",	"Left Margin Measurement" },
 { 0x27, "RIGHTMARGIN",	"Right Margin Measurement" },
 { 0x28, "TOPMARGIN",	"Top Margin Measurement" },

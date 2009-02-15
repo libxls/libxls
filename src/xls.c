@@ -18,7 +18,7 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
 
 #include <config.h>
@@ -43,7 +43,7 @@ static double NumFromRk(BYTE* rk);
 extern char* xls_addSheet(xlsWorkBook* pWB,BOUNDSHEET* bs);
 extern void xls_addRow(xlsWorkSheet* pWS,ROW* row);
 extern void xls_makeTable(xlsWorkSheet* pWS);
-extern void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf);
+extern struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf);
 extern char *xls_addFont(xlsWorkBook* pWB,FONT* font);
 extern void xls_addXF8(xlsWorkBook* pWB,XF8* xf);
 extern void xls_addXF5(xlsWorkBook* pWB,XF5* xf);
@@ -53,6 +53,41 @@ extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_preparseWorkSheet(xlsWorkSheet* pWS);
 extern void xls_formatColumn(xlsWorkSheet* pWS);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
+
+extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
+extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);
+extern void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo	*pSI);
+
+typedef struct {
+	uint32_t		format[4];
+	uint32_t		offset;
+} sectionList;
+
+typedef struct {
+	uint16_t		sig;
+	uint16_t		_empty;
+	uint32_t		os;
+	uint32_t		format[4];
+	uint32_t		count;
+	sectionList		secList[0];
+} header;
+
+typedef struct {
+	uint32_t		propertyID;
+	uint32_t		sectionOffset;
+} propertyList;
+
+typedef struct {
+	uint32_t		length;
+	uint32_t		numProperties;
+	propertyList	properties[0];
+} sectionHeader;
+
+typedef struct {
+	uint32_t		propertyID;
+	uint32_t		data[0];
+} property;
+
 
 int xls(void)
 {
@@ -159,9 +194,8 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
    
                 if (ret == NULL)
                 {
-                    char *str = "*failed to decode utf16*";
-                    ret = strdup(str);
-                    new_len = strlen(str);
+                    ret = strdup("*failed to decode utf16*");
+                    new_len = strlen(ret);
                 }
 
                 ret = (char *)realloc(ret,new_len+1);
@@ -277,24 +311,19 @@ static double NumFromRk(BYTE* rk)
 }
 
 
-char* xls_addSheet(xlsWorkBook* pWB,BOUNDSHEET *bs)
+char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
 {
 	char* name;
 	DWORD filepos;
-	BYTE visible, type, unicode;
+	BYTE visible, type;
 	
 	filepos = bs->filepos;
 	visible = bs->visible;
 	type = bs->type;
 		
-	if(pWB->is5ver) {
-		unicode=0;
-	} else {
-		unicode=1;
-	}
 	// printf("charset=%s uni=%d\n", pWB->charset, unicode);
 	// printf("bs name %.*s\n", bs->name[0], bs->name+1);
-	name=get_string(bs->name,unicode,0,pWB->charset);	// TODO: unicode relevant here?
+	name=get_string(bs->name, 0, pWB->is5ver, pWB->charset);
 	// printf("name=%s\n", name);
 
 	if(xls_debug) {
@@ -349,7 +378,7 @@ void xls_addRow(xlsWorkSheet* pWS,ROW* row)
 {
     struct st_row_data* tmp;
 
-    verbose ("xls_addRow");
+    //verbose ("xls_addRow");
 
     tmp=&pWS->rows.row[row->index];
     tmp->height=row->height;
@@ -358,7 +387,7 @@ void xls_addRow(xlsWorkSheet* pWS,ROW* row)
     tmp->flags=row->flags;
     tmp->xf=row->xf&0xfff;
     tmp->xfflags=row->xf&0xf000;
-    //	xls_showROW(tmp);
+    if(xls_debug) xls_showROW(tmp);
 }
 
 void xls_makeTable(xlsWorkSheet* pWS)
@@ -396,13 +425,13 @@ void xls_makeTable(xlsWorkSheet* pWS)
     }
 }
 
-void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
+struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     struct st_cell_data*	cell;
-    struct st_row_data*	row;
-    int i;
+    struct st_row_data*		row;
+    int						i;
 
-    verbose ("xls_addCell");
+	verbose ("xls_addCell");
 
     row=&pWS->rows.row[((COL*)buf)->row];
     cell=&row->cells.cell[((COL*)buf)->col-row->fcell];
@@ -412,12 +441,33 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 
     switch (bof->id)
     {
-    case 0x06:	//FORMULA
-        if (((FORMULA*)buf)->res!=0xffff)
+    case 0x0006:	//FORMULA
+		// test for formula, if 
+        if (((FORMULA*)buf)->res!=0xffff) {
+			cell->l=0;
+			// if a double, then set double and clear l
             cell->d=*(double *)&((FORMULA*)buf)->resid;
-        cell->str=xls_getfcell(pWS->workbook,cell);
+			cell->str=xls_getfcell(pWS->workbook,cell);
+		} else {
+			cell->l = 0xFFFF;
+			switch(((FORMULA*)buf)->resid) {
+			case 0:		// String
+				return cell;	// cell is half complete, get the STRING next record
+			case 1:		// Boolean
+				cell->d = (double)((FORMULA*)buf)->resdata[2];
+				sprintf((cell->str = malloc(5)), "bool");
+				break;
+			case 2:		// error
+				cell->d = (double)((FORMULA*)buf)->resdata[2];
+				sprintf((cell->str = malloc(6)), "error");
+				break;
+			case 3:		// empty string
+				cell->str = calloc(1,1);
+				break;
+			}
+		}
         break;
-    case 0x0BD:	//MULRK
+    case 0x00BD:	//MULRK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
             cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
@@ -428,7 +478,7 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell->str=xls_getfcell(pWS->workbook,cell);
         }
         break;
-    case 0x0BE:	//MULBLANK
+    case 0x00BE:	//MULBLANK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
             cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
@@ -438,29 +488,36 @@ void xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell->str=xls_getfcell(pWS->workbook,cell);
         }
         break;
-    case 0xFD:	//LABELSST
+    case 0x00FD:	//LABELSST
         cell->l=*(WORD *)&((LABELSST*)buf)->value;
         cell->str=xls_getfcell(pWS->workbook,cell);
-        break;
-    case 0x27E:	//RK
+		break;
+    case 0x027E:	//RK
         cell->d=NumFromRk(((RK*)buf)->value);
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
-    case 0x203:	//NUMBER
+    case 0x0201:	//BLANK
+        break;
+    case 0x0203:	//NUMBER
         cell->d=*(double *)&((BR_NUMBER*)buf)->value;
         cell->str=xls_getfcell(pWS->workbook,cell);
+        break;
+    case 0x0204:	//LABEL
+		cell->l = (long)&((LABEL*)buf)->value;
+		cell->str=xls_getfcell(pWS->workbook,cell);
+		cell->l = 0;
         break;
     default:
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     }
     
-    if (xls_debug) {
-    	xls_showCell(cell);
-    }
+    if (xls_debug) xls_showCell(cell);
+	
+	return cell;
 }
 
-char *xls_addFont(xlsWorkBook* pWB,FONT* font)
+char *xls_addFont(xlsWorkBook* pWB, FONT* font)
 {
     struct st_font_data* tmp;
 
@@ -468,15 +525,14 @@ char *xls_addFont(xlsWorkBook* pWB,FONT* font)
     if (pWB->fonts.count==0)
     {
         pWB->fonts.font=(struct st_font_data *) malloc(sizeof(struct st_font_data));
-    }
-    else
-    {
+    } else {
         pWB->fonts.font=(struct st_font_data *) realloc(pWB->fonts.font,(pWB->fonts.count+1)*sizeof(struct st_font_data));
     }
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
+	
+    tmp->name=get_string((BYTE*)&font->name, 0, pWB->is5ver, pWB->charset);
 
-    tmp->name=get_string((BYTE*)&font->name,0,0,pWB->charset);	// TODO: unicode relevant here?
     tmp->height=font->height;
     tmp->flag=font->flag;
     tmp->color=font->color;
@@ -492,7 +548,7 @@ char *xls_addFont(xlsWorkBook* pWB,FONT* font)
 	return tmp->name;
 }
 
-void xls_addFormat(xlsWorkBook* pWB,FORMAT* format)
+void xls_addFormat(xlsWorkBook* pWB, FORMAT* format)
 {
     struct st_format_data* tmp;
 
@@ -500,18 +556,14 @@ void xls_addFormat(xlsWorkBook* pWB,FORMAT* format)
     if (pWB->formats.count==0)
     {
         pWB->formats.format=(struct st_format_data *) malloc(sizeof(struct st_format_data));
-    }
-    else
-    {
+    } else {
         pWB->formats.format=(struct st_format_data *) realloc(pWB->formats.format,(pWB->formats.count+1)*sizeof(struct st_format_data));
     }
 
     tmp=&pWB->formats.format[pWB->formats.count];
-
     tmp->index=format->index;
-    tmp->value=get_string((BYTE*)format + 2,0,1,pWB->charset);	// TODO: unicode relevant here?
-
-    //	xls_showFormat(tmp);
+    tmp->value=get_string(format->value, !pWB->is5ver, pWB->is5ver, pWB->charset);
+    if(xls_debug) xls_showFormat(tmp);
     pWB->formats.count++;
 } 
 
@@ -599,7 +651,7 @@ void xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
     tmp->xf=colinfo->xf;
     tmp->flags=colinfo->flags;
 
-    //	xls_showColinfo(tmp);
+    if(xls_debug) xls_showColinfo(tmp);
     pWS->colinfo.count++;
 }
 
@@ -642,8 +694,9 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
         buf=(BYTE *)malloc(bof1.size);
         ole2_read(buf, 1, bof1.size, pWB->olestr);
+
         switch (bof1.id) {
-        case 0x0A:		// EOF
+        case 0x00A:		// EOF
             //verbose("EOF");
             break;
         case 0x809:		// BIFF5-8
@@ -661,20 +714,25 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				}
 			}
             break;
+
         case 0x042:		// CODEPAGE
             pWB->codepage=*(WORD*)buf;
+			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
             break;
-        case 0x3c:		// CONTINUE
+
+        case 0x03c:		// CONTINUE
 			if(once) {
 				if (bof2.id==0xfc)
 					xls_appendSST(pWB,buf,bof1.size);
 				bof1=bof2;
 			}
             break;
+
 		case 0x003D:	// WINDOW1
 			{
 				WIND1 *w = (WIND1*)buf;
 				if(xls_debug) {
+					printf("WINDOW1: ");
 					printf("xWn    : %d\n", w->xWn/20);
 					printf("yWn    : %d\n", w->yWn/20);
 					printf("dxWn   : %d\n", w->dxWn/20);
@@ -687,13 +745,16 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				}
 			}
 			break;
-        case 0xfc:		// SST
+
+        case 0x0fc:		// SST
             xls_addSST(pWB,(SST*)buf,bof1.size);
             break;
-        case 0xff:		// EXTSST
+
+        case 0x0ff:		// EXTSST
             if(xls_debug) dumpbuf("EXTSST",bof1.size,buf);
             break;
-        case 0x85:		// BOUNDSHEET
+
+        case 0x085:		// BOUNDSHEET
 			{
 				BOUNDSHEET *bs = (BOUNDSHEET *)buf;
 				char *s;
@@ -701,6 +762,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				s = xls_addSheet(pWB,bs);
 			}
             break;
+
         case 0x0e0:  	// XF
 			if(pWB->is5ver) {
 				XF5 *xf;
@@ -723,41 +785,69 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				
 				xls_addXF8(pWB,xf);
 				if(xls_debug) {
-					printf("   font: %d\n", xf->font);
-					printf(" format: %d\n", xf->format);
-					printf("   type: %d\n", xf->type);
-					printf("  align: %d\n", xf->align);
-					printf("rotatio: %d\n", xf->rotation);
-					printf("  ident: %d\n", xf->ident);
-					printf("usedatt: %d\n", xf->usedattr);
-					printf("linesty: %d\n", xf->linestyle);
-					printf("linecol: %d\n", xf->linecolor);
-					printf("groundc: %d\n", xf->groundcolor);
+					xls_showXF(xf);
 				}
 			}
             break;
+
         case 0x031:		// FONT
 			{
 				char *s;
 				FONT *f = (FONT*)buf;
 				s = xls_addFont(pWB,f);
 				if(xls_debug) {
-					printf("height : %d\n", f->height);
-					printf("flag   : %d\n", f->flag);
-					printf("color  : %d\n", f->color);
-					printf("escapem: %d\n", f->escapement);
-					printf("underli: %d\n", f->underline);
-					printf("family : %d\n", f->family);
-					printf("charset: %d\n", f->charset);
-					if(s) printf("name   : %s\n", s);
+					printf(" height: %d\n", f->height);
+					printf("   flag: 0x%x\n", f->flag);
+					printf("  color: 0x%x\n", f->color);
+					printf(" weight: %d\n", f->bold);
+					printf("escapem: 0x%x\n", f->escapement);
+					printf("underln: 0x%x\n", f->underline);
+					printf(" family: 0x%x\n", f->family);
+					printf("charset: 0x%x\n", f->charset);
+					if(s) printf("   name: %s\n", s);
 				}
 			}
 			break;
-        case 0x41E:	//FORMAT
+
+        case 0x41E:		//FORMAT
             xls_addFormat(pWB,(FORMAT*)buf);
             break;
+
 		case 0x0293:	// STYLE
+			if(xls_debug) { 
+				struct { unsigned short idx; unsigned char ident; unsigned char lvl; } *styl;
+				styl = (void *)buf;
+				
+				printf("    idx: 0x%x\n", styl->idx & 0x07FF);
+				if(styl->idx & 0x8000) {
+					printf("  ident: 0x%x\n", styl->ident);
+					printf("  level: 0x%x\n", styl->lvl);
+				} else {
+					char *s = get_string(&buf[2], 1, pWB->is5ver, pWB->charset);
+					printf("  name=%s\n", s);
+				}
+			}
 			break;
+
+		case 0x0092:	// PALETTE
+			if(xls_debug > 10) { 
+				unsigned char *p = buf + 2;
+				int idx, len;
+				
+				len = *(unsigned short *)buf;
+				for(idx=0; idx<len; ++idx) {
+					printf("   Index=0x%2.2x %2.2x%2.2x%2.2x\n", idx+8, p[0], p[1], p[2] );
+					p += 4;
+				}
+			}
+			break;
+				
+		case 0x0022: // 1904
+			if(xls_debug) {
+				printf("   mode: 0x%x\n", *(unsigned short *)buf);
+			}
+			break;
+
         default:
 			if(xls_debug) printf("UNKNOWN BOF=%Xh\n", bof1.id);
             break;
@@ -837,6 +927,9 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 {
     BOF tmp;
     BYTE* buf;
+	struct st_cell_data *cell;
+	xlsWorkBook *pWB = pWS->workbook;
+
     verbose ("xls_parseWorkSheet");
 
     xls_preparseWorkSheet(pWS);
@@ -845,6 +938,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
     xls_makeTable(pWS);
     xls_formatColumn(pWS);
 
+	cell = (void *)0;
     ole2_seek(pWS->workbook->olestr,pWS->filepos);
     do
     {
@@ -852,7 +946,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
         buf=(BYTE *)malloc(tmp.size);
         ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
 
-        //	xls_showBOF(&tmp);
+		// xls_showBOF(&tmp);
         switch (tmp.id)
         {
         case 0x0A:		//EOF
@@ -868,21 +962,38 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
         case 0x0BD:		//MULRK
         case 0x0BE:		//MULBLANK
         case 0x203:		//NUMBER
-        case 0x06:		//FORMULA
         case 0x27e:		//RK
         case 0xFD:		//LABELSST
         case 0x201:		//BLANK
-            xls_addCell(pWS,&tmp,buf);
+        case 0x204:		//LABEL
+        case 0x06:		//FORMULA
+            cell = xls_addCell(pWS,&tmp,buf);
             break;
+		case 0x207:		//STRING, only follows a formula
+			if(cell->id == 0x06) { // formula
+				cell->str = get_string(buf, !pWB->is5ver, pWB->is5ver, pWB->charset);
+				if (xls_debug) xls_showCell(cell);
+			}
+			break;
+#if 0 // debugging
+		case 0x023E:	// WINDOW2
+			if(xls_debug) {
+				printf("WINDOW2: ");
+				unsigned short xx, *foo = (void *)buf;
+				
+				for(xx=0; xx<7; ++xx, ++foo) {
+					printf("0x%4.4x ", *foo);
+				}
+				printf("\n");
+			}
+			break;
+#endif
         default:
             break;
         }
-
         free(buf);
     }
     while ((!pWS->workbook->olestr->eof)&&(tmp.id!=0x0A));
-
-
 }
 
 xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
@@ -912,11 +1023,25 @@ xlsWorkBook* xls_open(char *file,char* charset)
         if(xls_debug) printf("File \"%s\" not found\n",file);
         return(NULL);
     }
+	
+    if ((pWB->olestr=ole2_fopen(ole,"\005SummaryInformation")))
+    {
+        pWB->summary = calloc(1,4096);
+		ole2_read(pWB->summary, 4096, 1, pWB->olestr);
+		ole2_fclose(pWB->olestr);
+	}
+
+    if ((pWB->olestr=ole2_fopen(ole,"\005DocumentSummaryInformation")))
+    {
+        pWB->docSummary = calloc(1,4096);
+		ole2_read(pWB->docSummary, 4096, 1, pWB->olestr);
+		ole2_fclose(pWB->olestr);
+	}
 
     // open Workbook
     if (!(pWB->olestr=ole2_fopen(ole,"Workbook")) && !(pWB->olestr=ole2_fopen(ole,"Book")))
     {
-        if(xls_debug) printf("Workbook not found 123\n");
+        if(xls_debug) printf("Workbook not found\n");
         return(NULL);
     }
 
@@ -926,6 +1051,7 @@ xlsWorkBook* xls_open(char *file,char* charset)
     pWB->charset = (char *)malloc(strlen(charset) * sizeof(char));
     strcpy(pWB->charset, charset);
     xls_parseWorkBook(pWB);
+
     return(pWB);
 }
 
@@ -936,10 +1062,138 @@ void xls_close(xlsWorkBook* pWB)
 	ole=pWB->olestr->ole;
 	ole2_fclose(pWB->olestr);
 	ole2_close(ole);
+	
+	if(pWB->summary) free(pWB->summary);
+	if(pWB->docSummary) free(pWB->docSummary);
+	
+	// TODO - free other dynamically allocated objects like string table??
 	free(pWB);
 }
 
 extern const char* xls_getVersion(void)
 {
     return PACKAGE_VERSION;
+}
+
+//
+// http://poi.apache.org/hpsf/internals.html
+// or google "DocumentSummaryInformation and UserDefined Property Sets" and look for MSDN hits
+//
+
+xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
+{
+	xlsSummaryInfo	*pSI;
+	
+	pSI = (xlsSummaryInfo	*)calloc(1, sizeof(xlsSummaryInfo));
+	
+	xls_dumpSummary(pWB->summary, 1, pSI);
+	xls_dumpSummary(pWB->docSummary, 0, pSI);
+	
+	return pSI;
+}
+
+void xls_close_summaryInfo(xlsSummaryInfo *pSI)
+{
+	if(pSI->title)		free(pSI->title);
+	if(pSI->subject)	free(pSI->subject);
+	if(pSI->author)		free(pSI->author);
+	if(pSI->keywords)	free(pSI->keywords);
+	if(pSI->comment)	free(pSI->comment);
+	if(pSI->lastAuthor)	free(pSI->lastAuthor);
+	if(pSI->appName)	free(pSI->appName);
+	if(pSI->category)	free(pSI->category);
+	if(pSI->manager)	free(pSI->manager);
+	if(pSI->company)	free(pSI->company);
+
+	free(pSI);
+}
+
+void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
+	header			*head;
+	sectionList		*secList;
+	propertyList	*plist;
+	sectionHeader	*secHead;
+	property		*prop;
+	uint32_t i, j;
+		
+	if(!buf) return;	// perhaps the document was missing??
+
+	head = (header *)buf;
+	//printf("header: \n");
+	//printf("  sig=%x\n", head->sig);
+	//printf("  os=%x\n", head->os >> 16);
+	//printf("  class=%8.8x%8.8x%8.8x%8.8x\n", head->format[0], head->format[1], head->format[2], head->format[3]);
+	//printf("  count=%x\n", head->count);
+
+	for(i=0; i<head->count; ++i) {
+		secList = &head->secList[i];
+		//printf("Section %d:\n", i);
+		//printf("  class=%8.8x%8.8x%8.8x%8.8x\n", secList->format[0], secList->format[1], secList->format[2], secList->format[3]);
+		//printf("  offset=%d (now at %ld\n", secList->offset, (char *)secList - (char *)buf + sizeof(sectionList));
+
+
+		secHead = (sectionHeader *)((char *)head + secList->offset);
+		//printf("  len=%d\n", secHead->length);
+		//printf("  properties=%d\n", secHead->numProperties);
+		for(j=0; j<secHead->numProperties; ++j) {
+			char **s;
+
+			plist = &secHead->properties[j];
+			//printf("      ---------\n");
+			//printf("      propID=%d offset=%d\n", plist->propertyID, plist->sectionOffset);
+			prop = (property *)((char *)secHead + plist->sectionOffset);
+			//printf("      propType=%d\n", prop->propertyID);
+
+			switch(prop->propertyID) {
+			case 2:
+				//printf("      shortVal=%x\n", *(uint16_t *)prop->data);
+				break;
+			case 3:
+				//printf("      wordVal=%x\n", *(uint32_t *)prop->data);
+				break;
+			case 30:
+				//printf("      longVal=%llx\n", *(uint64_t *)prop->data);
+				//printf("      s[%u]=%s\n", *(uint32_t  *)prop->data, (char *)prop->data + 4);
+				if(isSummary) {
+					switch(plist->propertyID) {
+					case 2:		s = &pSI->title;		break;
+					case 3:		s = &pSI->subject;		break;
+					case 4:		s = &pSI->author;		break;
+					case 5:		s = &pSI->keywords;		break;
+					case 6:		s = &pSI->comment;		break;
+					case 8:		s = &pSI->lastAuthor;	break;
+					case 18:	s = &pSI->appName;		break;
+					default:	s = NULL;				break;
+					}
+				} else {
+					switch(plist->propertyID) {
+					case 2:		s = &pSI->category;		break;
+					case 14:	s = &pSI->manager;		break;
+					case 15:	s = &pSI->company;		break;
+					default:	s = NULL;				break;
+					}
+				}
+				if(s) *s = strdup((char *)prop->data + 4);
+				break;
+			case 64:
+				//printf("      longVal=%llx\n", *(uint64_t *)prop->data);
+				break;
+			case 65:
+#if 0
+				{
+				uint32_t k;
+				for(k=0; k<*(uint32_t  *)prop->data; ++k) {
+				unsigned char *t = (unsigned char *)prop->data + 4 + k;
+				printf(" %2.2x(%c)", *t, *t);
+				}
+				printf("\n");
+				}
+#endif
+				break;
+			default:
+				//printf("      UNKNOWN!\n");
+				break;
+			}				
+		}		
+	}
 }

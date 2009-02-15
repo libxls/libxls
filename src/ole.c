@@ -18,7 +18,7 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
  
 #include <memory.h>
@@ -26,12 +26,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define NDEBUG	// turn asserts off
 #include <assert.h>
 
 #include <libxls/ole.h>
 #include <libxls/xlstool.h>
 
 extern int xls_debug;
+
+//#define OLE_DEBUG
 
 const DWORD MSATSECT =		0xFFFFFFFC;	// -4
 const DWORD FATSECT =		0xFFFFFFFD;	// -3
@@ -47,15 +50,15 @@ void ole2_bufread(OLE2Stream* olest)
 {
 	BYTE *ptr;
 
-assert(olest);
-assert(olest->ole);
+	assert(olest);
+	assert(olest->ole);
 
     if (olest->fatpos!=ENDOFCHAIN)
     {
 		if(olest->sfat) {
-assert(olest->ole->SSAT);
-assert(olest->buf);
-assert(olest->ole->SSecID);
+			assert(olest->ole->SSAT);
+			assert(olest->buf);
+			assert(olest->ole->SSecID);
 
 			ptr = olest->ole->SSAT + olest->fatpos*olest->ole->lssector;
 			memcpy(olest->buf, ptr, olest->bufsize); 
@@ -64,13 +67,20 @@ assert(olest->ole->SSecID);
 			olest->pos=0;
 			olest->cfat++;
 		} else {
-			//printf("Fat val: %X[%X]\n",olest->fatpos,olest->ole->MSAT[olest->fatpos]);
+
+			assert(olest->fatpos >= 0);
+
+			//printf("fatpos: %d max=%u\n",olest->fatpos, (olest->ole->cfat*olest->ole->lsector)/4);
+			if(olest->fatpos > (olest->ole->cfat*olest->ole->lsector)/4) exit(-1);
+
 #if 0 // TODO: remove
 			fseek(olest->ole->file,olest->fatpos*olest->ole->lsector+512,0);
 			ret = fread(olest->buf,1,olest->bufsize,olest->ole->file);
 			assert(ret == olest->bufsize);
 #endif
+			assert((int)olest->fatpos >= 0);
 			sector_read(olest->ole, olest->buf, olest->fatpos);
+			//printf("Fat val: %d[0x%X]\n",olest->fatpos,olest->ole->SecID[olest->fatpos], olest->ole->SecID[olest->fatpos]);
 			olest->fatpos=olest->ole->SecID[olest->fatpos];
 			olest->pos=0;
 			olest->cfat++;
@@ -99,8 +109,8 @@ int ole2_read(void* buf,long size,long count,OLE2Stream* olest)
         if (rem<=0) olest->eof=1;
 
 		// printf("  rem=%ld olest->size=%d - subfunc=%d\n", rem, olest->size, (olest->cfat*olest->ole->lsector+olest->pos) );
+		//printf("  totalReadCount=%d (rem=%d size*count=%ld)\n", totalReadCount, rem, size*count);
 	}
-	//printf("  totalReadCount=%d (rem=%d size*count=%ld)\n", totalReadCount, rem, size*count);
 
 	while ((!olest->eof) && (didReadCount!=totalReadCount))
 	{
@@ -135,7 +145,7 @@ int ole2_read(void* buf,long size,long count,OLE2Stream* olest)
 	// printf("  didReadCount=%ld EOF=%d\n", didReadCount, olest->eof);
 	// printf("=====\n");
 
-#if 0
+#ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
     printf("ole2_read (end)\n");
     printf("start:		%li \n",olest->start);
@@ -155,7 +165,7 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, int size)
 {
     OLE2Stream* olest=NULL;
 
-#if 0
+#ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
     printf("ole2_sopen start=%lXh\n", start);
 #endif
@@ -225,7 +235,7 @@ OLE2Stream*  ole2_fopen(OLE2* ole,char* file)
     OLE2Stream* olest;
     int i;
 
-#if 0
+#ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
     printf("ole2_fopen %s\n", file);
 #endif
@@ -251,7 +261,7 @@ OLE2* ole2_open(char *file, char *charset)
     PSS*	pss;
     char* name = NULL;
 
-#if 0
+#ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
     printf("ole2_open %s\n", file);
 #endif
@@ -303,7 +313,7 @@ OLE2* ole2_open(char *file, char *charset)
     ole->cdif=oleh->cdif;
     ole->files.count=0;
 
-	if(xls_debug) {
+#ifdef OLE_DEBUG
 		printf("==== OLE HEADER ====\n");
 		//printf ("Header Size:   %i \n", sizeof(OLE2Header));
 		//printf ("id[0]-id[1]:   %X-%X \n", oleh->id[0], oleh->id[1]);
@@ -320,9 +330,8 @@ OLE2* ole2_open(char *file, char *charset)
 		printf ("Count MFat:    %i \n",oleh->csfat);
 		printf ("Dif start:     %X \n",oleh->difstart);
 		printf ("Count Dif:     %i \n",oleh->cdif);
-		printf ("Fat Size:      %i (0x%X) \n",oleh->cfat*ole->lsector,oleh->cfat*ole->lsector);
-	}
-
+		printf ("Fat Size:      %u (0x%X) \n",oleh->cfat*ole->lsector,oleh->cfat*ole->lsector);
+#endif
     // read directory entries
     read_MSAT(ole, oleh);
 
@@ -336,8 +345,15 @@ OLE2* ole2_open(char *file, char *charset)
         ole2_read(pss,1,sizeof(PSS),olest);
 
         name=unicode_decode(pss->name, pss->bsize, 0, charset);
+#ifdef OLE_DEBUG	
+		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
+#endif
         if (pss->type == PS_USER_ROOT || pss->type == PS_USER_STREAM) // (name!=NULL) // 
         {
+
+#ifdef OLE_DEBUG		
+			printf("OLE TYPE: %s file=%d \n", pss->type == PS_USER_ROOT ? "root" : "user", ole->files.count);
+#endif		
             if (ole->files.count==0)
             {
                 ole->files.file=malloc(sizeof(struct st_olefiles_data));
@@ -353,7 +369,7 @@ OLE2* ole2_open(char *file, char *charset)
 				if (xls_debug) verbose("END OF CHAIN\n");
 			} else
 			if(pss->type == PS_USER_STREAM) {
-				if(xls_debug) {
+#ifdef OLE_DEBUG
 					printf("----------------------------------------------\n");
 					printf("name: %s (size=%d [c=%c])\n", name, pss->bsize, name ? name[0]:' ');
 					printf("bsize %i\n",pss->bsize);
@@ -367,7 +383,7 @@ OLE2* ole2_open(char *file, char *charset)
 					printf("user flag %.4X\n",pss->userflags);
 					printf("sstart %.4d\n",pss->sstart);
 					printf("size %.4d\n",pss->size);
-				}
+#endif
 			} else
 			if(pss->type == PS_USER_ROOT) {
 				DWORD sector, k, blocks;
@@ -417,8 +433,21 @@ static int sector_pos(OLE2* ole2, int sid)
 // Read one sector from its sid
 static int sector_read(OLE2* ole2, BYTE *buffer, int sid)
 {
-    fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
-    fread(buffer, ole2->lsector, 1, ole2->file);
+	size_t num;
+	int seeked;
+	
+    seeked = fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
+	if(seeked != 0) {
+		printf("seek: wanted to seek to sector %u (0x%x) loc=%u\n", sid, sid, sector_pos(ole2, sid));
+	}
+	assert(seeked == 0);
+	
+	num = fread(buffer, ole2->lsector, 1, ole2->file);
+	if(num != 1) {
+		printf("fread: wanted %d got %d loc=%u\n", 1, num, sector_pos(ole2, sid));
+	}
+	assert(num == 1);
+
     return 0;
 }
 
@@ -436,6 +465,7 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
         count = (ole2->cfat < 109) ? ole2->cfat : 109;
         for (sectorNum = 0; sectorNum < count; sectorNum++)
         {
+			assert(sectorNum >= 0);
             sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, oleh->MSAT[sectorNum]);
         }
     }
@@ -445,20 +475,24 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
         unsigned int sid = ole2->difstart;
         BYTE *sector = malloc(ole2->lsector);
 
+		//printf("sid=%d (0x%x)\n", sid, sid);
         while (sid != ENDOFCHAIN)
           {
            int posInSector;
 
            // read MSAT sector
-           sector_read(ole2, sector, sid);
+			assert((int)sid >= 0);
+			sector_read(ole2, sector, sid);
 
            // read content
            for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
              {
               unsigned int s = *(int*)(sector + posInSector*4);
- 
+				//printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
+
               if (s != FREESECT)
                 {
+				 assert((int)s >= 0);
                  sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
                  sectorNum++;
                 }
@@ -469,13 +503,15 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
 
      free(sector);
     }
-#if 0
+#ifdef OLE_DEBUG
 	if(xls_debug) {
 		//printf("==== READ IN SECTORS FOR MSAT TABLE====\n");
+		int i;
 		for(i=0; i<512/4; ++i) {	// just the first block
-			if(ole->SecID[i] != FREESECT) printf("SecID[%d]=%d\n", i, ole->SecID[i]);
+			if(ole2->SecID[i] != FREESECT) printf("SecID[%d]=%d\n", i, ole2->SecID[i]);
 		}
 	}
+	//exit(0);
 #endif
 
 	// read in short table
@@ -493,8 +529,9 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
 			wptr += ole2->lsector;
 			sector = ole2->SecID[sector];
 		}
-#if 0
+#ifdef OLE_DEBUG
 		if(xls_debug) {
+			int i;
 			for(i=0; i<512/4; ++i) {
 				if(ole2->SSecID[i] != FREESECT) printf("SSecID[%d]=%d\n", i, ole2->SSecID[i]);
 			}

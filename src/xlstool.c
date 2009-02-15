@@ -18,7 +18,7 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
 
 #include <config.h>
@@ -152,7 +152,7 @@ char* unicode_decode(const BYTE *s, int len, int *newlen, const char* to_enc)
 }
 
 // Read and decode string
-char* get_string(BYTE *s, BYTE is2, BYTE fmt, char *charset)
+char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 {
     WORD ln;
     DWORD ofs;
@@ -167,21 +167,20 @@ char* get_string(BYTE *s, BYTE is2, BYTE fmt, char *charset)
 	flag = 0;
     str=s;
 
-
     ofs=0;
 
-    if (is2)
-    {
+    if (is2) {
+		// length is two bytes
         ln=*(WORD*)str;
         ofs+=2;
-    }
-    else
-    {
+    } else {
+		// single byte length
         ln=*(BYTE*)str;
         ofs++;
     }
 
-	if(fmt) {
+	if(!is5ver) {
+		// unicode strings have a format byte before the string
 		flag=*(BYTE*)(str+ofs);
 		ofs++;
 	}
@@ -205,11 +204,24 @@ char* get_string(BYTE *s, BYTE is2, BYTE fmt, char *charset)
         *(char*)(ret+ln)=0;
         ofs+=ln;
     }
-
+#if 0	// debugging
+	if(xls_debug == 100) {
+		printf("ofs=%d ret[0]=%d\n", ofs, *ret);
+		{
+			unsigned char *ptr;
+			
+			ptr = ret;
+			
+			printf("%x %x %x %x %x %x %x %x\n", ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7] );
+			printf("%s\n", ret);
+		}
+	}
+	// not used now
     if (flag&0x8)
         ofs+=4*rt;
     if (flag&0x4)
         ofs+=sz;
+#endif
 
     return ret;
 }
@@ -321,7 +333,7 @@ void xls_showColinfo(struct st_colinfo_data* col)
     printf("       XF: %i \n",col->xf);
     printf("    Flags: %i (",col->flags);
     if (col->flags & 0x1)
-        printf("hiddeh ");
+        printf("hidden ");
     if (col->flags & 0x700)
         printf("outline ");
     if (col->flags & 0x1000)
@@ -332,12 +344,14 @@ void xls_showColinfo(struct st_colinfo_data* col)
 
 void xls_showCell(struct st_cell_data* cell)
 {
-	if(cell->id == 0x0201) return;
-
     printf("  -----------\n");
     printf("     ID: %.4Xh %s (%s)\n",cell->id, brdb[get_brbdnum(cell->id)].name, brdb[get_brbdnum(cell->id)].desc);
     printf("   Cell: %c%i\n",cell->col+65,cell->row+1);
     printf("     xf: %i\n",cell->xf);
+	if(cell->id == 0x0201) {
+		//printf("BLANK_CELL!\n");
+		return;
+	}
     printf(" double: %f\n",cell->d);
     printf("   long: %i\n",cell->l);
     if (cell->str!=NULL)
@@ -359,42 +373,88 @@ void xls_showFont(struct st_font_data* font)
     printf("   charset: %i\n",font->charset);
 
 }
+#if 0
+typedef struct st_format
+	{
+		long count;		//Count of FORMAT's
+		struct st_format_data
+		{
+			WORD index;
+			char *value;
+		}
+		* format;
+	}
+	st_format;
+#endif
 
-void xls_showXF(struct st_xf_data* xf)
+void xls_showFormat(struct st_format_data* frmt)
 {
-    printf("       Font: %i\n",xf->font);
-    printf("     Format: %i\n",xf->format);
-    printf("       Type: %i\n",xf->type);
-    printf("      Align: %i\n",xf->align);
-    printf("   Rotation: %i\n",xf->rotation);
-    printf("      Ident: %i\n",xf->ident);
-    printf("   UsedAttr: %i\n",xf->usedattr);
-    printf("  LineStyle: %i\n",xf->linestyle);
-    printf("  Linecolor: %i\n",xf->linecolor);
-    printf("GroundColor: %i\n",xf->groundcolor);
+	printf("    index : %u\n", frmt->index);
+    printf("     value: %s\n", frmt->value);
+}
+
+void xls_showXF(XF8* xf)
+{
+	static int idx;
+	
+    printf("      Index: %u\n",idx++);
+    printf("       Font: %u\n",xf->font);
+    printf("     Format: %u\n",xf->format);
+    printf("       Type: 0x%x\n",xf->type);
+    printf("      Align: 0x%x\n",xf->align);
+    printf("   Rotation: 0x%x\n",xf->rotation);
+    printf("      Ident: 0x%x\n",xf->ident);
+    printf("   UsedAttr: 0x%x\n",xf->usedattr);
+    printf("  LineStyle: 0x%x\n",xf->linestyle);
+    printf("  Linecolor: 0x%x\n",xf->linecolor);
+    printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
 char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 {
     struct st_xf_data*  xf;
-    char ret[10240];
     char* out;
+	WORD	len, *lPtr;
+    static char ret[10240];	// don't want this on the stack, and no recursion so static OK
 
     xf=&pWB->xfs.xf[cell->xf];
 
     //LABELSST
     switch (cell->id)
     {
-    case 0x0FD:
+    case 0x0FD:		//LABELSST
         sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
-    case 0x201:
+    case 0x201:		//BLANK
         sprintf(ret,"");
         break;
-    case 0x0BE:
+    case 0x0BE:		//MULBLANK
         sprintf(ret,"");
         break;
-        //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 )
+    case 0x0204:	//LABEL (xlslib generates these)
+		lPtr = (WORD *)cell->l;
+		len = *lPtr++;
+		if(pWB->is5ver) {
+			sprintf(ret,"%.*s", len, lPtr);
+			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
+		} else
+		if((*(char *)lPtr & 0x01) == 0) {
+			sprintf(ret,"%.*s", len, (char *)lPtr + 1);	// 1 is the format
+			//printf("Found BIFF8/ASCII string of len=%d \"%s\"\n", len, ret);
+		} else {
+			//printf("Found unicode str len=%d\n", len);
+			int newlen;			
+			lPtr = (WORD *)((char *)lPtr + 1);	// skip format
+#if 0 // debugging			
+			int x;
+			for(x=0; x<len; ++x) {			
+				printf("wide_char[i] = %x\n", lPtr[x]);
+			}
+#endif						
+			return unicode_decode((const BYTE *)lPtr, len*2, &newlen, pWB->charset);
+		}
+        break;
+        //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
         switch (xf->format)
         {
@@ -407,7 +467,6 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         case 2:
             sprintf(ret,"%.1f",cell->d);
             break;
-
         case 9:
             sprintf(ret,"%i%",(int)cell->d);
             break;
@@ -419,7 +478,7 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
             break;
         case 14:
             {
-                //				ret=ctime(cell->d);
+                //ret=ctime(cell->d);
                 sprintf(ret,"%.0f",cell->d);
                 break;
             }
