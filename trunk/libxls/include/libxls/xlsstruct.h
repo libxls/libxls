@@ -87,7 +87,7 @@ typedef struct COL
 COL;
 
 
-typedef struct FORMULA
+typedef struct FORMULA // BIFF8
 {
     WORD	row;
     WORD	col;
@@ -98,7 +98,7 @@ typedef struct FORMULA
     WORD	res;
     //	double	res;
     WORD	flags;
-    BYTE	chn[4];
+    BYTE	chn[4]; // BIFF8
     WORD	len;
     BYTE	value[1]; //var
 }
@@ -109,7 +109,7 @@ typedef struct RK
     WORD	row;
     WORD	col;
     WORD	xf;
-    BYTE	value[4];
+    BYTE	value[1]; // var
 }
 RK;
 
@@ -118,10 +118,26 @@ typedef struct LABELSST
     WORD	row;
     WORD	col;
     WORD	xf;
-    BYTE	value[4];
+    BYTE	value[1];
 }
 LABELSST;
 
+typedef struct BLANK
+{
+    WORD	row;
+    WORD	col;
+    WORD	xf;
+}
+BLANK;
+
+typedef struct LABEL
+{
+    WORD	row;
+    WORD	col;
+    WORD	xf;
+    BYTE	value[1]; // var
+}
+LABEL;
 
 typedef struct SST
 {
@@ -206,7 +222,7 @@ FONT;
 typedef struct FORMAT
 {
     WORD	index;
-    BYTE	value[1];
+    BYTE	value[0];
 }
 FORMAT;
 
@@ -274,7 +290,6 @@ typedef	struct st_xf
         WORD	groundcolor;
     }
     * xf;
-
 }
 st_xf;
 
@@ -309,7 +324,7 @@ typedef	struct st_cell
         double	d;
         long	l;
         char*	str;		//String value;
-        BYTE	ishiden;		//Is cell hident
+        BYTE	ishiden;	//Is cell hidden
         WORD	width;		//Width of col
         WORD	colspan;
         WORD	rowspan;
@@ -373,6 +388,9 @@ typedef struct xlsWorkBook
     st_xf		xfs;		//XF table
     st_font		fonts;
     st_format	formats;	//FORMAT table
+	
+	char		*summary;		// ole file
+	char		*docSummary;	// ole file
 }
 xlsWorkBook;
 
@@ -386,3 +404,18 @@ typedef struct xlsWorkSheet
     WORD		maxcol;
 }
 xlsWorkSheet;
+
+typedef struct xls_summaryInfo
+{
+	char		*title;
+	char		*subject;
+	char		*author;
+	char		*keywords;
+	char		*comment;
+	char		*lastAuthor;
+	char		*appName;
+	char		*category;
+	char		*manager;
+	char		*company;
+}
+xlsSummaryInfo;
