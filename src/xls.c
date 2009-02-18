@@ -446,7 +446,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell->d=*(double *)&((FORMULA*)buf)->resid;
 			cell->str=xls_getfcell(pWS->workbook,cell);
 		} else {
-			cell->l = 0xFFFF;
+			cell->l = -1;
 			switch(((FORMULA*)buf)->resid) {
 			case 0:		// String
 				return cell;	// cell is half complete, get the STRING next record
