@@ -405,6 +405,8 @@ typedef struct xlsWorkSheet
 }
 xlsWorkSheet;
 
+typedef struct st_cell_data xlsCell;
+
 typedef struct xls_summaryInfo
 {
 	char		*title;
