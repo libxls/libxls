@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2004 Christophe Leitienne
  * Copyright 2008 David Hoerl
  */
@@ -26,6 +26,8 @@
 #include <ctype.h>
 
 #include <libxls/xls.h>
+
+static void OutputString(const char *string);
 
 int main(int pintArgc, char *ptstrArgv[])
 {
@@ -107,7 +109,9 @@ int main(int pintArgc, char *ptstrArgv[])
 
                 for (tt=0;tt<=pWS->rows.lastcol;tt++)
                 {
-                    if (!row->cells.cell[tt].ishiden)
+                	struct st_cell_data *cell = &row->cells.cell[tt];
+
+                    if (!cell->ishiden)
                     {
                         if (hasPreviousCol)
                           {
@@ -117,42 +121,46 @@ int main(int pintArgc, char *ptstrArgv[])
                         hasPreviousCol = 1;
 
                         // display the colspan as only one cell, but reject rowspans (they can't be converted to CSV)
-                        if (row->cells.cell[tt].rowspan > 1)
+                        if (cell->rowspan > 1)
                           {
-                           printf("%d,%d: rowspan=%i", tt, t, row->cells.cell[tt].rowspan);
+                           printf("%d,%d: rowspan=%i", tt, t, cell->rowspan);
                            return 1;
                           }
 
                         // display the value of the cell (either numeric or string)
-                        if (row->cells.cell[tt].id==0x27e || row->cells.cell[tt].id==0x0BD || row->cells.cell[tt].id==0x203)
+                        if (cell->id == 0x27e || cell->id == 0x0BD || cell->id == 0x203)
                           {
-                           printf("%.15g", row->cells.cell[tt].d);
+                           printf("%.15g", cell->d);
                           }
-                        else if (row->cells.cell[tt].str!=NULL)
+                        else if (cell->id == 0x06) // formula
                           {
-                           char *str = row->cells.cell[tt].str;
-
-                           printf("\"");
-                           for (str = row->cells.cell[tt].str; *str; str++)
-                              {
-                               if (*str == '\"')
-                                 {
-                                  printf("\"\"");
-                                 }
-                               else if (*str == '\\')
-                                 {
-                                  printf("\\\\");
-                                 }
-                               else
-                                 {
-                                  printf("%c", *str);
-                                 }
-                              }
-                           printf("\"");
+                           if (cell->l == 0) // its a number
+                        	 {
+                        	  printf("%.15g", cell->d);
+                             }
+                           else
+                             {
+                              if (cell->str == "bool") // its boolean, and test cell->d
+                                {
+                            	 printf("%s", cell->d ? "true" : "false");
+                                }
+                              else if (cell->str == "error") // formula is in error
+                                {
+                                 printf("*error*");
+                                }
+                              else // ... cell->str is valid as the result of a string formula.
+                                {
+                                 OutputString(cell->str);
+                                }
+                             }
+                          }
+                        else if (cell->str!=NULL)
+                          {
+						   OutputString(cell->str);
                           }
                         else
                           {
-                           printf("\"\"");
+                           OutputString("");
                           }
                     }
                 }
@@ -162,8 +170,31 @@ int main(int pintArgc, char *ptstrArgv[])
          xls_close(pWB);
          return EXIT_SUCCESS;
     }
-    
+
     return EXIT_FAILURE;
 }
 
+// Output a CSV String (between double quotes)
+// Escapes (doubles) " and \ characters
+static OutputString(const char *string)
+{
+	const char *str;
 
+    printf("\"");
+    for (str = string; *str; str++)
+    {
+         if (*str == '\"')
+           {
+            printf("\"\"");
+           }
+         else if (*str == '\\')
+           {
+            printf("\\\\");
+           }
+         else
+           {
+            printf("%c", *str);
+           }
+    }
+    printf("\"");
+}
