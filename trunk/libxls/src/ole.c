@@ -410,6 +410,7 @@ OLE2* ole2_open(char *file, char *charset)
     }
     while (!olest->eof);
     free(olest);
+    free(pss);  // DFH 
 
     return ole;
 }
@@ -422,6 +423,7 @@ void ole2_close(OLE2* ole2)
 
 void ole2_fclose(OLE2Stream* ole2st)
 {
+	free(ole2st->buf);
 	free(ole2st);
 }
 

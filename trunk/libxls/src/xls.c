@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <wchar.h>
+#include <assert.h>
 
 #include <libxls/xls.h>
 
@@ -53,6 +54,9 @@ extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_preparseWorkSheet(xlsWorkSheet* pWS);
 extern void xls_formatColumn(xlsWorkSheet* pWS);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
+
+extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
+extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);
 extern void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo	*pSI);
 
 typedef struct {
@@ -431,8 +435,12 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 	verbose ("xls_addCell");
 
     row=&pWS->rows.row[((COL*)buf)->row];
-    cell=&row->cells.cell[((COL*)buf)->col-row->fcell];
-
+    //cell=&row->cells.cell[((COL*)buf)->col - row->fcell]; DFH - inconsistent
+    cell=&row->cells.cell[((COL*)buf)->col];
+//if(((COL*)buf)->col != cell->col)
+//{
+//printf("buf->col=%d cell->col=%d  row->fcell=%d\n", ((COL*)buf)->col , cell->col,  row->fcell);
+//}
     cell->id=bof->id;
     cell->xf=((COL*)buf)->xf;
 
@@ -446,7 +454,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell->d=*(double *)&((FORMULA*)buf)->resid;
 			cell->str=xls_getfcell(pWS->workbook,cell);
 		} else {
-			cell->l = -1;
+			cell->l = 0xFFFF;
 			switch(((FORMULA*)buf)->resid) {
 			case 0:		// String
 				return cell;	// cell is half complete, get the STRING next record
@@ -467,7 +475,8 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x00BD:	//MULRK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
+            cell=&row->cells.cell[((COL*)buf)->col + i];
+            //cell=&row->cells.cell[((COL*)buf)->col - row->fcell + i];  DFH - inconsistent
             //				col=row->cols[i];
             cell->id=bof->id;
             cell->xf=*((WORD *)(buf+(4+i*6)));
@@ -478,7 +487,8 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x00BE:	//MULBLANK
         for (i=0;i<=*(WORD *)(buf+(bof->size-2))-((COL*)buf)->col;i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
+            cell=&row->cells.cell[((COL*)buf)->col + i];
+            //cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
             //				col=row->cols[i];
             cell->id=bof->id;
             cell->xf=*((WORD *)(buf+(4+i*2)));
@@ -895,8 +905,8 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
 
 void xls_formatColumn(xlsWorkSheet* pWS)
 {
-    int i,t,ii;
-    int fcol,lcol;
+    DWORD i,t,ii;
+    DWORD fcol,lcol;
 
     for (i=0;i<pWS->colinfo.count;i++)
     {
@@ -910,13 +920,14 @@ void xls_formatColumn(xlsWorkSheet* pWS)
         else
             lcol=pWS->rows.lastcol;
 
-        for (t=fcol;t<=lcol;t++)
+        for (t=fcol;t<=lcol;t++) {
             for (ii=0;ii<=pWS->rows.lastrow;ii++)
             {
                 if (pWS->colinfo.col[i].flags&1)
                     pWS->rows.row[ii].cells.cell[t].ishiden=1;
                 pWS->rows.row[ii].cells.cell[t].width=pWS->colinfo.col[i].width;
             }
+        }
     }
 }
 
@@ -967,7 +978,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
             cell = xls_addCell(pWS,&tmp,buf);
             break;
 		case 0x207:		//STRING, only follows a formula
-			if(cell->id == 0x06) { // formula
+			if(cell && cell->id == 0x06) { // formula
 				cell->str = get_string(buf, !pWB->is5ver, pWB->is5ver, pWB->charset);
 				if (xls_debug) xls_showCell(cell);
 			}
@@ -990,7 +1001,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
         }
         free(buf);
     }
-    while ((!pWS->workbook->olestr->eof)&&(tmp.id!=0x0A));
+    while ((!pWS->workbook->olestr->eof)&&(tmp.id!=0x0A));  // 0x0A == EOF
 }
 
 xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
@@ -1052,22 +1063,106 @@ xlsWorkBook* xls_open(char *file,char* charset)
     return(pWB);
 }
 
-void xls_close(xlsWorkBook* pWB)
+xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol)
+{
+    struct st_row_data	*row;
+
+    if(cellRow >= pWS->rows.lastrow) return NULL;
+    row = &pWS->rows.row[cellRow];
+    if(cellCol >= row->lcell) return NULL;
+    
+    return &row->cells.cell[cellCol];
+}
+
+void xls_close_WB(xlsWorkBook* pWB)
 {
 	OLE2*		ole;
+
 	verbose ("xls_close");
+
+    // OLE first
 	ole=pWB->olestr->ole;
 	ole2_fclose(pWB->olestr);
 	ole2_close(ole);
-	
-	if(pWB->summary) free(pWB->summary);
+
+    // WorkBook
+    free(pWB->charset);
+    
+    // Sheets
+    {
+        DWORD i;
+        for(i=0; i<pWB->sheets.count; ++i) {
+            free(pWB->sheets.sheet[i].name);
+        }
+        free(pWB->sheets.sheet);
+    }
+    
+    // SST
+    {
+        DWORD i;
+        for(i=0; i<pWB->sst.count; ++i) {
+            free(pWB->sst.string[i].str);
+        }
+        free(pWB->sst.string);
+    }
+
+    // xfs
+    {
+        free(pWB->xfs.xf);
+    }
+
+    // fonts
+    {
+        DWORD i;
+        for(i=0; i<pWB->fonts.count; ++i) {
+            free(pWB->fonts.font[i].name);
+        }
+        free(pWB->fonts.font);
+    }
+
+    // formats
+    {
+        DWORD i;
+        for(i=0; i<pWB->formats.count; ++i) {
+            free(pWB->formats.format[i].value);
+        }
+        free(pWB->formats.format);
+    }
+
+    // buffers
+	if(pWB->summary)  free(pWB->summary);
 	if(pWB->docSummary) free(pWB->docSummary);
-	
+
 	// TODO - free other dynamically allocated objects like string table??
 	free(pWB);
 }
 
-extern const char* xls_getVersion(void)
+void xls_close_WS(xlsWorkSheet* pWS)
+{
+//    st_colinfo	colinfo;
+    
+    // ROWS
+    {
+        DWORD i, j;
+        for(j=0; j<pWS->rows.lastrow; ++j) {
+            struct st_row_data *row = &pWS->rows.row[j];
+            for(i=0; i<row->cells.count; ++i) {
+                free(row->cells.cell[i].str);
+            }
+            free(row->cells.cell);
+        }
+        free(pWS->rows.row);
+    
+    }
+
+    // COLINFO
+    {
+        free(pWS->colinfo.col);
+    }
+    free(pWS);
+}
+
+const char* xls_getVersion(void)
 {
     return PACKAGE_VERSION;
 }
@@ -1080,9 +1175,8 @@ extern const char* xls_getVersion(void)
 xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
 {
 	xlsSummaryInfo	*pSI;
-	
-	pSI = (xlsSummaryInfo	*)calloc(1, sizeof(xlsSummaryInfo));
-	
+
+	pSI = (xlsSummaryInfo *)calloc(1, sizeof(xlsSummaryInfo));
 	xls_dumpSummary(pWB->summary, 1, pSI);
 	xls_dumpSummary(pWB->docSummary, 0, pSI);
 	
