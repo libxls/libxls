@@ -18,7 +18,7 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
 
 #include <libxls/ole.h>
@@ -228,8 +228,8 @@ FORMAT;
 
 //---------------------------------------------------------
 typedef	struct st_sheet
-{		//Sheets
-    long count;
+{
+    DWORD count;        //Count of sheets
     struct st_sheet_data
     {
         DWORD filepos;
@@ -243,7 +243,7 @@ st_sheet;
 
 typedef	struct st_font
 {
-    long count;		//Count of FONT's
+    DWORD count;		//Count of FONT's
     struct st_font_data
     {
         WORD	height;
@@ -262,7 +262,7 @@ st_font;
 
 typedef struct st_format
 {
-    long count;		//Count of FORMAT's
+    DWORD count;		//Count of FORMAT's
     struct st_format_data
     {
          WORD index;
@@ -274,7 +274,7 @@ st_format;
 
 typedef	struct st_xf
 {
-    long count;	//Count of XF
+    DWORD count;	//Count of XF
     //	XF** xf;
     struct st_xf_data
     {
@@ -357,7 +357,7 @@ st_row;
 
 typedef	struct st_colinfo
 {
-    long count;	//Count of COLINFO
+    DWORD count;	//Count of COLINFO
     struct st_colinfo_data
     {
         WORD	first;

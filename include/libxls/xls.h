@@ -37,8 +37,11 @@ extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 
 extern xlsWorkBook* xls_open(char *file,char* charset);
-extern void xls_close(xlsWorkBook* pWB);
-extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
+#define xls_close xls_close_WB                  // historical
+extern void xls_close_WB(xlsWorkBook* pWB);     // preferred name
 
-extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
-extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);
+extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
+extern void xls_close_WS(xlsWorkSheet* pWS);
+
+// utility function
+xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol);
