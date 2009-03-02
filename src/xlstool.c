@@ -346,7 +346,8 @@ void xls_showCell(struct st_cell_data* cell)
 {
     printf("  -----------\n");
     printf("     ID: %.4Xh %s (%s)\n",cell->id, brdb[get_brbdnum(cell->id)].name, brdb[get_brbdnum(cell->id)].desc);
-    printf("   Cell: %c%i\n",cell->col+65,cell->row+1);
+    printf("   Cell: %c:%u\n",cell->col+'A',cell->row+1);
+//    printf("   Cell: %u:%u\n",cell->col+1,cell->row+1);
     printf("     xf: %i\n",cell->xf);
 	if(cell->id == 0x0201) {
 		//printf("BLANK_CELL!\n");
@@ -515,7 +516,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
     char fontname[255];
     struct st_xf_data* xf;
     DWORD background;
-    int i;
+    DWORD i;
 
     for (i=0;i<pWB->xfs.count;i++)
     {
