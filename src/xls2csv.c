@@ -33,12 +33,12 @@ int main(int pintArgc, char *ptstrArgv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
-    int i;
+    unsigned int i;
 
     struct st_row_data* row;
     WORD t,tt;
 
-	if(pintArgc != 2) {
+	if(pintArgc < 2) {
 		printf("Need file arg\n");
 		exit(1);
 	}
@@ -63,7 +63,7 @@ int main(int pintArgc, char *ptstrArgv[])
 
            if (i == pWB->sheets.count)
              {
-              printf("Feuille non trouvée");
+              printf("Feuille non trouvÃˆe");
               return EXIT_FAILURE;
              }
           }
@@ -142,7 +142,7 @@ int main(int pintArgc, char *ptstrArgv[])
                              {
                               if (cell->str == "bool") // its boolean, and test cell->d
                                 {
-                            	 printf("%s", cell->d ? "true" : "false");
+                            	 printf("%s", (int)cell->d ? "true" : "false");
                                 }
                               else if (cell->str == "error") // formula is in error
                                 {
@@ -176,7 +176,7 @@ int main(int pintArgc, char *ptstrArgv[])
 
 // Output a CSV String (between double quotes)
 // Escapes (doubles) " and \ characters
-static OutputString(const char *string)
+static void OutputString(const char *string)
 {
 	const char *str;
 
