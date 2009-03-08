@@ -1,6 +1,6 @@
 body {
- margin: 0;
- font-family: Helvetica
+ margin: 1em;
+ font-family: Helvetica;
 }
 
 code {
@@ -10,9 +10,16 @@ code {
 h1 {
  background-color: #3399FF;
  color: white;
- padding: 0.1em;
+ margin-top: 0;
 }
 
 h2 {
  color: #FF3300;
+}
+
+h3 {
+}
+
+#menu a {
+ display: block;
 }
