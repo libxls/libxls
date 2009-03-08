@@ -1050,6 +1050,7 @@ xlsWorkBook* xls_open(char *file,char* charset)
     if (!(pWB->olestr=ole2_fopen(ole,"Workbook")) && !(pWB->olestr=ole2_fopen(ole,"Book")))
     {
         if(xls_debug) printf("Workbook not found\n");
+        ole2_close(ole);
         return(NULL);
     }
 
