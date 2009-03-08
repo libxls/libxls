@@ -27,13 +27,13 @@
 
 #include <libxls/xls.h>
 
-int main()
+int main(int argc, char *argv[])
 {
 
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
     FILE *f;
-    int i;
+    unsigned int i;
 
     struct st_row_data* row;
     WORD t,tt;
