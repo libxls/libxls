@@ -194,7 +194,8 @@ char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
         sz=*(DWORD*)(str+ofs);
         ofs+=4;
     }
-
+#if 0
+    OLD
     if (flag&0x1) {
         ret=unicode_decode(str+ofs,ln*2, &new_len,charset);
         ofs+=ln*2;
@@ -204,6 +205,22 @@ char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
         *(char*)(ret+ln)=0;
         ofs+=ln;
     }
+#else
+    if(flag & 0x1)
+    {
+        WORD *pTemp = (WORD *)calloc(ln+1, sizeof(WORD));
+        memcpy(pTemp,str+ofs,ln*2);
+        ret = unicode_decode((BYTE *)pTemp,ln*2, &new_len,charset);
+        free(pTemp);
+        ofs += ln*2;
+    } else {
+        ret=(char *)malloc(ln+1);
+        memcpy (ret,(str+ofs),ln);
+        *(char*)(ret+ln)=0;
+        ofs+=ln;
+    }
+#endif
+
 #if 0	// debugging
 	if(xls_debug == 100) {
 		printf("ofs=%d ret[0]=%d\n", ofs, *ret);
