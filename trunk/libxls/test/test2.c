@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
-    int i;
+    unsigned int i;
 
 xls_debug=1;
 
