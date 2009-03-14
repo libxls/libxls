@@ -15,9 +15,9 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2004 Komarov Valery
- * Copyright 2006 Christophe Leitienne
+ * Copyright 2006-2009 Christophe Leitienne
  * Copyright 2008-2009 David Hoerl
  */
 
@@ -192,7 +192,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 ln_toread = min((size-ofs)/2, ln);
 
                 ret=unicode_decode(buf+ofs,ln_toread*2, &new_len,pWB->charset);
-   
+
                 if (ret == NULL)
                 {
                     ret = strdup("*failed to decode utf16*");
@@ -204,7 +204,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 
                 ln -= ln_toread;
                 ofs+=ln_toread*2;
-                
+
                 if (xls_debug) {
 	                printf("String16: %s(%i)\n",ret,new_len);
                 }
@@ -219,7 +219,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 
                 ln -= ln_toread;
                 ofs+=ln_toread;
-                
+
                 if (xls_debug) {
                 	printf("String8: %s(%li) \n",ret,ln);
                 }
@@ -302,12 +302,12 @@ static double NumFromRk(BYTE* rk)
         *(1+(DWORD *)&num) = drk & 0xfffffffc;
         *((DWORD *)&num) = 0;
     }
-    
+
     // Is value multiplied by 100 ?
     if (drk & 0x01) {
         num = num / 100.0;
     }
-    
+
     return num;
 }
 
@@ -317,11 +317,11 @@ char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
 	char* name;
 	DWORD filepos;
 	BYTE visible, type;
-	
+
 	filepos = bs->filepos;
 	visible = bs->visible;
 	type = bs->type;
-		
+
 	// printf("charset=%s uni=%d\n", pWB->charset, unicode);
 	// printf("bs name %.*s\n", bs->name[0], bs->name+1);
 	name=get_string(bs->name, 0, pWB->is5ver, pWB->charset);
@@ -356,7 +356,7 @@ char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
 		printf("   type: %.4Xh\n",type);
 		printf("   name: %s\n", name);
 	}
-	
+
     if (pWB->sheets.count==0)
     {
         pWB->sheets.sheet=(struct st_sheet_data *) malloc((pWB->sheets.count+1)*sizeof (struct st_sheet_data));
@@ -370,7 +370,7 @@ char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
     pWB->sheets.sheet[pWB->sheets.count].visibility=visible;
     pWB->sheets.sheet[pWB->sheets.count].type=type;
     pWB->sheets.count++;
-	
+
 	return name;
 }
 
@@ -447,7 +447,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     switch (bof->id)
     {
     case 0x0006:	//FORMULA
-		// test for formula, if 
+		// test for formula, if
         if (((FORMULA*)buf)->res!=0xffff) {
 			cell->l=0;
 			// if a double, then set double and clear l
@@ -518,9 +518,9 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     }
-    
+
     if (xls_debug) xls_showCell(cell);
-	
+
 	return cell;
 }
 
@@ -537,7 +537,7 @@ char *xls_addFont(xlsWorkBook* pWB, FONT* font)
     }
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
-	
+
     tmp->name=get_string((BYTE*)&font->name, 0, pWB->is5ver, pWB->charset);
 
     tmp->height=font->height;
@@ -551,7 +551,7 @@ char *xls_addFont(xlsWorkBook* pWB, FONT* font)
 
     //	xls_showFont(tmp);
     pWB->fonts.count++;
-	
+
 	return tmp->name;
 }
 
@@ -572,7 +572,7 @@ void xls_addFormat(xlsWorkBook* pWB, FORMAT* format)
     tmp->value=get_string(format->value, !pWB->is5ver, pWB->is5ver, pWB->charset);
     if(xls_debug) xls_showFormat(tmp);
     pWB->formats.count++;
-} 
+}
 
 void xls_addXF8(xlsWorkBook* pWB,XF8* xf)
 {
@@ -631,7 +631,7 @@ void xls_addXF5(xlsWorkBook* pWB,XF5* xf)
     tmp->linestyle=xf->linestyle;
     tmp->linecolor=xf->linecolor;
     tmp->groundcolor=xf->groundcolor;
-*/ 
+*/
 
     //	xls_showXF(tmp);
     pWB->xfs.count++;
@@ -688,7 +688,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
     BYTE* buf;
 	BYTE once;
     //DWORD size;
-	
+
 	// this to prevent compiler warnings
 	once=0;
 	bof2.size = 0;
@@ -696,7 +696,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
     verbose ("xls_parseWorkBook");
     do
     {
-        ole2_read(&bof1, 1, 4, pWB->olestr);	
+        ole2_read(&bof1, 1, 4, pWB->olestr);
  		if(xls_debug) xls_showBOF(&bof1);
 
         buf=(BYTE *)malloc(bof1.size);
@@ -774,7 +774,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			if(pWB->is5ver) {
 				XF5 *xf;
 				xf = (XF5 *)buf;
-				
+
 				xls_addXF5(pWB,xf);
 				if(xls_debug) {
 					printf("   font: %d\n", xf->font);
@@ -789,7 +789,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			} else {
 				XF8 *xf;
 				xf = (XF8 *)buf;
-				
+
 				xls_addXF8(pWB,xf);
 				if(xls_debug) {
 					xls_showXF(xf);
@@ -821,10 +821,10 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
             break;
 
 		case 0x0293:	// STYLE
-			if(xls_debug) { 
+			if(xls_debug) {
 				struct { unsigned short idx; unsigned char ident; unsigned char lvl; } *styl;
 				styl = (void *)buf;
-				
+
 				printf("    idx: 0x%x\n", styl->idx & 0x07FF);
 				if(styl->idx & 0x8000) {
 					printf("  ident: 0x%x\n", styl->ident);
@@ -837,10 +837,10 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
 		case 0x0092:	// PALETTE
-			if(xls_debug > 10) { 
+			if(xls_debug > 10) {
 				unsigned char *p = buf + 2;
 				int idx, len;
-				
+
 				len = *(unsigned short *)buf;
 				for(idx=0; idx<len; ++idx) {
 					printf("   Index=0x%2.2x %2.2x%2.2x%2.2x\n", idx+8, p[0], p[1], p[2] );
@@ -848,7 +848,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				}
 			}
 			break;
-				
+
 		case 0x0022: // 1904
 			if(xls_debug) {
 				printf("   mode: 0x%x\n", *(unsigned short *)buf);
@@ -988,7 +988,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			if(xls_debug) {
 				printf("WINDOW2: ");
 				unsigned short xx, *foo = (void *)buf;
-				
+
 				for(xx=0; xx<7; ++xx, ++foo) {
 					printf("0x%4.4x ", *foo);
 				}
@@ -1031,7 +1031,7 @@ xlsWorkBook* xls_open(char *file,char* charset)
         if(xls_debug) printf("File \"%s\" not found\n",file);
         return(NULL);
     }
-	
+
     if ((pWB->olestr=ole2_fopen(ole,"\005SummaryInformation")))
     {
         pWB->summary = calloc(1,4096);
@@ -1064,14 +1064,24 @@ xlsWorkBook* xls_open(char *file,char* charset)
     return(pWB);
 }
 
+xlsRow *xls_row(xlsWorkSheet* pWS, WORD cellRow)
+{
+    struct st_row_data *row;
+
+    if(cellRow > pWS->rows.lastrow) return NULL;
+    row = &pWS->rows.row[cellRow];
+
+    return row;
+}
+
 xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol)
 {
     struct st_row_data	*row;
 
-    if(cellRow >= pWS->rows.lastrow) return NULL;
+    if(cellRow > pWS->rows.lastrow) return NULL;
     row = &pWS->rows.row[cellRow];
     if(cellCol >= row->lcell) return NULL;
-    
+
     return &row->cells.cell[cellCol];
 }
 
@@ -1088,7 +1098,7 @@ void xls_close_WB(xlsWorkBook* pWB)
 
     // WorkBook
     free(pWB->charset);
-    
+
     // Sheets
     {
         DWORD i;
@@ -1097,7 +1107,7 @@ void xls_close_WB(xlsWorkBook* pWB)
         }
         free(pWB->sheets.sheet);
     }
-    
+
     // SST
     {
         DWORD i;
@@ -1141,7 +1151,7 @@ void xls_close_WB(xlsWorkBook* pWB)
 void xls_close_WS(xlsWorkSheet* pWS)
 {
 //    st_colinfo	colinfo;
-    
+
     // ROWS
     {
         DWORD i, j;
@@ -1153,7 +1163,7 @@ void xls_close_WS(xlsWorkSheet* pWS)
             free(row->cells.cell);
         }
         free(pWS->rows.row);
-    
+
     }
 
     // COLINFO
@@ -1180,7 +1190,7 @@ xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
 	pSI = (xlsSummaryInfo *)calloc(1, sizeof(xlsSummaryInfo));
 	xls_dumpSummary(pWB->summary, 1, pSI);
 	xls_dumpSummary(pWB->docSummary, 0, pSI);
-	
+
 	return pSI;
 }
 
@@ -1207,7 +1217,7 @@ void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 	sectionHeader	*secHead;
 	property		*prop;
 	uint32_t i, j;
-		
+
 	if(!buf) return;	// perhaps the document was missing??
 
 	head = (header *)buf;
@@ -1285,7 +1295,7 @@ void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 			default:
 				//printf("      UNKNOWN!\n");
 				break;
-			}				
-		}		
+			}
+		}
 	}
 }

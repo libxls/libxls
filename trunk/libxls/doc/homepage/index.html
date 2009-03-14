@@ -58,9 +58,10 @@ if(cell->l == 0) { // its a number
 	if(cell->str == "error") // formula is in error
 	else ... cell->str is valid as the result of a string formula.
 }</pre></li>
-	<li>New function xls_cell to get cell content. Deprecates the use of direct access to cell content.
-	<pre>xlsCell* xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol)</pre></li>
-	</ol> 
+	<li>New functions <code>xls_row</code> and <code>xls_cell</code> to get cell content. Deprecates the use of direct access to row and cell content.
+	<pre>xlsRow*  xls_row(xlsWorkSheet* pWS, WORD cellRow);
+xlsCell* xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol);</pre></li>
+	</ol>
 	<h3>V0.2.0</h3>
 	<h4>Bugs corrected</h4>
 	<ol>
