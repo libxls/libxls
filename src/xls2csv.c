@@ -29,33 +29,33 @@
 
 static void OutputString(const char *string);
 
-int main(int pintArgc, char *ptstrArgv[])
+int main(int argc, char *argv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
     unsigned int i;
 
     struct st_row_data* row;
-    WORD t,tt;
+    WORD cellRow,cellCol;
 
-	if(pintArgc < 2) {
+	if(argc < 2) {
 		printf("Need file arg\n");
 		exit(1);
 	}
 
     // open workbook, choose standard conversion
-    pWB=xls_open(ptstrArgv[1], "iso-8859-15//TRANSLIT");
+    pWB=xls_open(argv[1], "iso-8859-15//TRANSLIT");
 
     // process workbook if found
     if (pWB!=NULL)
     {
         // check if the requested sheet (if any) exists
-        if (  (pintArgc >= 3)
-            &&(strcmp(ptstrArgv[2], "-l") != 0) )
+        if (  (argc >= 3)
+            &&(strcmp(argv[2], "-l") != 0) )
           {
            for (i=0;i<pWB->sheets.count;i++)
               {
-               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) == 0)
+               if (strcmp(argv[2], pWB->sheets.sheet[i].name) == 0)
                  {
                   break;
                  }
@@ -63,7 +63,7 @@ int main(int pintArgc, char *ptstrArgv[])
 
            if (i == pWB->sheets.count)
              {
-              printf("Feuille non trouvÈe");
+              printf("Sheet not found");
               return EXIT_FAILURE;
              }
           }
@@ -74,14 +74,14 @@ int main(int pintArgc, char *ptstrArgv[])
             int lineWritten = 0;
 
             // check if this is a requested sheet
-            if (pintArgc >= 3)
+            if (argc >= 3)
               {
-               if (strcmp(ptstrArgv[2], "-l") == 0)
+               if (strcmp(argv[2], "-l") == 0)
                  {
                   printf("%s\n", pWB->sheets.sheet[i].name);
                   continue;
                  }
-               if (strcmp(ptstrArgv[2], pWB->sheets.sheet[i].name) != 0)
+               if (strcmp(argv[2], pWB->sheets.sheet[i].name) != 0)
                  {
                   continue;
                  }
@@ -92,10 +92,10 @@ int main(int pintArgc, char *ptstrArgv[])
             xls_parseWorkSheet(pWS);
 
             // process all rows of the sheet
-            for (t=0;t<=pWS->rows.lastrow;t++)
+            for (cellRow=0;cellRow<=pWS->rows.lastrow;cellRow++)
             {
                 int hasPreviousCol = 0;
-                row=&pWS->rows.row[t];
+                row = xls_row(pWS, cellRow);
 
                 // process cells
                 if (lineWritten)
@@ -107,11 +107,12 @@ int main(int pintArgc, char *ptstrArgv[])
                    lineWritten = 1;
                   }
 
-                for (tt=0;tt<=pWS->rows.lastcol;tt++)
+                for (cellCol=0;cellCol<=pWS->rows.lastcol;cellCol++)
                 {
-                	struct st_cell_data *cell = &row->cells.cell[tt];
+                	xlsCell	*cell = xls_cell(pWS, cellRow, cellCol);
 
-                    if (!cell->ishiden)
+                    if (  (cell)
+                    	&&(!cell->ishiden) )
                     {
                         if (hasPreviousCol)
                           {
@@ -123,7 +124,7 @@ int main(int pintArgc, char *ptstrArgv[])
                         // display the colspan as only one cell, but reject rowspans (they can't be converted to CSV)
                         if (cell->rowspan > 1)
                           {
-                           printf("%d,%d: rowspan=%i", tt, t, cell->rowspan);
+                           printf("%d,%d: rowspan=%i", cellCol, cellRow, cell->rowspan);
                            return 1;
                           }
 

@@ -15,9 +15,9 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2004 Komarov Valery
- * Copyright 2006 Christophe Leitienne
+ * Copyright 2006-2009 Christophe Leitienne
  * Copyright 2008-2009 David Hoerl
  */
 
@@ -388,7 +388,7 @@ typedef struct xlsWorkBook
     st_xf		xfs;		//XF table
     st_font		fonts;
     st_format	formats;	//FORMAT table
-	
+
 	char		*summary;		// ole file
 	char		*docSummary;	// ole file
 }
@@ -406,6 +406,7 @@ typedef struct xlsWorkSheet
 xlsWorkSheet;
 
 typedef struct st_cell_data xlsCell;
+typedef struct st_row_data xlsRow;
 
 typedef struct xls_summaryInfo
 {

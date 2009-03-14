@@ -15,9 +15,9 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2004 Komarov Valery
- * Copyright 2006 Christophe Leitienne
+ * Copyright 2006-2009 Christophe Leitienne
  * Copyright 2008-2009 David Hoerl
  */
 
@@ -44,4 +44,5 @@ extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
 extern void xls_close_WS(xlsWorkSheet* pWS);
 
 // utility function
+xlsRow *xls_row(xlsWorkSheet* pWS, WORD cellRow);
 xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol);
