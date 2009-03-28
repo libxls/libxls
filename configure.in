@@ -1,9 +1,9 @@
-AC_INIT([libxls], [0.2.0], [cleit@users.sourceforge.net])
+AC_INIT([libxls],[0.3.0],[cleit@users.sourceforge.net])
 AC_CONFIG_SRCDIR([test/test.c])
 PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=0
-LIBXLS_MINOR_VERSION=2
+LIBXLS_MINOR_VERSION=3
 LIBXLS_MICRO_VERSION=0
 
 VERSION=$LIBXLS_MAJOR_VERSION.$LIBXLS_MINOR_VERSION.$LIBXLS_MICRO_VERSION
@@ -30,7 +30,7 @@ AC_PROG_INSTALL
 
 AC_PROG_CC
 AC_PROG_CXX
-AM_PROG_LIBTOOL
+LT_INIT
 AC_SUBST(LIBTOOL_DEPS)
 
 
@@ -44,7 +44,7 @@ AC_CHECK_HEADERS([wchar.h])
 AC_C_CONST
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_PROG_LIBTOOL
+LT_INIT
 AC_TYPE_SIZE_T
 
 WITH_ICONV=0
@@ -75,10 +75,10 @@ iconv (cd, NULL, NULL, NULL, NULL);]])],[
 	    LDFLAGS="${LDFLAGS} ${ICONV_LIBS}"
 	    LIBS="${LIBS} -liconv"
 
-	    AC_TRY_LINK([#include <stdlib.h>
-#include <iconv.h>],[
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <iconv.h>]], [[
 iconv_t cd = iconv_open ("","");
-iconv (cd, NULL, NULL, NULL, NULL);],[
+iconv (cd, NULL, NULL, NULL, NULL);]])],[
 		AC_MSG_RESULT(yes)
 		WITH_ICONV=1
 		ICONV_LIBS="${ICONV_LIBS} -liconv"
