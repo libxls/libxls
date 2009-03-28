@@ -75,6 +75,7 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
+AR_FLAGS = @AR_FLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -91,19 +92,21 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
-ECHO = @ECHO@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-F77 = @F77@
-FFLAGS = @FFLAGS@
+FGREP = @FGREP@
 GREP = @GREP@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -113,10 +116,18 @@ LIBXLS_LIBS = @LIBXLS_LIBS@
 LIBXLS_MAJOR_VERSION = @LIBXLS_MAJOR_VERSION@
 LIBXLS_MICRO_VERSION = @LIBXLS_MICRO_VERSION@
 LIBXLS_MINOR_VERSION = @LIBXLS_MINOR_VERSION@
+LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_AR = @LT_AR@
+LT_ARFLAGS = @LT_ARFLAGS@
 MAKEINFO = @MAKEINFO@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -133,9 +144,10 @@ STRIP = @STRIP@
 VERSION = @VERSION@
 VERSION_INFO = @VERSION_INFO@
 WITH_ICONV = @WITH_ICONV@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
-ac_ct_F77 = @ac_ct_F77@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -180,6 +192,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+to_host_path_cmd = @to_host_path_cmd@
+to_tool_path_cmd = @to_tool_path_cmd@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir) -I../include
 test_SOURCES = test.c
 test_LDADD = $(top_builddir)/src/libxlsreader.la
@@ -201,9 +215,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  test/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Makefile
+	  $(AUTOMAKE) --gnu  test/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -272,7 +286,7 @@ clean-libtool:
 	-rm -rf .libs _libs
 
 distclean-libtool:
-	-rm -f libtool
+	-rm -f libtool config.lt
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
