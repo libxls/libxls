@@ -17,48 +17,84 @@
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2004-2009 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2009 David Hoerl
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include <libxls/xls.h>
 
-const char stringSeparator = '\"';
-const char *lineSeparator = "\n";
-const char *fieldSeparator = ";";
+static char  stringSeparator = '\"';
+static char *lineSeparator = "\n";
+static char *fieldSeparator = ";";
+static char *encoding = "ASCII";
 
 static void OutputString(const char *string);
 static void OutputNumber(const double number);
+static void Usage(char *progName);
+
+static void Usage(char *progName)
+{
+    fprintf(stderr, "usage: %s <Excel xls file> [-l] [-e encoding] [-t sheet] [-q quote char] [-f field separator]\n", progName);
+    fprintf(stderr, "  Output Excel file cells as delimited values (default is comma separated)\n");
+    fprintf(stderr, "  Options:\n");
+    fprintf(stderr, "    -l            : list the sheets contained in the file but do not output their contents.\n");
+    fprintf(stderr, "    -t sheet_name : only process the named sheet\n");
+    fprintf(stderr, "    -e encoding   : the iconv encoding (default \"%s\")\n", encoding);
+    fprintf(stderr, "    -q character  : used to quote strings (default '%c')\n", stringSeparator);
+    fprintf(stderr, "    -f string     : used to separate fields (default \"%s\")\n", fieldSeparator);
+    fprintf(stderr, "\n");
+    exit(EXIT_FAILURE);
+}
 
 int main(int argc, char *argv[]) {
 	xlsWorkBook* pWB;
 	xlsWorkSheet* pWS;
 	unsigned int i;
+    int justList = 0;
+    char *sheetName = "";
+
+    if(argc < 2) {
+        Usage(argv[0]);
+    }
+
+    optind = 2; // skip file arg
+
+    //encoding = encoding = "iso-8859-15//TRANSLIT";
+
+    int ch;
+    while ((ch = getopt(argc, argv, "lt:e:q:f:")) != -1) {
+        switch (ch) {
+        case 'l':
+            justList = 1;
+            break;
+        case 'e':
+            encoding = strdup(optarg);
+            break;
+        case 't':
+            sheetName = strdup(optarg);
+            break;
+        case 'q':
+            stringSeparator = optarg[0];
+            break;
+        case 'f':
+            fieldSeparator = strdup(optarg);
+            break;
+        default:
+            Usage(argv[0]);
+            break;
+        }
+     }
 
 	struct st_row_data* row;
 	WORD cellRow, cellCol;
 
-	// check argument count
-	if (argc < 2 || argc > 3) {
-		fprintf(stderr, "usage: %s <Excel file> [-l|<sheet>]\n", argv[0]);
-		fprintf(stderr, "       display cells of an Excel file as comma separated values\n");
-		fprintf(stderr, "       Options:\n");
-		fprintf(stderr, "         -l: list sheets of Excel file, don't display content\n");
-		fprintf(stderr, "         <sheet>: display only this sheet\n");
-		fprintf(stderr, "       Output:\n");
-		fprintf(stderr, "         %c is used to quote strings\n", stringSeparator);
-		fprintf(stderr, "         LF is used to identify end of lines\n");
-		fprintf(stderr, "         %s is used to identify end of field\n", fieldSeparator);
-		fprintf(stderr, "\n");
-		return EXIT_FAILURE;
-	}
-
 	// open workbook, choose standard conversion
-	pWB = xls_open(argv[1], "iso-8859-15//TRANSLIT");
+	pWB = xls_open(argv[1], encoding);
 	if (!pWB) {
 		fprintf(stderr, "File not found");
 		fprintf(stderr, "\n");
@@ -66,15 +102,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	// check if the requested sheet (if any) exists
-	if ((argc >= 3) && (strcmp(argv[2], "-l") != 0)) {
+	if (sheetName[0]) {
 		for (i = 0; i < pWB->sheets.count; i++) {
-			if (strcmp(argv[2], pWB->sheets.sheet[i].name) == 0) {
+			if (strcmp(sheetName, pWB->sheets.sheet[i].name) == 0) {
 				break;
 			}
 		}
 
 		if (i == pWB->sheets.count) {
-			fprintf(stderr, "Sheet not found");
+			fprintf(stderr, "Sheet \"%s\" not found", sheetName);
 			fprintf(stderr, "\n");
 			return EXIT_FAILURE;
 		}
@@ -84,13 +120,15 @@ int main(int argc, char *argv[]) {
 	for (i = 0; i < pWB->sheets.count; i++) {
 		int isFirstLine = 1;
 
+        // just looking for sheet names
+        if (justList) {
+            printf("%s\n", pWB->sheets.sheet[i].name);
+            continue;
+        }
+        
 		// check if this the sheet we want
-		if (argc >= 3) {
-			if (strcmp(argv[2], "-l") == 0) {
-				printf("%s\n", pWB->sheets.sheet[i].name);
-				continue;
-			}
-			if (strcmp(argv[2], pWB->sheets.sheet[i].name) != 0) {
+		if (sheetName[0]) {
+			if (strcmp(sheetName, pWB->sheets.sheet[i].name) != 0) {
 				continue;
 			}
 		}
@@ -112,6 +150,8 @@ int main(int argc, char *argv[]) {
 			}
 
 			for (cellCol = 0; cellCol <= pWS->rows.lastcol; cellCol++) {
+                //printf("Processing row=%d col=%d\n", cellRow+1, cellCol+1);
+
 				xlsCell *cell = xls_cell(pWS, cellRow, cellCol);
 
 				if ((!cell) || (cell->ishiden)) {
@@ -126,16 +166,15 @@ int main(int argc, char *argv[]) {
 
 				// display the colspan as only one cell, but reject rowspans (they can't be converted to CSV)
 				if (cell->rowspan > 1) {
-					fprintf(stderr, "%d,%d: rowspan=%i", cellCol, cellRow, cell->rowspan);
-					fprintf(stderr, "\n");
-					return EXIT_FAILURE;
+					fprintf(stderr, "Warning: %d rows spanned at col=%d row=%d: output will not match the Excel file.\n", cell->rowspan, cellCol+1, cellRow+1);
 				}
 
 				// display the value of the cell (either numeric or string)
 				if (cell->id == 0x27e || cell->id == 0x0BD || cell->id == 0x203) {
 					OutputNumber(cell->d);
-				} else if (cell->id == 0x06) // formula
-				{
+				} else 
+                if (cell->id == 0x06) {
+                    // formula
 					if (cell->l == 0) // its a number
 					{
 						OutputNumber(cell->d);
@@ -165,7 +204,7 @@ int main(int argc, char *argv[]) {
 }
 
 // Output a CSV String (between double quotes)
-// Escapes (doubles) " and \ characters
+// Escapes (doubles)" and \ characters
 static void OutputString(const char *string) {
 	const char *str;
 
