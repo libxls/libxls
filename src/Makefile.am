@@ -5,7 +5,8 @@ bin_PROGRAMS = xls2csv
 lib_LTLIBRARIES = libxlsreader.la
 
 xls2csv_SOURCES =       \
-	xls2csv.c
+	xls2csv.c	\
+	getopt.c
 
 xls2csv_LDADD = libxlsreader.la
 
