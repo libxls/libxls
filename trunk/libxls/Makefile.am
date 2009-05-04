@@ -7,3 +7,4 @@ EXTRA_DIST = doc
 
 dist-hook:
 	rm -rf `find $(distdir)/doc -name CVS`
+
