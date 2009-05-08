@@ -54,13 +54,13 @@ pWB=xls_open("file.xls", "iso-8859-15//TRANSLIT");</pre>
 	<h4>New features</h4>
 	<ol>
 	<li>libxls can read Excel formulas results saved in files:
-	<pre>if(cell->id == 0x06) { // formula
+	<pre>if(cell-&gt;id == 0x06) { // formula
 if(cell->l == 0) { // its a number
-	... use cell->d
+	... use cell-&gt;d
 } else {
-	if(cell->str == "bool") // its boolean, and test cell->d > 0.0 for true
-	if(cell->str == "error") // formula is in error
-	else ... cell->str is valid as the result of a string formula.
+	if(cell-&gt;str == "bool") // its boolean, and test cell-&gt;d &gt; 0.0 for true
+	if(cell-&gt;str == "error") // formula is in error
+	else ... cell-&gt;str is valid as the result of a string formula.
 }</pre></li>
 	<li>New functions <code>xls_row</code> and <code>xls_cell</code> to get cell content. Deprecates the use of direct access to row and cell content.
 	<pre>xlsRow*  xls_row(xlsWorkSheet* pWS, WORD cellRow);
