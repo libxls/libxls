@@ -62,7 +62,7 @@ am_libxlsreader_la_OBJECTS = xlstool.lo ole.lo xls.lo
 libxlsreader_la_OBJECTS = $(am_libxlsreader_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_xls2csv_OBJECTS = xls2csv.$(OBJEXT)
+am_xls2csv_OBJECTS = xls2csv.$(OBJEXT) getopt.$(OBJEXT)
 xls2csv_OBJECTS = $(am_xls2csv_OBJECTS)
 xls2csv_DEPENDENCIES = libxlsreader.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -208,7 +208,8 @@ to_tool_path_cmd = @to_tool_path_cmd@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 lib_LTLIBRARIES = libxlsreader.la
 xls2csv_SOURCES = \
-	xls2csv.c
+	xls2csv.c	\
+	getopt.c
 
 xls2csv_LDADD = libxlsreader.la
 libxlsreader_la_SOURCES = \
@@ -317,6 +318,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ole.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls2csv.Po@am__quote@

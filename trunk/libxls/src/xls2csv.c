@@ -31,7 +31,8 @@
 static char  stringSeparator = '\"';
 static char *lineSeparator = "\n";
 static char *fieldSeparator = ";";
-static char *encoding = "ASCII";
+static char *encoding = "ASCII"; // initially defaulted to "iso-8859-15//TRANSLIT";
+
 
 static void OutputString(const char *string);
 static void OutputNumber(const double number);
@@ -65,8 +66,6 @@ int main(int argc, char *argv[]) {
     }
 
     optind = 2; // skip file arg
-
-    //encoding = encoding = "iso-8859-15//TRANSLIT";
 
     int ch;
     while ((ch = getopt(argc, argv, "lt:e:q:f:")) != -1) {
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]) {
             printf("%s\n", pWB->sheets.sheet[i].name);
             continue;
         }
-        
+
 		// check if this the sheet we want
 		if (sheetName[0]) {
 			if (strcmp(sheetName, pWB->sheets.sheet[i].name) != 0) {
@@ -174,8 +173,7 @@ int main(int argc, char *argv[]) {
 				// display the value of the cell (either numeric or string)
 				if (cell->id == 0x27e || cell->id == 0x0BD || cell->id == 0x203) {
 					OutputNumber(cell->d);
-				} else 
-                if (cell->id == 0x06) {
+				} else if (cell->id == 0x06) {
                     // formula
 					if (cell->l == 0) // its a number
 					{
