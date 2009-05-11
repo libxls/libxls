@@ -20,7 +20,12 @@ MAINTENANCE
 ./bootstrap
 or:
 autoreconf -v --install --force
+then:
+./configure
 
-* To build a binary distribution, use the following commands:
+* To build a binary distribution, use the following commands after 
+  substituting the current version number (e.g., 0.30) for <version> and
+  the current computer architecture (e.g., i386)
+
 DESTDIR="$PWD/libxls-<version>-<arch>" make install
 tar cvzf libxls-<version>-<arch>.tar.gz libxls-<version>-<arch>
