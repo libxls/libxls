@@ -1,10 +1,20 @@
 #! /bin/sh 
 
-# Note:  on OSX, change libtoolize to glibtoolize
-set -x
+sys=`uname`
 
-aclocal --force \
-&& libtoolize --copy --force \
-&& autoconf --force \
-&& autoheader --force \
-&& automake --add-missing --copy --force-missing
+# OSX does not have libtoolize, but it does glibtoolize
+
+if [ $sys = "Darwin" ]
+then 
+    aclocal --force \
+    && glibtoolize --copy --force \
+    && autoconf --force \
+    && autoheader --force \
+    && automake --add-missing --copy --force-missing
+else
+    aclocal --force \
+    && libtoolize --copy --force \
+    && autoconf --force \
+    && autoheader --force \
+    && automake --add-missing --copy --force-missing
+fi
