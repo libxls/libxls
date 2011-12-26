@@ -409,8 +409,9 @@ OLE2* ole2_open(char *file, char *charset)
 		}
     }
     while (!olest->eof);
-    free(olest);
-    free(pss);  // DFH 
+
+	ole2_fclose(olest);
+    free(pss);
 
     return ole;
 }
@@ -418,6 +419,14 @@ OLE2* ole2_open(char *file, char *charset)
 void ole2_close(OLE2* ole2)
 {
 	fclose(ole2->file);
+
+	for(int i=0; i<ole2->files.count; ++i) {
+		free(ole2->files.file[i].name);
+	}
+	free(ole2->files.file);
+	free(ole2->SecID);
+	free(ole2->SSecID);
+	free(ole2->SSAT);
 	free(ole2);
 }
 
@@ -446,7 +455,7 @@ static int sector_read(OLE2* ole2, BYTE *buffer, int sid)
 	
 	num = fread(buffer, ole2->lsector, 1, ole2->file);
 	if(num != 1) {
-		printf("fread: wanted %d got %d loc=%u\n", 1, num, sector_pos(ole2, sid));
+		fprintf(stderr, "fread: wanted %d got %lu loc=%u\n", 1, num, sector_pos(ole2, sid));
 	}
 	assert(num == 1);
 
