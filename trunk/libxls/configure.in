@@ -30,7 +30,7 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 AC_PROG_CC
-AC_PROG_CC_STDC   # check for ISO/C99 options for the compilers, if available. Be hip, don't be square.
+AC_PROG_CC_C99
 AC_PROG_CXX
 LT_INIT
 AC_SUBST(LIBTOOL_DEPS)
