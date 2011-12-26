@@ -328,7 +328,7 @@ char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
 	// printf("name=%s\n", name);
 
 	if(xls_debug) {
-		printf ("xls_addSheet\n");
+		printf ("xls_addSheet[0x%x]\n", type);
 		switch (type & 0x0f)
 		{
 		case 0x00:
@@ -406,7 +406,8 @@ void xls_makeTable(xlsWorkSheet* pWS)
         tmp->fcell=0;
         tmp->lcell=pWS->rows.lastcol;
 
-        tmp->cells.cell=(struct st_cell_data *)calloc((pWS->rows.lastcol+1),sizeof(struct st_cell_data));
+		tmp->cells.count = pWS->rows.lastcol+1;
+        tmp->cells.cell=(struct st_cell_data *)calloc(tmp->cells.count,sizeof(struct st_cell_data));
 
         for (i=0;i<=pWS->rows.lastcol;i++)
         {
@@ -518,7 +519,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     }
-
     if (xls_debug) xls_showCell(cell);
 
 	return cell;
@@ -687,7 +687,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
     BOF bof2;
     BYTE* buf;
 	BYTE once;
-    //DWORD size;
+    DWORD offset;
 
 	// this to prevent compiler warnings
 	once=0;
@@ -696,6 +696,11 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
     verbose ("xls_parseWorkBook");
     do
     {
+		if(xls_debug > 10) {
+			printf("READ WORKBOOK filePos=%ld\n",  (long)pWB->filepos);
+			printf("  OLE: start=%d pos=%d size=%d fatPos=%d\n", pWB->olestr->start, pWB->olestr->pos, pWB->olestr->size, pWB->olestr->fatpos); 
+		}
+
         ole2_read(&bof1, 1, 4, pWB->olestr);
  		if(xls_debug) xls_showBOF(&bof1);
 
@@ -935,6 +940,8 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 {
     BOF tmp;
     BYTE* buf;
+	long offset = pWS->filepos;
+
 	struct st_cell_data *cell;
 	xlsWorkBook *pWB = pWS->workbook;
 
@@ -950,9 +957,15 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
     ole2_seek(pWS->workbook->olestr,pWS->filepos);
     do
     {
+		long lastPos = offset;
+
+		if(xls_debug > 10) {
+			printf("LASTPOS=%ld pos=%d filePos=%d filePos=%ld\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
+		}
         ole2_read(&tmp, 1,4,pWS->workbook->olestr);
         buf=(BYTE *)malloc(tmp.size);
         ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
+		offset += 4 + tmp.size;
 
 		// xls_showBOF(&tmp);
         switch (tmp.id)
@@ -963,9 +976,38 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
             xls_mergedCells(pWS,&tmp,buf);
             break;
         case 0x208:		//ROW
+			if(xls_debug > 10) printf("ROW: %x at pos=%ld\n", tmp.id, lastPos);
             xls_addRow(pWS,(ROW*)buf);
             break;
+		case 0x55:
+			if(xls_debug > 10) printf("DEFAULT COL WIDTH: %d\n", *(short *)buf);
+			break;
+		case 0x225:
+			if(xls_debug > 10) printf("DEFAULT ROW Height: 0x%x %d\n", ((short *)buf)[0], ((short *)buf)[1]);
+			break;
+		case 0xD7:
+			if(xls_debug > 10) {
+				printf("DBCELL: size %d\n", tmp.size);
+				long *foo = (long *)buf;
+				printf("DBCELL OFFSET=%4.4ld -> ROW %ld\n", foo[0], lastPos-foo[0]);
+				++foo;
+				unsigned short *goo = (unsigned short *)foo;
+				for(int i=0; i<5; ++i) printf("goo[%d]=%4.4x %d\n", i, goo[i], goo[i]);
+			}
+			break;
         case 0x20B:		//INDEX
+			if(xls_debug > 10) {
+				printf("INDEX: size %d\n", tmp.size);
+				long *foo = (long *)buf;
+				for(int i=0; i<5; ++i) printf("FOO[%d]=%4.4x %d\n", i, foo[i], foo[i]);
+			}
+#if 0
+0	4 4	4 8	4
+12	4 16	4∙nm
+Not used Index to first used row (rf, 0-based) Index to first row of unused tail of sheet (rl, last used row + 1, 0-based)
+Absolute stream position of the DEFCOLWIDTH record (➜5.32) of the current sheet. If this record does not exist, the offset points to the record at the position where the DEFCOLWIDTH record would occur.
+Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row Block
+#endif
             break;
         case 0x0BD:		//MULRK
         case 0x0BE:		//MULBLANK
@@ -984,6 +1026,17 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			}
 			break;
 #if 0 // debugging
+		case 0x01B8:	// HYPERREF
+			if(xls_debug) {
+				printf("HYPERREF: ");
+				unsigned char xx, *foo = (void *)buf;
+
+				for(xx=0; xx<tmp.size; ++xx, ++foo) {
+					printf("%2.2x ", *foo);
+				}
+				printf("\n");
+			}
+			break;
 		case 0x023E:	// WINDOW2
 			if(xls_debug) {
 				printf("WINDOW2: ");
@@ -997,6 +1050,9 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			break;
 #endif
         default:
+			if(xls_debug) {
+				printf("UNKNOWN: %x at pos=%lu\n", tmp.id, lastPos);
+			}
             break;
         }
         free(buf);
@@ -1051,13 +1107,15 @@ xlsWorkBook* xls_open(char *file,char* charset)
     {
         if(xls_debug) printf("Workbook not found\n");
         ole2_close(ole);
+		free(pWB);
         return(NULL);
     }
+
 
     pWB->sheets.count=0;
     pWB->xfs.count=0;
     pWB->fonts.count=0;
-    pWB->charset = (char *)malloc(strlen(charset) * sizeof(char));
+    pWB->charset = (char *)malloc(strlen(charset) * sizeof(char)+1);
     strcpy(pWB->charset, charset);
     xls_parseWorkBook(pWB);
 
@@ -1093,7 +1151,9 @@ void xls_close_WB(xlsWorkBook* pWB)
 
     // OLE first
 	ole=pWB->olestr->ole;
+	
 	ole2_fclose(pWB->olestr);
+
 	ole2_close(ole);
 
     // WorkBook
@@ -1155,7 +1215,7 @@ void xls_close_WS(xlsWorkSheet* pWS)
     // ROWS
     {
         DWORD i, j;
-        for(j=0; j<pWS->rows.lastrow; ++j) {
+        for(j=0; j<=pWS->rows.lastrow; ++j) {
             struct st_row_data *row = &pWS->rows.row[j];
             for(i=0; i<row->cells.count; ++i) {
                 free(row->cells.cell[i].str);
