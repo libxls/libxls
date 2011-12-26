@@ -444,16 +444,16 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
     case 0x201:		//BLANK
-        sprintf(ret,"");
+        sprintf(ret,"%s", "%s", "");
         break;
     case 0x0BE:		//MULBLANK
-        sprintf(ret,"");
+        sprintf(ret,"%s", "%s", "");
         break;
     case 0x0204:	//LABEL (xlslib generates these)
 		lPtr = (WORD *)cell->l;
 		len = *lPtr++;
 		if(pWB->is5ver) {
-			sprintf(ret,"%.*s", len, lPtr);
+			sprintf(ret,"%.*s", len, (char *)lPtr);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
 		if((*(char *)lPtr & 0x01) == 0) {
@@ -477,19 +477,19 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         switch (xf->format)
         {
         case 0:
-            sprintf(ret,"%i",(int)cell->d);
+            sprintf(ret,"%d",(int)cell->d);
             break;
         case 1:
-            sprintf(ret,"%i",(int)cell->d);
+            sprintf(ret,"%d",(int)cell->d);
             break;
         case 2:
             sprintf(ret,"%.1f",cell->d);
             break;
         case 9:
-            sprintf(ret,"%i%",(int)cell->d);
+            sprintf(ret,"%d",(int)cell->d);
             break;
         case 10:
-            sprintf(ret,"%.2f%",cell->d);
+            sprintf(ret,"%.2f",cell->d);
             break;
         case 11:
             sprintf(ret,"%.1e",cell->d);
@@ -575,7 +575,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f)
         {
         case 0:
-            sprintf(borderleft,"\0");
+            sprintf(borderleft,"%s", "");
             break;
         default:
             sprintf(borderleft,"border-left: 1px solid black;");
@@ -585,7 +585,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f0)
         {
         case 0:
-            sprintf(borderright,"\0");
+            sprintf(borderright,"%s", "");
             break;
         default:
             sprintf(borderright,"border-right: 1px solid black;");
@@ -595,7 +595,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f00)
         {
         case 0:
-            sprintf(bordertop,"\0");
+            sprintf(bordertop,"%s", "");
             break;
         default:
             sprintf(bordertop,"border-top: 1px solid black;");
@@ -605,7 +605,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
         switch (xf->linestyle & 0x0f000)
         {
         case 0:
-            sprintf(borderbottom,"\0");
+            sprintf(borderbottom,"%s", "");
             break;
         default:
             sprintf(borderbottom,"border-bottom: 1px solid Black;");
@@ -615,22 +615,22 @@ char* xls_getCSS(xlsWorkBook* pWB)
         if (xf->font)
             sprintf(color,"color:#%.6X;",xls_getColor(pWB->fonts.font[xf->font-1].color,0));
         else
-            sprintf(color,"\0");
+            sprintf(color,"%s", "");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].flag & 2))
             sprintf(italic,"font-style: italic;");
         else
-            sprintf(italic,"\0");
+            sprintf(italic,"%s", "");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].bold>400))
             sprintf(bold,"font-weight: bold;");
         else
-            sprintf(bold,"\0");
+            sprintf(bold,"%s", "");
 
         if (xf->font && (pWB->fonts.font[xf->font-1].underline))
             sprintf(underline,"text-decoration: underline;");
         else
-            sprintf(underline,"\0");
+            sprintf(underline,"%s", "");
 
         if (xf->font)
             size=pWB->fonts.font[xf->font-1].height/20;
@@ -639,7 +639,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
 
         if (xf->font)
         {
-            sprintf(fontname,pWB->fonts.font[xf->font-1].name);
+            sprintf(fontname,"%s",pWB->fonts.font[xf->font-1].name);
         }
         else
             sprintf(fontname,"Arial");
