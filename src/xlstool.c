@@ -444,10 +444,10 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
     case 0x201:		//BLANK
-        sprintf(ret,"%s", "%s", "");
+        sprintf(ret,"%s", "");
         break;
     case 0x0BE:		//MULBLANK
-        sprintf(ret,"%s", "%s", "");
+        sprintf(ret,"%s", "");
         break;
     case 0x0204:	//LABEL (xlslib generates these)
 		lPtr = (WORD *)cell->l;
