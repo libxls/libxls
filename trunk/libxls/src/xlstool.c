@@ -371,7 +371,7 @@ void xls_showCell(struct st_cell_data* cell)
 		return;
 	}
     printf(" double: %f\n",cell->d);
-    printf("   long: %i\n",cell->l);
+    printf("   long: %ld\n",cell->l);
     if (cell->str!=NULL)
         printf("    str: %s\n",cell->str);
 }
