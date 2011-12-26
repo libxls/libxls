@@ -120,7 +120,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
     char* ret;
 
     if (xls_debug) {
-	    printf("xls_appendSST %ld\n", size);
+	    printf("xls_appendSST %u\n", size);
     }
 
 	sz = rt = ln = 0;	// kch
@@ -148,7 +148,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         }
 
 		if (xls_debug) {
-        	printf("ln=%ld\n", ln);
+        	printf("ln=%u\n", ln);
 		}
 
         // Read flags
@@ -173,7 +173,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 ofs+=4;
 
 				if (xls_debug) {
-					printf("sz=%ld\n", sz);
+					printf("sz=%u\n", sz);
 				}
             }
         }
@@ -221,7 +221,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 ofs+=ln_toread;
 
                 if (xls_debug) {
-                	printf("String8: %s(%li) \n",ret,ln);
+                	printf("String8: %s(%u) \n",ret,ln);
                 }
             }
         }
@@ -249,7 +249,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             }
 
 			if (xls_debug) {
-	            printf("String % 4ld: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
+	            printf("String %4u: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
 			}
         }
 
@@ -282,7 +282,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 		pWB->sst.lastsz = sz;
 
 		if (xls_debug) {
-			printf("continued: ln=%ld, rt=%ld, sz=%ld\n", ln, rt, sz);
+			printf("continued: ln=%u, rt=%u, sz=%u\n", ln, rt, sz);
 		}
 	}
 }
@@ -387,7 +387,7 @@ void xls_addRow(xlsWorkSheet* pWS,ROW* row)
     tmp->lcell=row->lcell;
     tmp->flags=row->flags;
     tmp->xf=row->xf&0xfff;
-    tmp->xfflags=row->xf&0xf000;
+    tmp->xfflags=(row->xf >> 8)&0xf0;
     if(xls_debug) xls_showROW(tmp);
 }
 
@@ -999,7 +999,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			if(xls_debug > 10) {
 				printf("INDEX: size %d\n", tmp.size);
 				long *foo = (long *)buf;
-				for(int i=0; i<5; ++i) printf("FOO[%d]=%4.4x %d\n", i, foo[i], foo[i]);
+				for(int i=0; i<5; ++i) printf("FOO[%d]=%4.4lx %ld\n", i, foo[i], foo[i]);
 			}
 #if 0
 0	4 4	4 8	4

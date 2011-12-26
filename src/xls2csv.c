@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 			// process cells
 			if (!isFirstLine) {
-				printf(lineSeparator);
+				printf("%s", lineSeparator);
 			} else {
 				isFirstLine = 0;
 			}
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 				}
 
 				if (!isFirstCol) {
-					printf(fieldSeparator);
+					printf("%s", fieldSeparator);
 				} else {
 					isFirstCol = 0;
 				}
