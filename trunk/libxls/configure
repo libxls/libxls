@@ -19820,3 +19820,11 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
+
+{ echo "$as_me:$LINENO: ---" >&5
+echo "$as_me: ---" >&6;}
+{ echo "$as_me:$LINENO: catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib to get libxls2csv" >&5
+echo "$as_me: catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib to get libxls2csv" >&6;}
+{ echo "$as_me:$LINENO: ---" >&5
+echo "$as_me: ---" >&6;}
+
