@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     xlsWorkSheet* pWS;
     unsigned int i;
 
-xls_debug=1;
+	xls_debug=0;
 
 	if(argc != 2) {
 		printf("Need file arg\n");
