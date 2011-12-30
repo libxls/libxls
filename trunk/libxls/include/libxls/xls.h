@@ -36,7 +36,7 @@ extern void xls_addFormat(xlsWorkBook* pWB,FORMAT* format);
 extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 
-extern xlsWorkBook* xls_open(char *file,char* charset);
+extern xlsWorkBook* xls_open(char *file,char* charset);	// charset used to interpret 16 bit strings withing the spread sheet. file is treated as a UTF-8 string
 #define xls_close xls_close_WB                  // historical
 extern void xls_close_WB(xlsWorkBook* pWB);     // preferred name
 
