@@ -1082,7 +1082,7 @@ xlsWorkBook* xls_open(char *file,char* charset)
     verbose ("xls_open");
 
     // open excel file
-    if (!(ole=ole2_open(file, charset)))
+    if (!(ole=ole2_open(file)))
     {
         if(xls_debug) printf("File \"%s\" not found\n",file);
         return(NULL);

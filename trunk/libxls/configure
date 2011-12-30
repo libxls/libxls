@@ -2324,6 +2324,8 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
 
 
 
+
+
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   { { echo "$as_me:$LINENO: error: cannot run $SHELL $ac_aux_dir/config.sub" >&5
@@ -19818,14 +19820,3 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
-
-{ echo "$as_me:$LINENO: ---" >&5
-echo "$as_me: ---" >&6;}
-{ echo "$as_me:$LINENO: ---" >&5
-echo "$as_me: ---" >&6;}
-{ echo "$as_me:$LINENO: catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib, which creates libxls2csv" >&5
-echo "$as_me: catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib, which creates libxls2csv" >&6;}
-{ echo "$as_me:$LINENO: ---" >&5
-echo "$as_me: ---" >&6;}
-{ echo "$as_me:$LINENO: ---" >&5
-echo "$as_me: ---" >&6;}

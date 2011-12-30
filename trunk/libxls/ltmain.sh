@@ -1,10 +1,10 @@
 # Generated from ltmain.m4sh.
 
-# libtool (GNU libtool 1.3087 2008-08-02) 2.2.7a
+# libtool (GNU libtool) 2.2.10
 # Written by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006,
-# 2007, 2008, 2009 Free Software Foundation, Inc.
+# 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 # This is free software; see the source for copying conditions.  There is NO
 # warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -70,7 +70,7 @@
 #         compiler:		$LTCC
 #         compiler flags:		$LTCFLAGS
 #         linker:		$LD (gnu? $with_gnu_ld)
-#         $progname:	(GNU libtool 1.3087 2008-08-02) 2.2.7a
+#         $progname:	(GNU libtool) 2.2.10
 #         automake:	$automake_version
 #         autoconf:	$autoconf_version
 #
@@ -78,9 +78,9 @@
 
 PROGRAM=libtool
 PACKAGE=libtool
-VERSION=2.2.7a
-TIMESTAMP=" 1.3087 2008-08-02"
-package_revision=1.3087
+VERSION=2.2.10
+TIMESTAMP=""
+package_revision=1.3175
 
 # Be Bourne compatible
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
@@ -105,9 +105,6 @@ _LTECHO_EOF'
 }
 
 # NLS nuisances: We save the old values to restore during execute mode.
-# Only set LANG and LC_ALL to C if already set.
-# These must not be set unconditionally because not all systems understand
-# e.g. LANG=C (notably SCO).
 lt_user_locale=
 lt_safe_locale=
 for lt_var in LANG LANGUAGE LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
@@ -120,13 +117,11 @@ do
 	  lt_safe_locale=\"$lt_var=C; \$lt_safe_locale\"
 	fi"
 done
+LC_ALL=C
+LANGUAGE=C
+export LANGUAGE LC_ALL
 
 $lt_unset CDPATH
-
-
-
-
-
 
 
 # Work around backward compatibility issue on IRIX 6.5. On IRIX 6.4+, sh
@@ -139,7 +134,7 @@ progpath="$0"
 
 
 : ${CP="cp -f"}
-: ${ECHO=$as_echo}
+test "${ECHO+set}" = set || ECHO=${as_echo-'printf %s\n'}
 : ${EGREP="/usr/bin/grep -E"}
 : ${FGREP="/usr/bin/grep -F"}
 : ${GREP="/usr/bin/grep"}
@@ -193,6 +188,154 @@ func_dirname_and_basename ()
 }
 
 # Generated shell functions inserted here.
+
+# These SED scripts presuppose an absolute path with a trailing slash.
+pathcar='s,^/\([^/]*\).*$,\1,'
+pathcdr='s,^/[^/]*,,'
+removedotparts=':dotsl
+		s@/\./@/@g
+		t dotsl
+		s,/\.$,/,'
+collapseslashes='s@/\{1,\}@/@g'
+finalslash='s,/*$,/,'
+
+# func_normal_abspath PATH
+# Remove doubled-up and trailing slashes, "." path components,
+# and cancel out any ".." path components in PATH after making
+# it an absolute path.
+#             value returned in "$func_normal_abspath_result"
+func_normal_abspath ()
+{
+  # Start from root dir and reassemble the path.
+  func_normal_abspath_result=
+  func_normal_abspath_tpath=$1
+  func_normal_abspath_altnamespace=
+  case $func_normal_abspath_tpath in
+    "")
+      # Empty path, that just means $cwd.
+      func_stripname '' '/' "`pwd`"
+      func_normal_abspath_result=$func_stripname_result
+      return
+    ;;
+    # The next three entries are used to spot a run of precisely
+    # two leading slashes without using negated character classes;
+    # we take advantage of case's first-match behaviour.
+    ///*)
+      # Unusual form of absolute path, do nothing.
+    ;;
+    //*)
+      # Not necessarily an ordinary path; POSIX reserves leading '//'
+      # and for example Cygwin uses it to access remote file shares
+      # over CIFS/SMB, so we conserve a leading double slash if found.
+      func_normal_abspath_altnamespace=/
+    ;;
+    /*)
+      # Absolute path, do nothing.
+    ;;
+    *)
+      # Relative path, prepend $cwd.
+      func_normal_abspath_tpath=`pwd`/$func_normal_abspath_tpath
+    ;;
+  esac
+  # Cancel out all the simple stuff to save iterations.  We also want
+  # the path to end with a slash for ease of parsing, so make sure
+  # there is one (and only one) here.
+  func_normal_abspath_tpath=`$ECHO "$func_normal_abspath_tpath" | $SED \
+        -e "$removedotparts" -e "$collapseslashes" -e "$finalslash"`
+  while :; do
+    # Processed it all yet?
+    if test "$func_normal_abspath_tpath" = / ; then
+      # If we ascended to the root using ".." the result may be empty now.
+      if test -z "$func_normal_abspath_result" ; then
+        func_normal_abspath_result=/
+      fi
+      break
+    fi
+    func_normal_abspath_tcomponent=`$ECHO "$func_normal_abspath_tpath" | $SED \
+        -e "$pathcar"`
+    func_normal_abspath_tpath=`$ECHO "$func_normal_abspath_tpath" | $SED \
+        -e "$pathcdr"`
+    # Figure out what to do with it
+    case $func_normal_abspath_tcomponent in
+      "")
+        # Trailing empty path component, ignore it.
+      ;;
+      ..)
+        # Parent dir; strip last assembled component from result.
+        func_dirname "$func_normal_abspath_result"
+        func_normal_abspath_result=$func_dirname_result
+      ;;
+      *)
+        # Actual path component, append it.
+        func_normal_abspath_result=$func_normal_abspath_result/$func_normal_abspath_tcomponent
+      ;;
+    esac
+  done
+  # Restore leading double-slash if one was found on entry.
+  func_normal_abspath_result=$func_normal_abspath_altnamespace$func_normal_abspath_result
+}
+
+# func_relative_path SRCDIR DSTDIR
+# generates a relative path from SRCDIR to DSTDIR, with a trailing
+# slash if non-empty, suitable for immediately appending a filename
+# without needing to append a separator.
+#             value returned in "$func_relative_path_result"
+func_relative_path ()
+{
+  func_relative_path_result=
+  func_normal_abspath "$1"
+  func_relative_path_tlibdir=$func_normal_abspath_result
+  func_normal_abspath "$2"
+  func_relative_path_tbindir=$func_normal_abspath_result
+
+  # Ascend the tree starting from libdir
+  while :; do
+    # check if we have found a prefix of bindir
+    case $func_relative_path_tbindir in
+      $func_relative_path_tlibdir)
+        # found an exact match
+        func_relative_path_tcancelled=
+        break
+        ;;
+      $func_relative_path_tlibdir*)
+        # found a matching prefix
+        func_stripname "$func_relative_path_tlibdir" '' "$func_relative_path_tbindir"
+        func_relative_path_tcancelled=$func_stripname_result
+        if test -z "$func_relative_path_result"; then
+          func_relative_path_result=.
+        fi
+        break
+        ;;
+      *)
+        func_dirname $func_relative_path_tlibdir
+        func_relative_path_tlibdir=${func_dirname_result}
+        if test "x$func_relative_path_tlibdir" = x ; then
+          # Have to descend all the way to the root!
+          func_relative_path_result=../$func_relative_path_result
+          func_relative_path_tcancelled=$func_relative_path_tbindir
+          break
+        fi
+        func_relative_path_result=../$func_relative_path_result
+        ;;
+    esac
+  done
+
+  # Now calculate path; take care to avoid doubling-up slashes.
+  func_stripname '' '/' "$func_relative_path_result"
+  func_relative_path_result=$func_stripname_result
+  func_stripname '/' '/' "$func_relative_path_tcancelled"
+  if test "x$func_stripname_result" != x ; then
+    func_relative_path_result=${func_relative_path_result}/${func_stripname_result}
+  fi
+
+  # Normalisation. If bindir is libdir, return empty string,
+  # else relative path ending with a slash; either way, target
+  # file name can be directly appended.
+  if test ! -z "$func_relative_path_result"; then
+    func_stripname './' '' "$func_relative_path_result/"
+    func_relative_path_result=$func_stripname_result
+  fi
+}
 
 # The name of this program:
 func_dirname_and_basename "$progpath"
@@ -507,26 +650,6 @@ func_show_eval_locale ()
     fi
 }
 
-# func_tr_sh
-# Turn $1 into a string suitable for a shell variable name.
-# Result is stored in $func_tr_sh_result.  All characters
-# not in the set a-zA-Z0-9_ are replaced with '_'. Further,
-# if $1 begins with a digit, a '_' is prepended as well.
-func_tr_sh ()
-{
-  case "$1" in
-  [0-9]* | *[!a-zA-Z0-9_]*)
-    func_tr_sh_result=`$ECHO "$1" | $SED 's/^\([0-9]\)/_\1/; s/[^a-zA-Z0-9_]/_/g'`
-    ;;
-  * )
-    func_tr_sh_result=$1
-    ;;
-  esac
-}
-
-
-
-
 
 # func_version
 # Echo version message to standard output and exit.
@@ -536,7 +659,7 @@ func_version ()
 	:more
 	/\./!{
 	  N
-	  s/\n# //
+	  s/\n# / /
 	  b more
 	}
 	:go
@@ -553,7 +676,7 @@ func_version ()
 # Echo short help message to standard output and exit.
 func_usage ()
 {
-    $SED -n '/^# Usage:/,/^#  *-h/ {
+    $SED -n '/^# Usage:/,/^#  *.*--help/ {
         s/^# //
 	s/^# *$//
 	s/\$progname/'$progname'/
@@ -594,7 +717,7 @@ func_help ()
 # exit_cmd.
 func_missing_arg ()
 {
-    func_error "missing argument for $1"
+    func_error "missing argument for $1."
     exit_cmd=exit
 }
 
@@ -1256,7 +1379,7 @@ func_mode_compile ()
     *.[cCFSifmso] | \
     *.ada | *.adb | *.ads | *.asm | \
     *.c++ | *.cc | *.ii | *.class | *.cpp | *.cxx | \
-    *.[fF][09]? | *.for | *.java | *.obj | *.sx)
+    *.[fF][09]? | *.for | *.java | *.obj | *.sx | *.cu | *.cup)
       func_xform "$libobj"
       libobj=$func_xform_result
       ;;
@@ -1525,8 +1648,8 @@ This mode accepts the following additional options:
 
   -o OUTPUT-FILE    set the output file name to OUTPUT-FILE
   -no-suppress      do not suppress compiler output for multiple passes
-  -prefer-pic       try to building PIC objects only
-  -prefer-non-pic   try to building non-PIC objects only
+  -prefer-pic       try to build PIC objects only
+  -prefer-non-pic   try to build non-PIC objects only
   -shared           do not build a \`.o' file suitable for static linking
   -static           only build a \`.o' file suitable for static linking
   -Wc,FLAG          pass FLAG directly to the compiler
@@ -1602,6 +1725,8 @@ The following components of LINK-COMMAND are treated specially:
 
   -all-static       do not do any dynamic linking at all
   -avoid-version    do not add a version suffix if possible
+  -bindir BINDIR    specify path to binaries directory (for systems where
+                    libraries must be found in the PATH setting at runtime)
   -dlopen FILE      \`-dlpreopen' FILE if it cannot be dlopened at runtime
   -dlpreopen FILE   link in FILE and add its symbols to lt_preloaded_symbols
   -export-dynamic   allow symbols from OUTPUT-FILE to be resolved with dlsym(3)
@@ -2419,6 +2544,10 @@ func_generate_dlsyms ()
 extern \"C\" {
 #endif
 
+#if defined(__GNUC__) && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ > 4))
+#pragma GCC diagnostic ignored \"-Wstrict-prototypes\"
+#endif
+
 /* External symbol declarations for the compiler. */\
 "
 
@@ -2480,49 +2609,10 @@ extern \"C\" {
 	  func_verbose "extracting global C symbols from \`$dlprefile'"
 	  func_basename "$dlprefile"
 	  name="$func_basename_result"
-          case $host in
-	    *cygwin* | *mingw* | *cegcc* )
-	      # if an import library, we need to obtain dlname
-	      if func_win32_import_lib_p "$dlprefile"; then
-	        func_tr_sh "$dlprefile"
-	        eval "curr_lafile=\$libfile_$func_tr_sh_result"
-	        dlprefile_dlbasename=""
-	        if test -n "$curr_lafile" && func_lalib_p "$curr_lafile"; then
-	          # Use subshell, to avoid clobbering current variable values
-	          dlprefile_dlname=`source "$curr_lafile" && echo "$dlname"`
-	          if test -n "$dlprefile_dlname" ; then
-	            func_basename "$dlprefile_dlname"
-	            dlprefile_dlbasename="$func_basename_result"
-	          else
-	            # no lafile. user explicitly requested -dlpreopen <import library>.
-	            eval '$sharedlib_from_linklib "$dlprefile"'
-	            dlprefile_dlbasename=$sharedlib_from_linklib_result
-	          fi
-	        fi
-	        $opt_dry_run || {
-	          if test -n "$dlprefile_dlbasename" ; then
-	            eval '$ECHO ": $dlprefile_dlbasename" >> "$nlist"'
-	          else
-	            func_warning "Could not compute DLL name from $name"
-	            eval '$ECHO ": $name " >> "$nlist"'
-	          fi
-	          eval "$NM $dlprefile 2>/dev/null | $global_symbol_pipe |
-	            $SED -e '/I __imp/d' -e 's/I __nm_/D /;s/_nm__//' >> '$nlist'"
-	        }
-	      else # not an import lib
-	        $opt_dry_run || {
-	          eval '$ECHO ": $name " >> "$nlist"'
-	          eval "$NM $dlprefile 2>/dev/null | $global_symbol_pipe >> '$nlist'"
-	        }
-	      fi
-	    ;;
-	    *)
-	      $opt_dry_run || {
-	        eval '$ECHO ": $name " >> "$nlist"'
-	        eval "$NM $dlprefile 2>/dev/null | $global_symbol_pipe >> '$nlist'"
-	      }
-	    ;;
-          esac
+	  $opt_dry_run || {
+	    eval '$ECHO ": $name " >> "$nlist"'
+	    eval "$NM $dlprefile 2>/dev/null | $global_symbol_pipe >> '$nlist'"
+	  }
 	done
 
 	$opt_dry_run || {
@@ -2695,8 +2785,9 @@ func_win32_libid ()
     win32_libid_type="x86 archive import"
     ;;
   *ar\ archive*) # could be an import, or static
+    # Keep the egrep pattern in sync with the one in _LT_CHECK_MAGIC_METHOD.
     if eval $OBJDUMP -f $1 | $SED -e '10q' 2>/dev/null |
-       $EGREP 'file format (pei?-i386(.*architecture: i386)?|pe-arm-wince|pe-x86-64)' >/dev/null; then
+       $EGREP 'file format (pei*-i386(.*architecture: i386)?|pe-arm-wince|pe-x86-64)' >/dev/null; then
       win32_nmres=`eval $NM -f posix -A $1 |
 	$SED -n -e '
 	    1,100{
@@ -2726,129 +2817,6 @@ func_win32_libid ()
   $ECHO "$win32_libid_type"
 }
 
-# func_cygming_dll_for_implib ARG
-#
-# Platform-specific function to extract the
-# name of the DLL associated with the specified
-# import library ARG.
-# Invoked by eval'ing the libtool variable
-#    $sharedlib_from_linklib_cmd
-# Result is available in the variable
-#    $sharedlib_from_linklib_result
-func_cygming_dll_for_implib ()
-{
-  $opt_debug
-  sharedlib_from_linklib_result=`$DLLTOOL --identify-strict --identify "$1"`
-}
-
-# func_cygming_dll_for_implib_core SECTION_NAME LIBNAMEs
-#
-# The is the core of a fallback implementation of a
-# platform-specific function to extract the name of the
-# DLL associated with the specified import library LIBNAME.
-#
-# SECTION_NAME is either .idata$6 or .idata$7, depending
-# on the platform and compiler that created the implib.
-#
-# Echos the name of the DLL associated with the
-# specified import library.
-func_cygming_dll_for_implib_fallback_core ()
-{
-  $opt_debug
-  $OBJDUMP -s --section "$1" "$2" 2>/dev/null |
-    sed '/^Contents of section '"$1"':/{
-      # Place marker at beginning of archive member dllname section
-      s/.*/====MARK====/
-      p
-      d
-    }
-    # These lines can sometimes be longer than 43 characters, but
-    # are always uninteresting
-    /:[ \t]*file format pe[i]\{,1\}-i386$/d
-    /^In archive [^:]*:/d
-    # Ensure marker is printed
-    /^====MARK====/p
-    # Remove all lines with less than 43 characters
-    /^.\{43\}/!d
-    # From remoaining lines, remove first 43 characters
-    s/^.\{43\}//' |
-    sed -n '
-      # Join marker and all lines until next marker into a single line
-      /^====MARK====/ b para
-      H
-      $ b para
-      b
-      :para
-      x
-      s/\n//g
-      # Remove the marker
-      s/^====MARK====//
-      # Remove trailing dots and whitespace
-      s/[\. \t]*$//
-      # Print
-      /./p
-      ' |
-    # we now have a list, one entry per line, of the stringified
-    # contents of the appropriate section of all members of the
-    # archive which possess that section. Heuristic: eliminate
-    # all those which have a first or second character that is
-    # a '.' (that is, objdump's representation of an unprintable
-    # character.) This should work for all archives with less than
-    # 0x302f exports -- but will fail for DLLs whose name actually
-    # begins with a literal '.' or a single character followed by
-    # a '.'.
-    #
-    # Of those that remain, print the first one.
-    sed -e '/^\./d' -e '/^.\./d' | sed -n -e '1p'
-}
-
-# func_cygming_gnu_implib_p ARG
-# This predicate returns with zero status (TRUE) if
-# ARG is a GNU/binutils-style import library. Returns
-# with nonzero status (FALSE) otherwise.
-func_cygming_gnu_implib_p ()
-{
-  $opt_debug
-  func_cygming_gnu_implib_tmp=`eval "\$NM \$1 | \$global_symbol_pipe | \$EGREP ' (_head_[A-Za-z0-9_]+_dll|[A-Za-z0-9_]+_dll_iname)\\\$'"`
-  test -n "$func_cygming_gnu_implib_tmp"
-}
-
-# func_cygming_ms_implib_p ARG
-# This predicate returns with zero status (TRUE) if
-# ARG is an MS-style import library. Returns
-# with nonzero status (FALSE) otherwise.
-func_cygming_ms_implib_p ()
-{
-  $opt_debug
-  func_cygming_ms_implib_tmp=`eval "\$NM \$1 | \$global_symbol_pipe | grep '_NULL_IMPORT_DESCRIPTOR'"`
-  test -n "$func_cygming_ms_implib_tmp"
-}
-
-# func_cygming_dll_for_implib_fallback ARG
-# Platform-specific function to extract the
-# name of the DLL associated with the specified
-# import library ARG.
-#
-# This fallback implementation is for use when $DLLTOOL
-# does not support the --identify-strict option.
-# Invoked by eval'ing the libtool variable
-#    $sharedlib_from_linklib_cmd
-# Result is available in the variable
-#    $sharedlib_from_linklib_result
-func_cygming_dll_for_implib_fallback ()
-{
-  $opt_debug
-  if func_cygming_gnu_implib_p "$1" ; then
-    # binutils import library
-    sharedlib_from_linklib_result=`func_cygming_dll_for_implib_fallback_core '.idata$7' "$1"`
-  elif func_cygming_ms_implib_p "$1" ; then
-    # ms-generated import library
-    sharedlib_from_linklib_result=`func_cygming_dll_for_implib_fallback_core '.idata$6' "$1"`
-  else
-    # unknown
-    sharedlib_from_linklib_result=""
-  fi
-}
 
 
 # func_extract_an_archive dir oldlib
@@ -2857,15 +2825,19 @@ func_extract_an_archive ()
     $opt_debug
     f_ex_an_ar_dir="$1"; shift
     f_ex_an_ar_oldlib="$1"
-    if test "X$ar_extract_one_by_one" != "Xyes"; then
-      func_show_eval "(cd \$f_ex_an_ar_dir && $AR ${AR_XFLAGS}${AR_SEP}\"\$f_ex_an_ar_oldlib\")" 'exit $?'
-    else
-      $AR ${AR_TFLAGS}${AR_SEP}"$f_ex_an_ar_oldlib" | while read name
-      do
-       func_show_eval "(cd \$f_ex_an_ar_dir && $AR ${AR_XFLAGS}${AR_SEP}\$name \"\$f_ex_an_ar_oldlib\")" 'exit $?'
+    if test "$lock_old_archive_extraction" = yes; then
+      lockfile=$f_ex_an_ar_oldlib.lock
+      until $opt_dry_run || ln "$progpath" "$lockfile" 2>/dev/null; do
+	func_echo "Waiting for $lockfile to be removed"
+	sleep 2
       done
     fi
-    if ($AR ${AR_TFLAGS}${AR_SEP}"$f_ex_an_ar_oldlib" | sort | sort -uc >/dev/null 2>&1); then
+    func_show_eval "(cd \$f_ex_an_ar_dir && $AR x \"\$f_ex_an_ar_oldlib\")" \
+		   'stat=$?; rm -f "$lockfile"; exit $stat'
+    if test "$lock_old_archive_extraction" = yes; then
+      $opt_dry_run || rm -f "$lockfile"
+    fi
+    if ($AR t "$f_ex_an_ar_oldlib" | sort | sort -uc >/dev/null 2>&1); then
      :
     else
       func_fatal_error "object name conflicts in archive: $f_ex_an_ar_dir/$f_ex_an_ar_oldlib"
@@ -2935,7 +2907,7 @@ func_extract_archives ()
 	    darwin_file=
 	    darwin_files=
 	    for darwin_file in $darwin_filelist; do
-	      darwin_files=`find unfat-$$ -name $darwin_file -print | $NL2SP`
+	      darwin_files=`find unfat-$$ -name $darwin_file -print | sort | $NL2SP`
 	      $LIPO -create -output "$darwin_file" $darwin_files
 	    done # $darwin_filelist
 	    $RM -rf unfat-$$
@@ -2950,7 +2922,7 @@ func_extract_archives ()
         func_extract_an_archive "$my_xdir" "$my_xabs"
 	;;
       esac
-      my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | $NL2SP`
+      my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | sort | $NL2SP`
     done
 
     func_extract_archives_result="$my_oldobjs"
@@ -3032,7 +3004,110 @@ func_fallback_echo ()
 _LTECHO_EOF'
 }
     ECHO=\"$qECHO\"
-  fi\
+  fi
+
+# Very basic option parsing. These options are (a) specific to
+# the libtool wrapper, (b) are identical between the wrapper
+# /script/ and the wrapper /executable/ which is used only on
+# windows platforms, and (c) all begin with the string "--lt-"
+# (application programs are unlikely to have options which match
+# this pattern).
+#
+# There are only two supported options: --lt-debug and
+# --lt-dump-script. There is, deliberately, no --lt-help.
+#
+# The first argument to this parsing function should be the
+# script's $0 value, followed by "$@".
+lt_option_debug=
+func_parse_lt_options ()
+{
+  lt_script_arg0=\$0
+  shift
+  for lt_opt
+  do
+    case \"\$lt_opt\" in
+    --lt-debug) lt_option_debug=1 ;;
+    --lt-dump-script)
+        lt_dump_D=\`\$ECHO \"X\$lt_script_arg0\" | $SED -e 's/^X//' -e 's%/[^/]*$%%'\`
+        test \"X\$lt_dump_D\" = \"X\$lt_script_arg0\" && lt_dump_D=.
+        lt_dump_F=\`\$ECHO \"X\$lt_script_arg0\" | $SED -e 's/^X//' -e 's%^.*/%%'\`
+        cat \"\$lt_dump_D/\$lt_dump_F\"
+        exit 0
+      ;;
+    --lt-*)
+        \$ECHO \"Unrecognized --lt- option: '\$lt_opt'\" 1>&2
+        exit 1
+      ;;
+    esac
+  done
+
+  # Print the debug banner immediately:
+  if test -n \"\$lt_option_debug\"; then
+    echo \"${outputname}:${output}:\${LINENO}: libtool wrapper (GNU $PACKAGE$TIMESTAMP) $VERSION\" 1>&2
+  fi
+}
+
+# Used when --lt-debug. Prints its arguments to stdout
+# (redirection is the responsibility of the caller)
+func_lt_dump_args ()
+{
+  lt_dump_args_N=1;
+  for lt_arg
+  do
+    \$ECHO \"${outputname}:${output}:\${LINENO}: newargv[\$lt_dump_args_N]: \$lt_arg\"
+    lt_dump_args_N=\`expr \$lt_dump_args_N + 1\`
+  done
+}
+
+# Core function for launching the target application
+func_exec_program_core ()
+{
+"
+  case $host in
+  # Backslashes separate directories on plain windows
+  *-*-mingw | *-*-os2* | *-cegcc*)
+    $ECHO "\
+      if test -n \"\$lt_option_debug\"; then
+        \$ECHO \"${outputname}:${output}:\${LINENO}: newargv[0]: \$progdir\\\\\$program\" 1>&2
+        func_lt_dump_args \${1+\"\$@\"} 1>&2
+      fi
+      exec \"\$progdir\\\\\$program\" \${1+\"\$@\"}
+"
+    ;;
+
+  *)
+    $ECHO "\
+      if test -n \"\$lt_option_debug\"; then
+        \$ECHO \"${outputname}:${output}:\${LINENO}: newargv[0]: \$progdir/\$program\" 1>&2
+        func_lt_dump_args \${1+\"\$@\"} 1>&2
+      fi
+      exec \"\$progdir/\$program\" \${1+\"\$@\"}
+"
+    ;;
+  esac
+  $ECHO "\
+      \$ECHO \"\$0: cannot exec \$program \$*\" 1>&2
+      exit 1
+}
+
+# A function to encapsulate launching the target application
+# Strips options in the --lt-* namespace from \$@ and
+# launches target application with the remaining arguments.
+func_exec_program ()
+{
+  for lt_wr_arg
+  do
+    case \$lt_wr_arg in
+    --lt-*) ;;
+    *) set x \"\$@\" \"\$lt_wr_arg\"; shift;;
+    esac
+    shift
+  done
+  func_exec_program_core \${1+\"\$@\"}
+}
+
+  # Parse options
+  func_parse_lt_options \"\$0\" \${1+\"\$@\"}
 
   # Find the directory that this script lives in.
   thisdir=\`\$ECHO \"\$file\" | $SED 's%/[^/]*$%%'\`
@@ -3145,24 +3220,7 @@ _LTECHO_EOF'
 	$ECHO "\
     if test \"\$libtool_execute_magic\" != \"$magic\"; then
       # Run the actual program with our arguments.
-"
-	case $host in
-	# Backslashes separate directories on plain windows
-	*-*-mingw | *-*-os2* | *-cegcc*)
-	  $ECHO "\
-      exec \"\$progdir\\\\\$program\" \${1+\"\$@\"}
-"
-	  ;;
-
-	*)
-	  $ECHO "\
-      exec \"\$progdir/\$program\" \${1+\"\$@\"}
-"
-	  ;;
-	esac
-	$ECHO "\
-      \$ECHO \"\$0: cannot exec \$program \$*\" 1>&2
-      exit 1
+      func_exec_program \${1+\"\$@\"}
     fi
   else
     # The program doesn't exist.
@@ -3175,607 +3233,166 @@ fi\
 "
 }
 
-####################################
-# PATH CONVERSION HELPER FUNCTIONS #
-####################################
 
-# func_wine_to_win32_path ARG
-# Helper function used by path conversion functions
-# when $build is *nix, and $host is mingw, cygwin,
-# or some other win32 environment. Relies on a
-# correctly configured wine environment available,
-# with the winepath program in $build's $PATH.
+# func_to_host_path arg
 #
-# ARG is the $build path to be converted to win32 format.
-# result is available in $func_wine_to_win32_path_result
-# result is empty on error (or when arg is empty)
-func_wine_to_win32_path ()
-{
-  $opt_debug
-  lt_sed_naive_backslashify='s|\\\\*|\\|g;s|/|\\|g;s|\\|\\\\|g'
-  func_wine_to_win32_path_result="$1"
-  if test -n "$1"; then
-    # Unfortunately, winepath does not exit with a non-zero
-    # error code, so we are forced to check the contents of
-    # stdout. On the other hand, if the command is not
-    # found, the shell will set an exit code of 127 and print
-    # *an error message* to stdout. So we must check for both
-    # error code of zero AND non-empty stdout, which explains
-    # the odd construction:
-    func_to_host_path_tmp1=`winepath -w "$1" 2>/dev/null`
-    if test "$?" -eq 0 && test -n "${func_wine_to_win32_path_tmp}"; then
-      func_to_host_path_result=`$ECHO "$func_wine_to_win32_path_tmp" |
-        $SED -e "$lt_sed_naive_backslashify"`
-    else
-      func_wine_to_win32_path_result=
-    fi
-  fi
-}
-# end: func_wine_to_win32_path
-
-
-# func_wine_to_win32_pathlist ARG
-# Helper function used by path conversion functions
-# when $build is *nix, and $host is mingw, cygwin,
-# or some other win32 environment. Relies on a
-# correctly configured wine environment available,
-# with the winepath program in $build's $PATH.
-# Assumes ARG has no leading or trailing path separator
-# characters.
-#
-# ARG is pathlist to be converted from $build format to win32.
-# Result is available in $func_wine_to_win32_pathlist_result
-# Unconvertible paths in pathlist are skipped; if no paths
-# are convertible, result may be empty.
-func_wine_to_win32_pathlist ()
-{
-  $opt_debug
-  # unfortunately, winepath doesn't convert pathlists
-  func_wine_to_win32_pathlist_result=""
-  if test -n "$1"; then
-    func_wine_to_win32_pathlist_oldIFS=$IFS
-    IFS=:
-    for func_wine_to_win32_pathlist_f in $1; do
-      IFS=$func_wine_to_win32_pathlist_oldIFS
-      if test -n "$func_wine_to_win32_pathlist_f" ; then
-        func_wine_to_win32_path "$func_wine_to_win32_pathlist_f"
-        if test -n "$func_wine_to_win32_path_result" ; then
-          if test -z "$func_wine_to_win32_pathlist_result"; then
-            func_wine_to_win32_pathlist_result="$func_wine_to_win32_path_result"
-          else
-            func_append func_wine_to_win32_pathlist_result ";$func_wine_to_win32_path_result"
-          fi
-        fi
-      fi
-    done
-    IFS=$func_wine_to_win32_pathlist_oldIFS
-  fi
-}
-# end: func_wine_to_win32_pathlist
-
-
-# func_cygpath ARGS...
-# a wrapper around calling the cygpath program via
-# LT_CYGPATH, when $host is *nix and cygwin is
-# hosted via a wine environment (or, rarely, when
-# host is mingw -- that is, msys).
-#
-# Result is available in func_cygpath_result, which
-# may be empty on error. Can accomodate both paths
-# and pathlists (with appropriate options).
-#
-# ARGS are the typical arguments and options for
-# the cygpath program. Usually, the last argument
-# is the path or pathlist to be converted.
-#
-# The full *nix (or msys) path to the cygpath program must be
-# specified in the LT_CYGPATH environment variable. This
-# is because (a) the cygpath program shouldn't be in $PATH,
-# because it usually lives in cygwin's bin/ directory --
-# along with *cygwin* versions of sed, id, cp. If the *nix (or
-# msys) host environment had those programs in its $PATH, many
-# bad things could happen. (b) especially in cygwin-1.7, multiple
-# installations (with separate "mount tables" in
-# <CYGROOT-N>/etc/fstab) can coexist on the same Win32
-# instance. The cygpath.exe for cygwin installation #N in
-# <CYGROOT-N>/bin automatically deduces the appropriate
-# ../etc/fstab file. Therefore, it matters which cygpath.exe
-# is used. LT_CYGPATH may be replaced or supplemented by an
-# LT_INIT-activated configure option in the future.
-func_cygpath ()
-{
-  $opt_debug
-  if test -n "$LT_CYGPATH" && test -f "$LT_CYGPATH"; then
-    func_cygpath_result=`$LT_CYGPATH "$@" 2>/dev/null`
-    if test "$?" -ne 0; then
-      # on failure, ensure result is empty
-      func_cygpath_result=
-    fi
-  else
-    func_cygpath_result=
-    func_error "LT_CYGPATH is empty or specifies non-existant file: \`$LT_CYGPATH'"
-  fi
-}
-#end: func_cygpath
-
-
-# func_msys_to_win32 ARG
-# Converts ARG from msys (unix-ish) format to
-# win32 format. Can accomodate both paths and pathlists.
-# Result is available in func_msys_to_win32_result.
-func_msys_to_win32 ()
-{
-  $opt_debug
-  lt_sed_naive_backslashify='s|\\\\*|\\|g;s|/|\\|g;s|\\|\\\\|g'
-  # awkward: cmd appends spaces to result
-  func_msys_to_win32_result=`( cmd //c echo "$1" ) 2>/dev/null |
-    $SED -e 's/[ ]*$//' -e "$lt_sed_naive_backslashify"`
-}
-#end: func_msys_to_win32
-
-
-# func_path_convert_check ARG1 ARG2
-# Verify that ARG1 (a path in $build format) was
-# converted to $host format in ARG2. Otherwise, emit
-# an error message, but continue (resetting
-# func_to_host_path_result to ARG1).
-func_path_convert_check ()
-{
-  $opt_debug
-  if test -z "$2" && test -n "$1" ; then
-    func_error "Could not determine host path corresponding to"
-    func_error "  \`$1'"
-    func_error "Continuing, but uninstalled executables may not work."
-    # Fallback:
-    func_to_host_path_result="$1"
-  fi
-}
-# end func_path_convert_check
-
-
-# func_pathlist_convert_check FROM_PATHSEP TO_PATHSEP FROM_PATHLIST TO_PATHLIST
-# Verify that FROM_PATHLIST (a path in $build format) was converted
-# $host format in TO_PATHLIST. Otherwise, emit an error message, but
-# continue, resetting func_to_host_path_result to a simplistic
-# fallback value (see below).
-func_pathlist_convert_check ()
-{
-  $opt_debug
-  if test -z "$4" && test -n "$3"; then
-    func_error "Could not determine the host path(s) corresponding to"
-    func_error "  \`$3'"
-    func_error "Continuing, but uninstalled executables may not work."
-    # Fallback. If even this fallback fails, the fix is not to
-    # complicate the expression below, but for the user to provide,
-    # in that situation, whatever elements are missing from the
-    # environment so that the actual pathlist conversion functions
-    # work properly (for instance, a working wine installation
-    # with winepath so that path translation in the cross-to-mingw
-    # case works).
-    if test "x$1" != "x$2"; then
-      lt_replace_pathsep_chars="s|$1|$2|g"
-      func_to_host_pathlist_result=`echo "$3" |\
-        $SED -e "$lt_replace_pathsep_chars"`
-    else
-      func_to_host_pathlist_result="$3"
-    fi
-  fi
-}
-# end func_pathlist_convert_check
-
-
-# func_pathlist_front_back_pathsep FRONTPAT BACKPAT REPL ORIG
-# Modifies func_to_host_pathlist_result by prepending REPL
-# if ORIG matches FRONTPAT and appending REPL if ORIG matches
-# BACKPAT.
-func_pathlist_front_back_pathsep ()
-{
-  $opt_debug
-  case "$4" in
-  $1 ) func_to_host_pathlist_result="$3$func_to_host_pathlist_result"
-    ;;
-  esac
-  case "$4" in
-  $2 ) func_append func_to_host_pathlist_result "$3"
-    ;;
-  esac
-}
-# end func_pathlist_front_back_pathsep
-
-
-#############################################
-# $build to $host PATH CONVERSION FUNCTIONS #
-#############################################
-# invoked via `eval $to_host_path_cmd ARG'
-#
-# At present, the following path conversions are supported:
+# Convert paths to host format when used with build tools.
+# Intended for use with "native" mingw (where libtool itself
+# is running under the msys shell), or in the following cross-
+# build environments:
 #    $build          $host
 #    mingw (msys)    mingw  [e.g. native]
 #    cygwin          mingw
 #    *nix + wine     mingw
-#    mingw (msys)    cygwin [*] [**]
-#    *nix + wine     cygwin [**]
 # where wine is equipped with the `winepath' executable.
-# [*] available, but not officially supported. See comments with
-#     func_msys_to_cygwin_path_convert.
-# [**] requires environment variable $LT_CYGPATH. See comments
-#      with func_cygpath.
-# In each case, ARG is the path to be converted from $build
-# to $host format. the result will be available in
-# $func_to_host_path_result.
-
-
-# func_to_host_path ARG
-# converts the path ARG from $build format to $host
-# format.
+# In the native mingw case, the (msys) shell automatically
+# converts paths for any non-msys applications it launches,
+# but that facility isn't available from inside the cwrapper.
+# Similar accommodations are necessary for $host mingw and
+# $build cygwin.  Calling this function does no harm for other
+# $host/$build combinations not listed above.
+#
+# ARG is the path (on $build) that should be converted to
+# the proper representation for $host. The result is stored
+# in $func_to_host_path_result.
 func_to_host_path ()
 {
-  $opt_debug
-  eval '$to_host_path_cmd "$1"'
-}
-# end func_to_host_path
-
-
-# func_to_tool_path ARG
-# converts the path ARG from $build format to toolchain
-# format.
-func_to_tool_path ()
-{
-  $opt_debug
-  eval '$to_tool_path_cmd "$1"'
-  func_to_tool_path_result=$func_to_host_path_result
-}
-# end func_to_tool_path
-
-
-# func_noop_path_convert ARG
-# A no-op path conversion function for use when $build == $host.
-# or when there is no required (or known) conversion function
-# between $build and $host.
-func_noop_path_convert ()
-{
-  $opt_debug
-  func_to_host_path_result="$1"
-}
-# end func_noop_path_convert
-
-
-# func_msys_to_mingw_path_convert ARG
-# A path conversion function for use with "native" mingw
-# builds -- that is, when $host is *mingw*, and $build
-# is *mingw* (which is to say, msys).  In this case, the
-# msys shell automatically converts paths for any non-msys
-# applications it launches, but that facility isn't available
-# from inside the cwrapper.
-#
-# ARG is the path to be converted; the result is available
-# in func_to_host_path_result.
-func_msys_to_mingw_path_convert ()
-{
-  $opt_debug
   func_to_host_path_result="$1"
   if test -n "$1"; then
-    func_msys_to_win32 "$1"
-    func_to_host_path_result="$func_msys_to_win32_result"
+    case $host in
+      *mingw* )
+        lt_sed_naive_backslashify='s|\\\\*|\\|g;s|/|\\|g;s|\\|\\\\|g'
+        case $build in
+          *mingw* ) # actually, msys
+            # awkward: cmd appends spaces to result
+            func_to_host_path_result=`( cmd //c echo "$1" ) 2>/dev/null |
+              $SED -e 's/[ ]*$//' -e "$lt_sed_naive_backslashify"`
+            ;;
+          *cygwin* )
+            func_to_host_path_result=`cygpath -w "$1" |
+	      $SED -e "$lt_sed_naive_backslashify"`
+            ;;
+          * )
+            # Unfortunately, winepath does not exit with a non-zero
+            # error code, so we are forced to check the contents of
+            # stdout. On the other hand, if the command is not
+            # found, the shell will set an exit code of 127 and print
+            # *an error message* to stdout. So we must check for both
+            # error code of zero AND non-empty stdout, which explains
+            # the odd construction:
+            func_to_host_path_tmp1=`winepath -w "$1" 2>/dev/null`
+            if test "$?" -eq 0 && test -n "${func_to_host_path_tmp1}"; then
+              func_to_host_path_result=`$ECHO "$func_to_host_path_tmp1" |
+                $SED -e "$lt_sed_naive_backslashify"`
+            else
+              # Allow warning below.
+              func_to_host_path_result=
+            fi
+            ;;
+        esac
+        if test -z "$func_to_host_path_result" ; then
+          func_error "Could not determine host path corresponding to"
+          func_error "  \`$1'"
+          func_error "Continuing, but uninstalled executables may not work."
+          # Fallback:
+          func_to_host_path_result="$1"
+        fi
+        ;;
+    esac
   fi
-  func_path_convert_check "$1" "$func_to_host_path_result"
 }
-# end func_msys_to_mingw_path_convert
+# end: func_to_host_path
 
-
-# func_cygwin_to_mingw_path_convert ARG
-# A path conversion function for use when $host is *mingw*
-# but $build is *cygwin*. In this case, the cygpath program
-# provided by the $build environment is sufficient for all
-# conversions.
+# func_to_host_pathlist arg
 #
-# ARG is the path to be converted; the result is available
-# in func_to_host_path_result.
-func_cygwin_to_mingw_path_convert ()
-{
-  $opt_debug
-  func_to_host_path_result="$1"
-  if test -n "$1"; then
-    # because $build is cygwin, we call "the" cygpath
-    # in $PATH; no need to use LT_CYGPATH in this case.
-    func_to_host_path_result=`cygpath -m "$1"`
-  fi
-  func_path_convert_check "$1" "$func_to_host_path_result"
-}
-# end func_cygwin_to_mingw_path_convert
-
-
-# func_nix_to_mingw_path_convert ARG
-# A path conversion function for use when $host is *mingw*
-# but $build is some *nix variant. In this case, we assume
-# that a wine environment with a working winepath executable
-# is available in $build's $PATH.
-#
-# ARG is the path to be converted; the result is available
-# in func_to_host_path_result.
-func_nix_to_mingw_path_convert ()
-{
-  $opt_debug
-  func_to_host_path_result="$1"
-  if test -n "$1"; then
-    func_wine_to_win32_path "$1"
-    func_to_host_path_result="$func_wine_to_win32_path_result"
-  fi
-  func_path_convert_check "$1" "$func_to_host_path_result"
-}
-# end func_nix_to_mingw_path_convert
-
-
-# func_msys_to_cygwin_path_convert ARG
-# A path conversion function for use when $host is *cygwin*
-# but $build is *mingw* (that is, msys). This implies running
-# a cross build from msys to cygwin -- but msys has notorious
-# problems executing cygwin apps, because of conflicts between
-# cygwin1.dll and msys-1.0.dll. However, we'll try it. First,
-# convert from msys to win32, then use func_cygpath to convert
-# from win32 to cygwin. Requires LT_CYGPATH.
-#
-# ARG is the path to be converted; the result is available
-# in func_to_host_path_result.
-func_msys_to_cygwin_path_convert ()
-{
-  $opt_debug
-  func_to_host_path_result="$1"
-  if test -n "$1"; then
-    func_msys_to_win32 "$1"
-    func_cygpath -u "$func_msys_to_win32_result"
-    func_to_host_path_result="$func_cygpath_result"
-  fi
-  func_path_convert_check "$1" "$func_to_host_path_result"
-}
-# end func_msys_to_cygwin_path_convert
-
-# func_nix_to_cygwin_path_convert ARG
-# A path conversion function for use when $host is *cygwin*
-# but $build is some *nix variant. In this case, we assume
-# that a wine environment with a working winepath executable
-# is available in $build's $PATH, and that cygwin is installed
-# within that wine environment. Requires LT_CYGPATH (see
-# func_cygpath).
-#
-# ARG is the path to be converted; the result is available
-# in func_to_host_path_result.
-func_nix_to_cygwin_path_convert ()
-{
-  $opt_debug
-  func_to_host_path_result="$1"
-  if test -n "$1"; then
-    # convert from *nix to win32, then use cygpath to
-    # convert from win32 to cygwin.
-    func_wine_to_win32_path "$1"
-    func_cygpath -u "$func_wine_to_win32_path_result"
-    func_to_host_path_result="$func_cygpath_result"
-  fi
-  func_path_convert_check "$1" "$func_to_host_path_result"
-}
-# end func_nix_to_cygwin_path_convert
-
-
-#################################################
-# $build to $host PATHLIST CONVERSION FUNCTIONS #
-#################################################
-# invoked via `eval $to_host_pathlist_cmd ARG'
-#
-# At present, the following pathlist conversions are supported:
+# Convert pathlists to host format when used with build tools.
+# See func_to_host_path(), above. This function supports the
+# following $build/$host combinations (but does no harm for
+# combinations not listed here):
 #    $build          $host
 #    mingw (msys)    mingw  [e.g. native]
 #    cygwin          mingw
 #    *nix + wine     mingw
-#    mingw (msys)    cygwin [*] [**]
-#    *nix + wine     cygwin [**]
-# where wine is equipped with the `winepath' executable.
-# [*] available, but not officially supported. See comments with
-#     func_msys_to_cygwin_pathlist_convert.
-# [**] requires environment variable $LT_CYGPATH. See comments
-#      with func_cygpath.
-# In each case, ARG is the pathlist to be converted from
-# $build to $host format. the result will be available in
-# $func_to_host_pathlist_result.
 #
 # Path separators are also converted from $build format to
 # $host format. If ARG begins or ends with a path separator
 # character, it is preserved (but converted to $host format)
 # on output.
-
-
-# func_init_to_host_pathlist_cmd
-# Ensures that function "pointer" variable
-# $to_host_pathlist_cmd is set to the appropriate
-# value, based on the value of $to_host_path_cmd.
 #
-# ASSUMPTIONS: all such conversion functions are
-# named using the following convention:
-#   path conversion function    : xxxxxx_path_convert ()
-#   pathlist conversion function: xxxxxx_pathlist_convert ()
-# where, for any given $build/$host combination the 'xxxxxx'
-# value is the same.
-to_host_pathlist_cmd=
-func_init_to_host_pathlist_cmd ()
-{
-  $opt_debug
-  if test -z "$to_host_pathlist_cmd"; then
-    func_stripname '' '_path_convert' "$to_host_path_cmd"
-    to_host_pathlist_cmd="${func_stripname_result}_pathlist_convert"
-  fi
-}
-
-
-# func_to_host_pathlist ARG
-# converts the pathlist ARG from $build format to $host
-# format.
+# ARG is a pathlist (on $build) that should be converted to
+# the proper representation on $host. The result is stored
+# in $func_to_host_pathlist_result.
 func_to_host_pathlist ()
 {
-  $opt_debug
-  func_init_to_host_pathlist_cmd
-  eval '$to_host_pathlist_cmd "$1"'
-}
-# end func_to_host_pathlist
-
-
-# func_noop_pathlist_convert ARG
-# A no-op pathlist conversion function for use when $build == $host,
-# or when there is no required (or known) conversion function
-# between $build and $host.
-func_noop_pathlist_convert ()
-{
-  $opt_debug
-  func_to_host_pathlist_result="$1"
-}
-# end func_noop_pathlist_convert
-
-
-# func_msys_to_mingw_pathlist_convert ARG
-# A pathlist conversion function for use with "native" mingw
-# builds -- that is, when $host is *mingw*, and $build
-# is *mingw* (which is to say, msys).  In this case, the
-# msys shell automatically converts pathlists for any non-msys
-# applications it launches, but that facility isn't available
-# from inside the cwrapper.
-#
-# ARG is the pathlist to be converted; the result is available
-# in func_to_host_pathlist_result.
-func_msys_to_mingw_pathlist_convert ()
-{
-  $opt_debug
   func_to_host_pathlist_result="$1"
   if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_pathlist_tmp1=$func_stripname_result
-    func_msys_to_win32 "$func_to_host_pathlist_tmp1"
-    func_to_host_pathlist_result="$func_msys_to_win32_result"
-    func_pathlist_convert_check ":" ";" \
-      "$func_to_host_pathlist_tmp1" "$func_to_host_pathlist_result"
-    func_pathlist_front_back_pathsep ":*" "*:" ";" "$1"
+    case $host in
+      *mingw* )
+        lt_sed_naive_backslashify='s|\\\\*|\\|g;s|/|\\|g;s|\\|\\\\|g'
+        # Remove leading and trailing path separator characters from
+        # ARG. msys behavior is inconsistent here, cygpath turns them
+        # into '.;' and ';.', and winepath ignores them completely.
+	func_stripname : : "$1"
+        func_to_host_pathlist_tmp1=$func_stripname_result
+        case $build in
+          *mingw* ) # Actually, msys.
+            # Awkward: cmd appends spaces to result.
+            func_to_host_pathlist_result=`
+	      ( cmd //c echo "$func_to_host_pathlist_tmp1" ) 2>/dev/null |
+	      $SED -e 's/[ ]*$//' -e "$lt_sed_naive_backslashify"`
+            ;;
+          *cygwin* )
+            func_to_host_pathlist_result=`cygpath -w -p "$func_to_host_pathlist_tmp1" |
+              $SED -e "$lt_sed_naive_backslashify"`
+            ;;
+          * )
+            # unfortunately, winepath doesn't convert pathlists
+            func_to_host_pathlist_result=""
+            func_to_host_pathlist_oldIFS=$IFS
+            IFS=:
+            for func_to_host_pathlist_f in $func_to_host_pathlist_tmp1 ; do
+              IFS=$func_to_host_pathlist_oldIFS
+              if test -n "$func_to_host_pathlist_f" ; then
+                func_to_host_path "$func_to_host_pathlist_f"
+                if test -n "$func_to_host_path_result" ; then
+                  if test -z "$func_to_host_pathlist_result" ; then
+                    func_to_host_pathlist_result="$func_to_host_path_result"
+                  else
+                    func_append func_to_host_pathlist_result ";$func_to_host_path_result"
+                  fi
+                fi
+              fi
+            done
+            IFS=$func_to_host_pathlist_oldIFS
+            ;;
+        esac
+        if test -z "$func_to_host_pathlist_result"; then
+          func_error "Could not determine the host path(s) corresponding to"
+          func_error "  \`$1'"
+          func_error "Continuing, but uninstalled executables may not work."
+          # Fallback. This may break if $1 contains DOS-style drive
+          # specifications. The fix is not to complicate the expression
+          # below, but for the user to provide a working wine installation
+          # with winepath so that path translation in the cross-to-mingw
+          # case works properly.
+          lt_replace_pathsep_nix_to_dos="s|:|;|g"
+          func_to_host_pathlist_result=`echo "$func_to_host_pathlist_tmp1" |\
+            $SED -e "$lt_replace_pathsep_nix_to_dos"`
+        fi
+        # Now, add the leading and trailing path separators back
+        case "$1" in
+          :* ) func_to_host_pathlist_result=";$func_to_host_pathlist_result"
+            ;;
+        esac
+        case "$1" in
+          *: ) func_append func_to_host_pathlist_result ";"
+            ;;
+        esac
+        ;;
+    esac
   fi
 }
-# end func_msys_to_mingw_pathlist_convert
-
-
-# func_cygwin_to_mingw_pathlist_convert ARG
-# A pathlist conversion function for use when $host is *mingw*
-# but $build is *cygwin*. In this case, the cygpath program
-# provided by the $build environment is sufficient for all
-# conversions.
-#
-# ARG is the pathlist to be converted; the result is available
-# in func_to_host_pathlist_result.
-func_cygwin_to_mingw_pathlist_convert ()
-{
-  $opt_debug
-  func_to_host_pathlist_result="$1"
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_pathlist_tmp1=$func_stripname_result
-    func_to_host_pathlist_result=`cygpath -m -p "$func_to_host_pathlist_tmp1"`
-    func_pathlist_convert_check ":" ";" \
-      "$func_to_host_pathlist_tmp1" "$func_to_host_pathlist_result"
-    func_pathlist_front_back_pathsep ":*" "*:" ";" "$1"
-  fi
-}
-# end func_cygwin_to_mingw_pathlist_convert
-
-
-# func_nix_to_mingw_pathlist_convert ARG
-# A pathlist conversion function for use when $host is *mingw*
-# but $build is some *nix variant. In this case, we assume
-# that a wine environment with a working winepath executable
-# is available in $build's $PATH.
-#
-# ARG is the pathlist to be converted; the result is available
-# in func_to_host_pathlist_result.
-func_nix_to_mingw_pathlist_convert ()
-{
-  $opt_debug
-  func_to_host_pathlist_result="$1"
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_pathlist_tmp1=$func_stripname_result
-    func_wine_to_win32_pathlist "$func_to_host_pathlist_tmp1"
-    func_to_host_pathlist_result="$func_wine_to_win32_pathlist_result"
-    func_pathlist_convert_check ":" ";" \
-      "$func_to_host_pathlist_tmp1" "$func_to_host_pathlist_result"
-    func_pathlist_front_back_pathsep ":*" "*:" ";" "$1"
-  fi
-}
-# end func_nix_to_mingw_pathlist_convert
-
-
-# func_msys_to_cygwin_pathlist_convert ARG
-# A pathlist conversion function for use when $host is *cygwin*
-# but $build is *mingw* (that is, msys). This implies running
-# a cross build from msys to cygwin -- but msys has notorious
-# problems executing cygwin apps, because of conflicts between
-# cygwin1.dll and msys-1.0.dll. However, we'll try it. First,
-# convert from msys to win32, then use func_cygpath to convert
-# from win32 to cygwin. Requires LT_CYGPATH.
-#
-# ARG is the pathlist to be converted; the result is available
-# in func_to_host_pathlist_result.
-func_msys_to_cygwin_pathlist_convert ()
-{
-  $opt_debug
-  func_to_host_pathlist_result="$1"
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_pathlist_tmp1=$func_stripname_result
-    func_msys_to_win32 "$func_to_host_pathlist_tmp1"
-    func_cygpath -u -p "$func_msys_to_win32_result"
-    func_to_host_pathlist_result="$func_cygpath_result"
-    func_pathlist_convert_check ":" ":" \
-      "$func_to_host_pathlist_tmp1" "$func_to_host_pathlist_result"
-    func_pathlist_front_back_pathsep ":*" "*:" ":" "$1"
-  fi
-}
-# end func_msys_to_cygwin_pathlist_convert
-
-
-# func_nix_to_cygwin_pathlist_convert ARG
-# A pathlist conversion function for use when $host is *cygwin*
-# but $build is some *nix variant. In this case, we assume
-# that a wine environment with a working winepath executable
-# is available in $build's $PATH, and that cygwin is installed
-# within that wine environment. Requires LT_CYGPATH (see
-# func_cygpath).
-#
-# ARG is the pathlist to be converted; the result is available
-# in func_to_host_pathlist_result.
-func_nix_to_cygwin_pathlist_convert ()
-{
-  $opt_debug
-  func_to_host_pathlist_result="$1"
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_pathlist_tmp1=$func_stripname_result
-    func_wine_to_win32_pathlist "$func_to_host_pathlist_tmp1"
-    func_cygpath -u -p "$func_wine_to_win32_pathlist_result"
-    func_to_host_pathlist_result="$func_cygpath_result"
-    func_pathlist_convert_check ":" ":" \
-      "$func_to_host_pathlist_tmp1" "$func_to_host_pathlist_result"
-    func_pathlist_front_back_pathsep ":*" "*:" ":" "$1"
-  fi
-}
-# end func_nix_to_cygwin_pathlist_convert
-
+# end: func_to_host_pathlist
 
 # func_emit_cwrapperexe_src
 # emit the source code for a wrapper executable on stdout
@@ -3793,10 +3410,6 @@ func_emit_cwrapperexe_src ()
 
    This wrapper executable should never be moved out of the build directory.
    If it is, it will not operate correctly.
-
-   Currently, it simply execs the wrapper *script* "$SHELL $output",
-   but could eventually absorb all of the scripts functionality and
-   exec $objdir/$outputname directly.
 */
 EOF
 	    cat <<"EOF"
@@ -3821,9 +3434,7 @@ EOF
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
-#ifndef __MINGW32CE__
-# include <errno.h>
-#endif
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -3853,7 +3464,7 @@ int setenv (const char *, const char *, int);
 #  define _INTPTR_T_DEFINED
 #  define intptr_t int
 # endif
-#elif defined(__MINGW32__) && !defined(__MINGW32CE__)
+#elif defined(__MINGW32__)
 # define setmode _setmode
 # define stat    _stat
 # define chmod   _chmod
@@ -3923,22 +3534,13 @@ int setenv (const char *, const char *, int);
   if (stale) { free ((void *) stale); stale = 0; } \
 } while (0)
 
-#undef LTWRAPPER_DEBUGPRINTF
-#if defined LT_DEBUGWRAPPER
-# define LTWRAPPER_DEBUGPRINTF(args) ltwrapper_debugprintf args
-static void
-ltwrapper_debugprintf (const char *fmt, ...)
-{
-    va_list args;
-    va_start (args, fmt);
-    (void) vfprintf (stderr, fmt, args);
-    va_end (args);
-}
+#if defined(LT_DEBUGWRAPPER)
+static int lt_debug = 1;
 #else
-# define LTWRAPPER_DEBUGPRINTF(args)
+static int lt_debug = 0;
 #endif
 
-const char *program_name = NULL;
+const char *program_name = "libtool-wrapper"; /* in case xstrdup fails */
 
 void *xmalloc (size_t num);
 char *xstrdup (const char *string);
@@ -3948,13 +3550,12 @@ char *chase_symlinks (const char *pathspec);
 int make_executable (const char *path);
 int check_executable (const char *path);
 char *strendzap (char *str, const char *pat);
-void lt_fatal (const char *message, ...);
+void lt_debugprintf (const char *file, int line, const char *fmt, ...);
+void lt_fatal (const char *file, int line, const char *message, ...);
+static const char *nonnull (const char *s);
+static const char *nonempty (const char *s);
 void lt_setenv (const char *name, const char *value);
 char *lt_extend_str (const char *orig_value, const char *add, int to_end);
-void lt_opt_process_env_set (const char *arg);
-void lt_opt_process_env_prepend (const char *arg);
-void lt_opt_process_env_append (const char *arg);
-int lt_split_name_value (const char *arg, char** name, char** value);
 void lt_update_exe_path (const char *name, const char *value);
 void lt_update_lib_path (const char *name, const char *value);
 char **prepare_spawn (char **argv);
@@ -4004,24 +3605,10 @@ EOF
 	    cat <<"EOF"
 
 #define LTWRAPPER_OPTION_PREFIX         "--lt-"
-#define LTWRAPPER_OPTION_PREFIX_LENGTH  5
 
-static const size_t opt_prefix_len         = LTWRAPPER_OPTION_PREFIX_LENGTH;
 static const char *ltwrapper_option_prefix = LTWRAPPER_OPTION_PREFIX;
-
 static const char *dumpscript_opt       = LTWRAPPER_OPTION_PREFIX "dump-script";
-
-static const size_t env_set_opt_len     = LTWRAPPER_OPTION_PREFIX_LENGTH + 7;
-static const char *env_set_opt          = LTWRAPPER_OPTION_PREFIX "env-set";
-  /* argument is putenv-style "foo=bar", value of foo is set to bar */
-
-static const size_t env_prepend_opt_len = LTWRAPPER_OPTION_PREFIX_LENGTH + 11;
-static const char *env_prepend_opt      = LTWRAPPER_OPTION_PREFIX "env-prepend";
-  /* argument is putenv-style "foo=bar", new value of foo is bar${foo} */
-
-static const size_t env_append_opt_len  = LTWRAPPER_OPTION_PREFIX_LENGTH + 10;
-static const char *env_append_opt       = LTWRAPPER_OPTION_PREFIX "env-append";
-  /* argument is putenv-style "foo=bar", new value of foo is ${foo}bar */
+static const char *debug_opt            = LTWRAPPER_OPTION_PREFIX "debug";
 
 int
 main (int argc, char *argv[])
@@ -4038,10 +3625,13 @@ main (int argc, char *argv[])
   int i;
 
   program_name = (char *) xstrdup (base_name (argv[0]));
-  LTWRAPPER_DEBUGPRINTF (("(main) argv[0]      : %s\n", argv[0]));
-  LTWRAPPER_DEBUGPRINTF (("(main) program_name : %s\n", program_name));
+  newargz = XMALLOC (char *, argc + 1);
 
-  /* very simple arg parsing; don't want to rely on getopt */
+  /* very simple arg parsing; don't want to rely on getopt
+   * also, copy all non cwrapper options to newargz, except
+   * argz[0], which is handled differently
+   */
+  newargc=0;
   for (i = 1; i < argc; i++)
     {
       if (strcmp (argv[i], dumpscript_opt) == 0)
@@ -4058,21 +3648,54 @@ EOF
 	  lt_dump_script (stdout);
 	  return 0;
 	}
+      if (strcmp (argv[i], debug_opt) == 0)
+	{
+          lt_debug = 1;
+          continue;
+	}
+      if (strcmp (argv[i], ltwrapper_option_prefix) == 0)
+        {
+          /* however, if there is an option in the LTWRAPPER_OPTION_PREFIX
+             namespace, but it is not one of the ones we know about and
+             have already dealt with, above (inluding dump-script), then
+             report an error. Otherwise, targets might begin to believe
+             they are allowed to use options in the LTWRAPPER_OPTION_PREFIX
+             namespace. The first time any user complains about this, we'll
+             need to make LTWRAPPER_OPTION_PREFIX a configure-time option
+             or a configure.ac-settable value.
+           */
+          lt_fatal (__FILE__, __LINE__,
+		    "unrecognized %s option: '%s'",
+                    ltwrapper_option_prefix, argv[i]);
+        }
+      /* otherwise ... */
+      newargz[++newargc] = xstrdup (argv[i]);
     }
+  newargz[++newargc] = NULL;
 
-  newargz = XMALLOC (char *, argc + 1);
+EOF
+	    cat <<EOF
+  /* The GNU banner must be the first non-error debug message */
+  lt_debugprintf (__FILE__, __LINE__, "libtool wrapper (GNU $PACKAGE$TIMESTAMP) $VERSION\n");
+EOF
+	    cat <<"EOF"
+  lt_debugprintf (__FILE__, __LINE__, "(main) argv[0]: %s\n", argv[0]);
+  lt_debugprintf (__FILE__, __LINE__, "(main) program_name: %s\n", program_name);
+
   tmp_pathspec = find_executable (argv[0]);
   if (tmp_pathspec == NULL)
-    lt_fatal ("Couldn't find %s", argv[0]);
-  LTWRAPPER_DEBUGPRINTF (("(main) found exe (before symlink chase) at : %s\n",
-			  tmp_pathspec));
+    lt_fatal (__FILE__, __LINE__, "couldn't find %s", argv[0]);
+  lt_debugprintf (__FILE__, __LINE__,
+                  "(main) found exe (before symlink chase) at: %s\n",
+		  tmp_pathspec);
 
   actual_cwrapper_path = chase_symlinks (tmp_pathspec);
-  LTWRAPPER_DEBUGPRINTF (("(main) found exe (after symlink chase) at : %s\n",
-			  actual_cwrapper_path));
+  lt_debugprintf (__FILE__, __LINE__,
+                  "(main) found exe (after symlink chase) at: %s\n",
+		  actual_cwrapper_path);
   XFREE (tmp_pathspec);
 
-  actual_cwrapper_name = xstrdup( base_name (actual_cwrapper_path));
+  actual_cwrapper_name = xstrdup (base_name (actual_cwrapper_path));
   strendzap (actual_cwrapper_path, actual_cwrapper_name);
 
   /* wrapper name transforms */
@@ -4090,8 +3713,9 @@ EOF
   target_name = tmp_pathspec;
   tmp_pathspec = 0;
 
-  LTWRAPPER_DEBUGPRINTF (("(main) libtool target name: %s\n",
-			  target_name));
+  lt_debugprintf (__FILE__, __LINE__,
+		  "(main) libtool target name: %s\n",
+		  target_name);
 EOF
 
 	    cat <<EOF
@@ -4144,77 +3768,12 @@ EOF
   lt_update_lib_path (LIB_PATH_VARNAME, LIB_PATH_VALUE);
   lt_update_exe_path (EXE_PATH_VARNAME, EXE_PATH_VALUE);
 
-  newargc=0;
-  for (i = 1; i < argc; i++)
-    {
-      if (strncmp (argv[i], env_set_opt, env_set_opt_len) == 0)
-        {
-          if (argv[i][env_set_opt_len] == '=')
-            {
-              const char *p = argv[i] + env_set_opt_len + 1;
-              lt_opt_process_env_set (p);
-            }
-          else if (argv[i][env_set_opt_len] == '\0' && i + 1 < argc)
-            {
-              lt_opt_process_env_set (argv[++i]); /* don't copy */
-            }
-          else
-            lt_fatal ("%s missing required argument", env_set_opt);
-          continue;
-        }
-      if (strncmp (argv[i], env_prepend_opt, env_prepend_opt_len) == 0)
-        {
-          if (argv[i][env_prepend_opt_len] == '=')
-            {
-              const char *p = argv[i] + env_prepend_opt_len + 1;
-              lt_opt_process_env_prepend (p);
-            }
-          else if (argv[i][env_prepend_opt_len] == '\0' && i + 1 < argc)
-            {
-              lt_opt_process_env_prepend (argv[++i]); /* don't copy */
-            }
-          else
-            lt_fatal ("%s missing required argument", env_prepend_opt);
-          continue;
-        }
-      if (strncmp (argv[i], env_append_opt, env_append_opt_len) == 0)
-        {
-          if (argv[i][env_append_opt_len] == '=')
-            {
-              const char *p = argv[i] + env_append_opt_len + 1;
-              lt_opt_process_env_append (p);
-            }
-          else if (argv[i][env_append_opt_len] == '\0' && i + 1 < argc)
-            {
-              lt_opt_process_env_append (argv[++i]); /* don't copy */
-            }
-          else
-            lt_fatal ("%s missing required argument", env_append_opt);
-          continue;
-        }
-      if (strncmp (argv[i], ltwrapper_option_prefix, opt_prefix_len) == 0)
-        {
-          /* however, if there is an option in the LTWRAPPER_OPTION_PREFIX
-             namespace, but it is not one of the ones we know about and
-             have already dealt with, above (inluding dump-script), then
-             report an error. Otherwise, targets might begin to believe
-             they are allowed to use options in the LTWRAPPER_OPTION_PREFIX
-             namespace. The first time any user complains about this, we'll
-             need to make LTWRAPPER_OPTION_PREFIX a configure-time option
-             or a configure.ac-settable value.
-           */
-          lt_fatal ("Unrecognized option in %s namespace: '%s'",
-                    ltwrapper_option_prefix, argv[i]);
-        }
-      /* otherwise ... */
-      newargz[++newargc] = xstrdup (argv[i]);
-    }
-  newargz[++newargc] = NULL;
-
-  LTWRAPPER_DEBUGPRINTF     (("(main) lt_argv_zero : %s\n", (lt_argv_zero ? lt_argv_zero : "<NULL>")));
+  lt_debugprintf (__FILE__, __LINE__, "(main) lt_argv_zero: %s\n",
+		  nonnull (lt_argv_zero));
   for (i = 0; i < newargc; i++)
     {
-      LTWRAPPER_DEBUGPRINTF (("(main) newargz[%d]   : %s\n", i, (newargz[i] ? newargz[i] : "<NULL>")));
+      lt_debugprintf (__FILE__, __LINE__, "(main) newargz[%d]: %s\n",
+		      i, nonnull (newargz[i]));
     }
 
 EOF
@@ -4228,11 +3787,9 @@ EOF
   if (rval == -1)
     {
       /* failed to start process */
-#ifndef __MINGW32CE__
-      LTWRAPPER_DEBUGPRINTF (("(main) failed to launch target \"%s\": errno = %d\n", lt_argv_zero, errno));
-#else
-      LTWRAPPER_DEBUGPRINTF (("(main) failed to launch target \"%s\"\n", lt_argv_zero));
-#endif
+      lt_debugprintf (__FILE__, __LINE__,
+		      "(main) failed to launch target \"%s\": %s\n",
+		      lt_argv_zero, nonnull (strerror (errno)));
       return 127;
     }
   return rval;
@@ -4254,7 +3811,7 @@ xmalloc (size_t num)
 {
   void *p = (void *) malloc (num);
   if (!p)
-    lt_fatal ("Memory exhausted");
+    lt_fatal (__FILE__, __LINE__, "memory exhausted");
 
   return p;
 }
@@ -4288,8 +3845,8 @@ check_executable (const char *path)
 {
   struct stat st;
 
-  LTWRAPPER_DEBUGPRINTF (("(check_executable)  : %s\n",
-			  path ? (*path ? path : "EMPTY!") : "NULL!"));
+  lt_debugprintf (__FILE__, __LINE__, "(check_executable): %s\n",
+                  nonempty (path));
   if ((!path) || (!*path))
     return 0;
 
@@ -4306,8 +3863,8 @@ make_executable (const char *path)
   int rval = 0;
   struct stat st;
 
-  LTWRAPPER_DEBUGPRINTF (("(make_executable)   : %s\n",
-			  path ? (*path ? path : "EMPTY!") : "NULL!"));
+  lt_debugprintf (__FILE__, __LINE__, "(make_executable): %s\n",
+                  nonempty (path));
   if ((!path) || (!*path))
     return 0;
 
@@ -4333,8 +3890,8 @@ find_executable (const char *wrapper)
   int tmp_len;
   char *concat_name;
 
-  LTWRAPPER_DEBUGPRINTF (("(find_executable)   : %s\n",
-			  wrapper ? (*wrapper ? wrapper : "EMPTY!") : "NULL!"));
+  lt_debugprintf (__FILE__, __LINE__, "(find_executable): %s\n",
+                  nonempty (wrapper));
 
   if ((wrapper == NULL) || (*wrapper == '\0'))
     return NULL;
@@ -4387,7 +3944,8 @@ find_executable (const char *wrapper)
 		{
 		  /* empty path: current directory */
 		  if (getcwd (tmp, LT_PATHMAX) == NULL)
-		    lt_fatal ("getcwd failed");
+		    lt_fatal (__FILE__, __LINE__, "getcwd failed: %s",
+                              nonnull (strerror (errno)));
 		  tmp_len = strlen (tmp);
 		  concat_name =
 		    XMALLOC (char, tmp_len + 1 + strlen (wrapper) + 1);
@@ -4412,7 +3970,8 @@ find_executable (const char *wrapper)
     }
   /* Relative path | not found in path: prepend cwd */
   if (getcwd (tmp, LT_PATHMAX) == NULL)
-    lt_fatal ("getcwd failed");
+    lt_fatal (__FILE__, __LINE__, "getcwd failed: %s",
+              nonnull (strerror (errno)));
   tmp_len = strlen (tmp);
   concat_name = XMALLOC (char, tmp_len + 1 + strlen (wrapper) + 1);
   memcpy (concat_name, tmp, tmp_len);
@@ -4438,8 +3997,9 @@ chase_symlinks (const char *pathspec)
   int has_symlinks = 0;
   while (strlen (tmp_pathspec) && !has_symlinks)
     {
-      LTWRAPPER_DEBUGPRINTF (("checking path component for symlinks: %s\n",
-			      tmp_pathspec));
+      lt_debugprintf (__FILE__, __LINE__,
+		      "checking path component for symlinks: %s\n",
+		      tmp_pathspec);
       if (lstat (tmp_pathspec, &s) == 0)
 	{
 	  if (S_ISLNK (s.st_mode) != 0)
@@ -4461,12 +4021,9 @@ chase_symlinks (const char *pathspec)
 	}
       else
 	{
-#ifndef __MINGW32CE__
-	  char *errstr = strerror (errno);
-	  lt_fatal ("Error accessing file %s (%s)", tmp_pathspec, errstr);
-#else
-	  lt_fatal ("Error accessing file %s", tmp_pathspec);
-#endif
+	  lt_fatal (__FILE__, __LINE__,
+		    "error accessing file \"%s\": %s",
+		    tmp_pathspec, nonnull (strerror (errno)));
 	}
     }
   XFREE (tmp_pathspec);
@@ -4479,7 +4036,8 @@ chase_symlinks (const char *pathspec)
   tmp_pathspec = realpath (pathspec, buf);
   if (tmp_pathspec == 0)
     {
-      lt_fatal ("Could not follow symlinks for %s", pathspec);
+      lt_fatal (__FILE__, __LINE__,
+		"could not follow symlinks for %s", pathspec);
     }
   return xstrdup (tmp_pathspec);
 #endif
@@ -4505,11 +4063,25 @@ strendzap (char *str, const char *pat)
   return str;
 }
 
+void
+lt_debugprintf (const char *file, int line, const char *fmt, ...)
+{
+  va_list args;
+  if (lt_debug)
+    {
+      (void) fprintf (stderr, "%s:%s:%d: ", program_name, file, line);
+      va_start (args, fmt);
+      (void) vfprintf (stderr, fmt, args);
+      va_end (args);
+    }
+}
+
 static void
-lt_error_core (int exit_status, const char *mode,
+lt_error_core (int exit_status, const char *file,
+	       int line, const char *mode,
 	       const char *message, va_list ap)
 {
-  fprintf (stderr, "%s: %s: ", program_name, mode);
+  fprintf (stderr, "%s:%s:%d: %s: ", program_name, file, line, mode);
   vfprintf (stderr, message, ap);
   fprintf (stderr, ".\n");
 
@@ -4518,20 +4090,32 @@ lt_error_core (int exit_status, const char *mode,
 }
 
 void
-lt_fatal (const char *message, ...)
+lt_fatal (const char *file, int line, const char *message, ...)
 {
   va_list ap;
   va_start (ap, message);
-  lt_error_core (EXIT_FAILURE, "FATAL", message, ap);
+  lt_error_core (EXIT_FAILURE, file, line, "FATAL", message, ap);
   va_end (ap);
+}
+
+static const char *
+nonnull (const char *s)
+{
+  return s ? s : "(null)";
+}
+
+static const char *
+nonempty (const char *s)
+{
+  return (s && !*s) ? "(empty)" : nonnull (s);
 }
 
 void
 lt_setenv (const char *name, const char *value)
 {
-  LTWRAPPER_DEBUGPRINTF (("(lt_setenv) setting '%s' to '%s'\n",
-                          (name ? name : "<NULL>"),
-                          (value ? value : "<NULL>")));
+  lt_debugprintf (__FILE__, __LINE__,
+		  "(lt_setenv) setting '%s' to '%s'\n",
+                  nonnull (name), nonnull (value));
   {
 #ifdef HAVE_SETENV
     /* always make a copy, for consistency with !HAVE_SETENV */
@@ -4576,95 +4160,12 @@ lt_extend_str (const char *orig_value, const char *add, int to_end)
   return new_value;
 }
 
-int
-lt_split_name_value (const char *arg, char** name, char** value)
-{
-  const char *p;
-  int len;
-  if (!arg || !*arg)
-    return 1;
-
-  p = strchr (arg, (int)'=');
-
-  if (!p)
-    return 1;
-
-  *value = xstrdup (++p);
-
-  len = strlen (arg) - strlen (*value);
-  *name = XMALLOC (char, len);
-  strncpy (*name, arg, len-1);
-  (*name)[len - 1] = '\0';
-
-  return 0;
-}
-
-void
-lt_opt_process_env_set (const char *arg)
-{
-  char *name = NULL;
-  char *value = NULL;
-
-  if (lt_split_name_value (arg, &name, &value) != 0)
-    {
-      XFREE (name);
-      XFREE (value);
-      lt_fatal ("bad argument for %s: '%s'", env_set_opt, arg);
-    }
-
-  lt_setenv (name, value);
-  XFREE (name);
-  XFREE (value);
-}
-
-void
-lt_opt_process_env_prepend (const char *arg)
-{
-  char *name = NULL;
-  char *value = NULL;
-  char *new_value = NULL;
-
-  if (lt_split_name_value (arg, &name, &value) != 0)
-    {
-      XFREE (name);
-      XFREE (value);
-      lt_fatal ("bad argument for %s: '%s'", env_prepend_opt, arg);
-    }
-
-  new_value = lt_extend_str (getenv (name), value, 0);
-  lt_setenv (name, new_value);
-  XFREE (new_value);
-  XFREE (name);
-  XFREE (value);
-}
-
-void
-lt_opt_process_env_append (const char *arg)
-{
-  char *name = NULL;
-  char *value = NULL;
-  char *new_value = NULL;
-
-  if (lt_split_name_value (arg, &name, &value) != 0)
-    {
-      XFREE (name);
-      XFREE (value);
-      lt_fatal ("bad argument for %s: '%s'", env_append_opt, arg);
-    }
-
-  new_value = lt_extend_str (getenv (name), value, 1);
-  lt_setenv (name, new_value);
-  XFREE (new_value);
-  XFREE (name);
-  XFREE (value);
-}
-
 void
 lt_update_exe_path (const char *name, const char *value)
 {
-  LTWRAPPER_DEBUGPRINTF (("(lt_update_exe_path) modifying '%s' by prepending '%s'\n",
-                          (name ? name : "<NULL>"),
-                          (value ? value : "<NULL>")));
+  lt_debugprintf (__FILE__, __LINE__,
+		  "(lt_update_exe_path) modifying '%s' by prepending '%s'\n",
+                  nonnull (name), nonnull (value));
 
   if (name && *name && value && *value)
     {
@@ -4683,9 +4184,9 @@ lt_update_exe_path (const char *name, const char *value)
 void
 lt_update_lib_path (const char *name, const char *value)
 {
-  LTWRAPPER_DEBUGPRINTF (("(lt_update_lib_path) modifying '%s' by prepending '%s'\n",
-                          (name ? name : "<NULL>"),
-                          (value ? value : "<NULL>")));
+  lt_debugprintf (__FILE__, __LINE__,
+		  "(lt_update_lib_path) modifying '%s' by prepending '%s'\n",
+                  nonnull (name), nonnull (value));
 
   if (name && *name && value && *value)
     {
@@ -4885,6 +4386,7 @@ func_mode_link ()
     new_inherited_linker_flags=
 
     avoid_version=no
+    bindir=
     dlfiles=
     dlprefiles=
     dlself=no
@@ -4977,6 +4479,11 @@ func_mode_link ()
 	esac
 
 	case $prev in
+	bindir)
+	  bindir="$arg"
+	  prev=
+	  continue
+	  ;;
 	dlfiles|dlprefiles)
 	  if test "$preload" = no; then
 	    # Add the symbol object into the linking commands.
@@ -5238,6 +4745,11 @@ func_mode_link ()
 	continue
 	;;
 
+      -bindir)
+	prev=bindir
+	continue
+	;;
+
       -dlopen)
 	prev=dlfiles
 	continue
@@ -5335,7 +4847,7 @@ func_mode_link ()
       -l*)
 	if test "X$arg" = "X-lc" || test "X$arg" = "X-lm"; then
 	  case $host in
-	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-beos* | *-cegcc*)
+	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-beos* | *-cegcc* | *-*-haiku*)
 	    # These systems don't actually have a C or math library (as such)
 	    continue
 	    ;;
@@ -5521,7 +5033,7 @@ func_mode_link ()
 	for flag in $args; do
 	  IFS="$save_ifs"
           func_quote_for_eval "$flag"
-	  arg="$arg $wl$func_quote_for_eval_result"
+	  arg="$arg $func_quote_for_eval_result"
 	  compiler_flags="$compiler_flags $func_quote_for_eval_result"
 	done
 	IFS="$save_ifs"
@@ -5567,18 +5079,19 @@ func_mode_link ()
 	arg="$func_quote_for_eval_result"
 	;;
 
-      # -64, -mips[0-9] enable 64-bit mode on the SGI compiler
-      # -r[0-9][0-9]* specifies the processor on the SGI compiler
-      # -xarch=*, -xtarget=* enable 64-bit mode on the Sun compiler
-      # +DA*, +DD* enable 64-bit mode on the HP compiler
-      # -q* pass through compiler args for the IBM compiler
-      # -m*, -t[45]*, -txscale* pass through architecture-specific
-      # compiler args for GCC
-      # -F/path gives path to uninstalled frameworks, gcc on darwin
-      # -p, -pg, --coverage, -fprofile-* pass through profiling flag for GCC
-      # @file GCC response files
+      # Flags to be passed through unchanged, with rationale:
+      # -64, -mips[0-9]      enable 64-bit mode for the SGI compiler
+      # -r[0-9][0-9]*        specify processor for the SGI compiler
+      # -xarch=*, -xtarget=* enable 64-bit mode for the Sun compiler
+      # +DA*, +DD*           enable 64-bit mode for the HP compiler
+      # -q*                  compiler args for the IBM compiler
+      # -m*, -t[45]*, -txscale* architecture-specific flags for GCC
+      # -F/path              path to uninstalled frameworks, gcc on darwin
+      # -p, -pg, --coverage, -fprofile-*  profiling flags for GCC
+      # @file                GCC response files
+      # -tp=*                Portland pgcc target processor selection
       -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
-      -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*)
+      -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*|-tp=*)
         func_quote_for_eval "$arg"
 	arg="$func_quote_for_eval_result"
         func_append compile_command " $arg"
@@ -6251,46 +5764,20 @@ func_mode_link ()
 	  if test -z "$libdir" && test "$linkmode" = prog; then
 	    func_fatal_error "only libraries may -dlpreopen a convenience library: \`$lib'"
 	  fi
-	  case "$host" in
-	    # special handling for platforms with PE-DLLs.
-	    *cygwin* | *mingw* | *cegcc* )
-	      # Linker will automatically link against shared library if both
-	      # static and shared are present.  Therefore, ensure we extract
-	      # symbols from the import library if a shared library is present
-	      # (otherwise, the dlopen module name will be incorrect).  We do
-	      # this by putting the import library name into $newdlprefiles.
-	      # We recover the dlopen module name by 'saving' the la file
-	      # name in a special purpose variable, and (later) extracting the
-	      # dlname from the la file.
-	      if test -n "$dlname"; then
-	        func_tr_sh "$dir/$linklib"
-	        eval "libfile_$func_tr_sh_result=\$abs_ladir/\$laname"
-	        newdlprefiles="$newdlprefiles $dir/$linklib"
-	      else
-	        newdlprefiles="$newdlprefiles $dir/$old_library"
-	        # Keep a list of preopened convenience libraries to check
-	        # that they are being used correctly in the link pass.
-	        test -z "$libdir" && \
-	          dlpreconveniencelibs="$dlpreconveniencelibs $dir/$old_library"
-	      fi
-	    ;;
-	    * )
-	      # Prefer using a static library (so that no silly _DYNAMIC symbols
-	      # are required to link).
-	      if test -n "$old_library"; then
-	        newdlprefiles="$newdlprefiles $dir/$old_library"
-	        # Keep a list of preopened convenience libraries to check
-	        # that they are being used correctly in the link pass.
-	        test -z "$libdir" && \
-	          dlpreconveniencelibs="$dlpreconveniencelibs $dir/$old_library"
-	      # Otherwise, use the dlname, so that lt_dlopen finds it.
-	      elif test -n "$dlname"; then
-	        newdlprefiles="$newdlprefiles $dir/$dlname"
-	      else
-	        newdlprefiles="$newdlprefiles $dir/$linklib"
-	      fi
-	    ;;
-	  esac
+	  # Prefer using a static library (so that no silly _DYNAMIC symbols
+	  # are required to link).
+	  if test -n "$old_library"; then
+	    newdlprefiles="$newdlprefiles $dir/$old_library"
+	    # Keep a list of preopened convenience libraries to check
+	    # that they are being used correctly in the link pass.
+	    test -z "$libdir" && \
+		dlpreconveniencelibs="$dlpreconveniencelibs $dir/$old_library"
+	  # Otherwise, use the dlname, so that lt_dlopen finds it.
+	  elif test -n "$dlname"; then
+	    newdlprefiles="$newdlprefiles $dir/$dlname"
+	  else
+	    newdlprefiles="$newdlprefiles $dir/$linklib"
+	  fi
 	fi # $pass = dlpreopen
 
 	if test -z "$libdir"; then
@@ -6733,6 +6220,7 @@ func_mode_link ()
 	  if test "$link_all_deplibs" != no; then
 	    # Add the search paths of all dependency libraries
 	    for deplib in $dependency_libs; do
+	      path=
 	      case $deplib in
 	      -L*) path="$deplib" ;;
 	      *.la)
@@ -7034,7 +6522,7 @@ func_mode_link ()
 	    age="$number_minor"
 	    revision="$number_revision"
 	    ;;
-	  freebsd-aout|freebsd-elf|sunos)
+	  freebsd-aout|freebsd-elf|qnx|sunos)
 	    current="$number_major"
 	    revision="$number_minor"
 	    age="0"
@@ -7316,7 +6804,7 @@ func_mode_link ()
       if test "$build_libtool_libs" = yes; then
 	if test -n "$rpath"; then
 	  case $host in
-	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-*-beos* | *-cegcc*)
+	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-*-beos* | *-cegcc* | *-*-haiku*)
 	    # these systems don't actually have a c library (as such)!
 	    ;;
 	  *-*-rhapsody* | *-*-darwin1.[012])
@@ -8031,17 +7519,19 @@ EOF
 		  # command to the queue.
 		  if test "$k" -eq 1 ; then
 		    # The first file doesn't have a previous command to add.
-		    eval concat_cmds=\"$reload_cmds $objlist $last_robj\"
+		    reload_objs=$objlist
+		    eval concat_cmds=\"$reload_cmds\"
 		  else
 		    # All subsequent reloadable object files will link in
 		    # the last one created.
-		    eval concat_cmds=\"\$concat_cmds~$reload_cmds $objlist $last_robj~\$RM $last_robj\"
+		    reload_objs="$objlist $last_robj"
+		    eval concat_cmds=\"\$concat_cmds~$reload_cmds~\$RM $last_robj\"
 		  fi
 		  last_robj=$output_objdir/$output_la-${k}.$objext
 		  func_arith $k + 1
 		  k=$func_arith_result
 		  output=$output_objdir/$output_la-${k}.$objext
-		  objlist=$obj
+		  objlist=" $obj"
 		  func_len " $last_robj"
 		  func_arith $len0 + $func_len_result
 		  len=$func_arith_result
@@ -8051,7 +7541,8 @@ EOF
 	      # reloadable object file.  All subsequent reloadable object
 	      # files will link in the last one created.
 	      test -z "$concat_cmds" || concat_cmds=$concat_cmds~
-	      eval concat_cmds=\"\${concat_cmds}$reload_cmds $objlist $last_robj\"
+	      reload_objs="$objlist $last_robj"
+	      eval concat_cmds=\"\${concat_cmds}$reload_cmds\"
 	      if test -n "$last_robj"; then
 	        eval concat_cmds=\"\${concat_cmds}~\$RM $last_robj\"
 	      fi
@@ -8515,14 +8006,14 @@ EOF
 
       wrappers_required=yes
       case $host in
+      *cegcc* | *mingw32ce*)
+        # Disable wrappers for cegcc and mingw32ce hosts, we are cross compiling anyway.
+        wrappers_required=no
+        ;;
       *cygwin* | *mingw* )
         if test "$build_libtool_libs" != yes; then
           wrappers_required=no
         fi
-        ;;
-      *cegcc*)
-        # Disable wrappers for cegcc, we are cross compiling anyway.
-        wrappers_required=no
         ;;
       *)
         if test "$need_relink" = no || test "$build_libtool_libs" != yes; then
@@ -8951,9 +8442,27 @@ EOF
 	  fi
 	  $RM $output
 	  # place dlname in correct position for cygwin
+	  # In fact, it would be nice if we could use this code for all target
+	  # systems that can't hard-code library paths into their executables
+	  # and that have no shared library path variable independent of PATH,
+	  # but it turns out we can't easily determine that from inspecting
+	  # libtool variables, so we have to hard-code the OSs to which it
+	  # applies here; at the moment, that means platforms that use the PE
+	  # object format with DLL files.  See the long comment at the top of
+	  # tests/bindir.at for full details.
 	  tdlname=$dlname
 	  case $host,$output,$installed,$module,$dlname in
-	    *cygwin*,*lai,yes,no,*.dll | *mingw*,*lai,yes,no,*.dll | *cegcc*,*lai,yes,no,*.dll) tdlname=../bin/$dlname ;;
+	    *cygwin*,*lai,yes,no,*.dll | *mingw*,*lai,yes,no,*.dll | *cegcc*,*lai,yes,no,*.dll)
+	      # If a -bindir argument was supplied, place the dll there.
+	      if test "x$bindir" != x ;
+	      then
+		func_relative_path "$install_libdir" "$bindir"
+		tdlname=$func_relative_path_result$dlname
+	      else
+		# Otherwise fall back on heuristic.
+		tdlname=../bin/$dlname
+	      fi
+	      ;;
 	  esac
 	  $ECHO > $output "\
 # $outputname - a libtool library file
@@ -9191,55 +8700,6 @@ func_mode_uninstall ()
 
 { test "$mode" = uninstall || test "$mode" = clean; } &&
     func_mode_uninstall ${1+"$@"}
-
-
-# func_mode_ar arg...
-func_mode_ar ()
-{
-    $opt_debug
-    ar_action="$nonopt"
-    archive=
-    files=
-
-    for arg
-    do
-      if test -z "$archive"; then
-	func_to_host_path "$arg"
-	archive=$func_to_host_path_result
-      else
-	files="$files $arg"
-      fi
-    done
-
-    test -z "$archive" && \
-      func_fatal_help "you must specify an archive"
-
-    case "$ar_action" in
-    cru)
-      test -z "$files" && \
-	func_fatal_help "you must specify some objects"
-      func_show_eval "$AR $AR_FLAGS$AR_SEP$archive $files" 'exit $?'
-      ;;
-    x)
-      if test "x$ar_extract_one_by_one" = xyes; then
-	func_extract_an_archive . "$archive"
-	exit $?
-      else
-	func_show_eval "$AR $AR_XFLAGS$AR_SEP$archive" 'exit $?'
-      fi
-      ;;
-    t)
-      func_show_eval "$AR $AR_TFLAGS$AR_SEP$archive" 'exit $?'
-      ;;
-    *)
-      func_fatal_help "bad archive action, either cru, x or t"
-      ;;
-    esac
-
-    exit $EXIT_SUCCESS
-}
-
-test "$mode" = ar && func_mode_ar ${1+"$@"}
 
 test -z "$mode" && {
   help="$generic_help"

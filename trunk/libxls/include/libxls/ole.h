@@ -142,7 +142,7 @@ extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, int size);
 extern void ole2_seek(OLE2Stream* olest,DWORD ofs);
 extern OLE2Stream*  ole2_fopen(OLE2* ole,char* file);
 extern void ole2_fclose(OLE2Stream* ole2st);
-extern OLE2* ole2_open(char *file, char *charset);
+extern OLE2* ole2_open(char *file);
 extern void ole2_close(OLE2* ole2);
 extern void ole2_bufread(OLE2Stream* olest);
 
