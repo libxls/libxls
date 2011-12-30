@@ -252,7 +252,7 @@ OLE2Stream*  ole2_fopen(OLE2* ole,char* file)
 }
 
 // Open physical file
-OLE2* ole2_open(char *file, char *charset)
+OLE2* ole2_open(char *file)
 {
     //BYTE buf[1024];
     OLE2Header* oleh;
@@ -344,7 +344,7 @@ OLE2* ole2_open(char *file, char *charset)
     {
         ole2_read(pss,1,sizeof(PSS),olest);
 
-        name=unicode_decode(pss->name, pss->bsize, 0, charset);
+        name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
 #ifdef OLE_DEBUG	
 		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
 #endif
