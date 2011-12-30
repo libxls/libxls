@@ -105,3 +105,8 @@ AC_SUBST(LIBXLS_LIBS)
 
 AC_CONFIG_FILES([Makefile include/Makefile include/libxls/Makefile src/Makefile test/Makefile])
 AC_OUTPUT
+
+AC_MSG_NOTICE([---])
+AC_MSG_NOTICE([catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib to get libxls2csv])
+AC_MSG_NOTICE([---])
+
