@@ -2,4 +2,15 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = libxls
+includedir = $(prefix)/include
+
+include_HEADERS =			\
+libxls/xls.h
+
+nobase_include_HEADERS =	\
+libxls/brdb.c.h				\
+libxls/brdb.h				\
+libxls/ole.h				\
+libxls/xlsstruct.h			\
+libxls/xlstypes.h			\
+libxls/xlstool.h

@@ -18,32 +18,34 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2009 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
- 
+
+#include "config.h" 
+
 #include <memory.h>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define NDEBUG	// turn asserts off
+
 #include <assert.h>
 
-#include <libxls/ole.h>
-#include <libxls/xlstool.h>
+#include "libxls/ole.h"
+#include "libxls/xlstool.h"
 
 extern int xls_debug;
 
 //#define OLE_DEBUG
 
-const DWORD MSATSECT =		0xFFFFFFFC;	// -4
-const DWORD FATSECT =		0xFFFFFFFD;	// -3
-const DWORD ENDOFCHAIN =	0xFFFFFFFE;	// -2
-const DWORD FREESECT =		0xFFFFFFFF;	// -1
+static const DWORD MSATSECT		= 0xFFFFFFFC;	// -4
+static const DWORD FATSECT		= 0xFFFFFFFD;	// -3
+static const DWORD ENDOFCHAIN	= 0xFFFFFFFE;	// -2
+static const DWORD FREESECT		= 0xFFFFFFFF;	// -1
 
-static int sector_pos(OLE2* ole2, int sid);
-static int sector_read(OLE2* ole2, BYTE *buffer, int sid);
-static int read_MSAT(OLE2* ole2, OLE2Header *oleh);
+static size_t sector_pos(OLE2* ole2, size_t sid);
+static int sector_read(OLE2* ole2, BYTE *buffer, size_t sid);
+static size_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
 
 // Read next sector of stream
 void ole2_bufread(OLE2Stream* olest) 
@@ -90,20 +92,20 @@ void ole2_bufread(OLE2Stream* olest)
 }
 
 // Read part of stream
-int ole2_read(void* buf,long size,long count,OLE2Stream* olest)
+size_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest)
 {
-    long didReadCount=0;
-    long totalReadCount;;	// was DWORD
-	unsigned long needToReadCount;
+    size_t didReadCount=0;
+    size_t totalReadCount;
+	size_t needToReadCount;
 
 	totalReadCount=size*count;
 
 	// olest->size inited to -1
 	//printf("===== ole2_read(%ld bytes)\n", totalReadCount);
 
-    if (olest->size>=0 && !olest->sfat)	// directory is -1
+    if ((long)olest->size>=0 && !olest->sfat)	// directory is -1
     {
-		int rem;
+		size_t rem;
 		rem = olest->size - (olest->cfat*olest->ole->lsector+olest->pos);		
         totalReadCount = rem<totalReadCount?rem:totalReadCount;
         if (rem<=0) olest->eof=1;
@@ -161,7 +163,7 @@ int ole2_read(void* buf,long size,long count,OLE2Stream* olest)
 }
 
 // Open stream in logical ole file
-OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, int size)
+OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 {
     OLE2Stream* olest=NULL;
 
@@ -178,7 +180,7 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, int size)
 	olest->pos=0;
 	olest->eof=0;
 	olest->cfat=-1;
-	if(size > 0 && size < (int)ole->sectorcutoff) {
+	if((long)size > 0 && size < (size_t)ole->sectorcutoff) {
 		olest->bufsize=ole->lssector;
 		olest->sfat = 1;
 	} else {
@@ -230,7 +232,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 }
 
 // Open logical file contained in physical OLE file
-OLE2Stream*  ole2_fopen(OLE2* ole,char* file)
+OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file)
 {
     OLE2Stream* olest;
     int i;
@@ -241,8 +243,8 @@ OLE2Stream*  ole2_fopen(OLE2* ole,char* file)
 #endif
 
     for (i=0;i<ole->files.count;i++) {
-		char *str = ole->files.file[i].name;
-        if (str && strcmp(str,file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
+		BYTE *str = ole->files.file[i].name;
+        if (str && strcmp((char *)str,(char *)file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
         {
             olest=ole2_sopen(ole,ole->files.file[i].start,ole->files.file[i].size);
             return(olest);
@@ -252,14 +254,14 @@ OLE2Stream*  ole2_fopen(OLE2* ole,char* file)
 }
 
 // Open physical file
-OLE2* ole2_open(char *file)
+OLE2* ole2_open(const BYTE *file)
 {
     //BYTE buf[1024];
     OLE2Header* oleh;
     OLE2* ole;
     OLE2Stream* olest;
     PSS*	pss;
-    char* name = NULL;
+    BYTE* name = NULL;
 
 #ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
@@ -267,27 +269,17 @@ OLE2* ole2_open(char *file)
 #endif
 
 	if(xls_debug) printf("ole2_open: %s\n", file);
-    oleh=(OLE2Header*)malloc(512);
     ole=(OLE2*)calloc(1, sizeof(OLE2));
-    if (!(ole->file=fopen(file,"rb")))
+    if (!(ole->file=fopen((char *)file,"rb")))
     {
         if(xls_debug) printf("File not found\n");
         free(ole);
         return(NULL);
     }
     // read header and check magic numbers
+    oleh=(OLE2Header*)malloc(512);
     fread(oleh,1,512,ole->file);
 
-#if 0 // Christophe's code:  however, so much of this library depends on intel format no real reason for this now
-    // read header and check magic numbers
-    if (  (ntohl(oleh->id[0]) != 0xD0CF11E0)
-        ||(ntohl(oleh->id[1]) != 0xA1B11AE1))
-    {
-        printf("Not an excel file\n");
-        free(ole);
-        return(NULL);
-    }
-#else
 	// make sure the file looks good. Note: this code only works on Little Endian machines
 	if(oleh->id[0] != 0xE011CFD0 || oleh->id[1] != 0xE11AB1A1 || oleh->byteorder != 0xFFFE) {
 		fclose(ole->file);
@@ -295,7 +287,6 @@ OLE2* ole2_open(char *file)
 		free(ole);
 		return NULL;
 	}
-#endif
 
     //ole->lsector=(WORD)pow(2,oleh->lsector);
     //ole->lssector=(WORD)pow(2,oleh->lssector);
@@ -337,7 +328,7 @@ OLE2* ole2_open(char *file)
 
 	// reuse this buffer
     pss = (PSS*)oleh;
-	oleh = (void *)NULL;
+	// oleh = (void *)NULL; // Not needed as oleh not used from here on
 	
     olest=ole2_sopen(ole,ole->dirstart, -1);
     do
@@ -406,6 +397,8 @@ OLE2* ole2_open(char *file)
 					sector = ole->SecID[sector];
 				}
 			}	
+		} else {
+			free(name);
 		}
     }
     while (!olest->eof);
@@ -437,25 +430,25 @@ void ole2_fclose(OLE2Stream* ole2st)
 }
 
 // Return offset in bytes of a sector from its sid
-static int sector_pos(OLE2* ole2, int sid)
+static size_t sector_pos(OLE2* ole2, size_t sid)
 {
     return 512 + sid * ole2->lsector;
 }
 // Read one sector from its sid
-static int sector_read(OLE2* ole2, BYTE *buffer, int sid)
+static int sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 {
 	size_t num;
-	int seeked;
+	size_t seeked;
 	
     seeked = fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
 	if(seeked != 0) {
-		printf("seek: wanted to seek to sector %u (0x%x) loc=%u\n", sid, sid, sector_pos(ole2, sid));
+		printf("seek: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
 	}
 	assert(seeked == 0);
 	
 	num = fread(buffer, ole2->lsector, 1, ole2->file);
 	if(num != 1) {
-		fprintf(stderr, "fread: wanted %d got %lu loc=%u\n", 1, num, sector_pos(ole2, sid));
+		fprintf(stderr, "fread: wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
 	}
 	assert(num == 1);
 
@@ -463,7 +456,7 @@ static int sector_read(OLE2* ole2, BYTE *buffer, int sid)
 }
 
 // Read MSAT
-static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
+static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 {
     int sectorNum;
 
@@ -484,11 +477,11 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
     // Add additionnal sectors of the MSAT
     {
         unsigned int sid = ole2->difstart;
-        BYTE *sector = malloc(ole2->lsector);
 
 		//printf("sid=%d (0x%x)\n", sid, sid);
+		BYTE *sector = malloc(ole2->lsector);
         while (sid != ENDOFCHAIN)
-          {
+		{
            int posInSector;
 
            // read MSAT sector
@@ -497,8 +490,8 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
 
            // read content
            for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
-             {
-              unsigned int s = *(int*)(sector + posInSector*4);
+		   {
+              DWORD s = *(DWORD *)(sector + posInSector*4);
 				//printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
               if (s != FREESECT)
@@ -507,12 +500,10 @@ static int read_MSAT(OLE2* ole2, OLE2Header* oleh)
                  sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
                  sectorNum++;
                 }
-             }
-
-           sid = *(int*)(sector + posInSector*4);
-     }
-
-     free(sector);
+			}
+			sid = *(DWORD *)(sector + posInSector*4);
+		}
+		free(sector);
     }
 #ifdef OLE_DEBUG
 	if(xls_debug) {

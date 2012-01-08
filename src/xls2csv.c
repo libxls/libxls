@@ -17,7 +17,7 @@
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2004-2009 Christophe Leitienne
- * Copyright 2008-2009 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
 #include <stdio.h>
@@ -26,12 +26,12 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include <libxls/xls.h>
+#include "libxls/xls.h"
 
 static char  stringSeparator = '\"';
 static char *lineSeparator = "\n";
 static char *fieldSeparator = ";";
-static char *encoding = "ASCII"; // initially defaulted to "iso-8859-15//TRANSLIT";
+static char *encoding = "UTF-8";
 
 
 static void OutputString(const char *string);
@@ -153,9 +153,9 @@ int main(int argc, char *argv[]) {
 			for (cellCol = 0; cellCol <= pWS->rows.lastcol; cellCol++) {
                 //printf("Processing row=%d col=%d\n", cellRow+1, cellCol+1);
 
-				xlsCell *cell = xls_cell(pWS, cellRow, cellCol);
+				XLS_WIDE_STRINGS *cell = xls_cell(pWS, cellRow, cellCol);
 
-				if ((!cell) || (cell->ishiden)) {
+				if ((!cell) || (cell->isHidden)) {
 					continue;
 				}
 
@@ -179,10 +179,10 @@ int main(int argc, char *argv[]) {
 					{
 						OutputNumber(cell->d);
 					} else {
-						if (cell->str == "bool") // its boolean, and test cell->d
+						if (!strcmp(cell->str, "bool")) // its boolean, and test cell->d
 						{
 							OutputString((int) cell->d ? "true" : "false");
-						} else if (cell->str == "error") // formula is in error
+						} else if (!strcmp(cell->str, "error")) // formula is in error
 						{
 							OutputString("*error*");
 						} else // ... cell->str is valid as the result of a string formula.
@@ -197,6 +197,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+		xls_close_WS(pWS);
 	}
 
 	xls_close(pWB);

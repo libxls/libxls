@@ -1812,7 +1812,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=1
-LIBXLS_MINOR_VERSION=0
+LIBXLS_MINOR_VERSION=2
 LIBXLS_MICRO_VERSION=0
 
 VERSION=$LIBXLS_MAJOR_VERSION.$LIBXLS_MINOR_VERSION.$LIBXLS_MICRO_VERSION
@@ -15844,7 +15844,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
 # Extract the first word of "pkg-config", so it can be a program name with args.
 set dummy pkg-config; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -16941,6 +16940,14 @@ _ACEOF
 
 fi
 
+
+# Comment out if your want assertions
+
+cat >>confdefs.h <<\_ACEOF
+#define NDEBUG 1
+_ACEOF
+
+#AC_HEADER_ASSERT
 
 WITH_ICONV=0
 
