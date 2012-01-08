@@ -18,16 +18,17 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
 #ifndef OLE_INCLUDE
 #define OLE_INCLUDE
 
-#pragma pack(1)
-
 #include <stdio.h>			// FILE *
-#include <libxls/xlstypes.h>
+
+#include "xlstypes.h"
+
+#pragma pack(push, 1)
 
 typedef struct TIME_T
 {
@@ -64,6 +65,7 @@ typedef struct OLE2Header
 }
 OLE2Header;
 
+#pragma pack(pop)
 
 //-----------------------------------------------------------------------------------
 typedef	struct st_olefiles
@@ -71,7 +73,7 @@ typedef	struct st_olefiles
     long count;
     struct st_olefiles_data
     {
-        char*	name;
+        BYTE*	name;
         DWORD	start;
         DWORD	size;
    }
@@ -103,16 +105,18 @@ typedef struct OLE2Stream
 {
     OLE2*	ole;
     DWORD	start;
-    DWORD	pos;
-    int		cfat;
-    int		size;
-    DWORD	fatpos;
+    size_t	pos;
+    size_t	cfat;
+    size_t	size;
+    size_t	fatpos;
     BYTE*	buf;
     DWORD	bufsize;
     BYTE	eof;
 	BYTE	sfat;	// short
 }
 OLE2Stream;
+
+#pragma pack(push, 1)
 
 typedef struct PSS
 {
@@ -137,13 +141,16 @@ typedef struct PSS
 }
 PSS;
 
-extern int ole2_read(void* buf,long size,long count,OLE2Stream* olest);
-extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, int size);
+#pragma pack(pop)
+
+extern size_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest);
+extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size);
 extern void ole2_seek(OLE2Stream* olest,DWORD ofs);
-extern OLE2Stream*  ole2_fopen(OLE2* ole,char* file);
+extern OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file);
 extern void ole2_fclose(OLE2Stream* ole2st);
-extern OLE2* ole2_open(char *file);
+extern OLE2* ole2_open(const BYTE *file);
 extern void ole2_close(OLE2* ole2);
 extern void ole2_bufread(OLE2Stream* olest);
+
 
 #endif

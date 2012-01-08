@@ -18,10 +18,15 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006-2009 Christophe Leitienne
- * Copyright 2008-2009 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
-#include <libxls/ole.h>
+#ifndef XLS_STRUCT_INC
+#define XLS_STRUCT_INC
+
+#include "ole.h"
+
+#pragma pack(push, 1)
 
 typedef struct BOF
 {
@@ -226,6 +231,8 @@ typedef struct FORMAT
 }
 FORMAT;
 
+#pragma pack(pop)
+
 //---------------------------------------------------------
 typedef	struct st_sheet
 {
@@ -235,7 +242,7 @@ typedef	struct st_sheet
         DWORD filepos;
         BYTE visibility;
         BYTE type;
-        char* name;
+        BYTE* name;
     }
     * sheet;
 }
@@ -254,7 +261,7 @@ typedef	struct st_font
         BYTE	underline;
         BYTE	family;
         BYTE	charset;
-        char*	name;
+        BYTE*	name;
     }
     * font;
 }
@@ -266,7 +273,7 @@ typedef struct st_format
     struct st_format_data
     {
          WORD index;
-         char *value;
+         BYTE *value;
     }
     * format;
 }
@@ -305,7 +312,7 @@ typedef	struct st_sst
     struct str_sst_string
     {
         //	long len;
-        char* str;
+        BYTE* str;
     }
     * string;
 }
@@ -323,9 +330,9 @@ typedef	struct st_cell
         WORD	xf;
         double	d;
         long	l;
-        char*	str;		//String value;
-        BYTE	ishiden;	//Is cell hidden
-        WORD	width;		//Width of col
+        BYTE*	str;		// String value;
+        BYTE	isHidden;	// Is cell hidden
+        WORD	width;		// Width of col
         WORD	colspan;
         WORD	rowspan;
     }
@@ -337,8 +344,8 @@ st_cell;
 typedef	struct st_row
 {
     //	DWORD count;
-    WORD lastcol;
-    WORD lastrow;
+    WORD lastcol;	// numCols - 1
+    WORD lastrow;	// numRows - 1
     struct st_row_data
     {
         WORD index;
@@ -399,26 +406,32 @@ typedef struct xlsWorkSheet
     DWORD		filepos;
     WORD		defcolwidth;
     st_row		rows;
-    xlsWorkBook * 	workbook;
+    xlsWorkBook *workbook;
     st_colinfo	colinfo;
-    WORD		maxcol;
 }
 xlsWorkSheet;
 
+#ifdef __cplusplus
+typedef struct st_cell::st_cell_data xlsCell;
+typedef	struct st_row::st_row_data xlsRow;
+#else
 typedef struct st_cell_data xlsCell;
-typedef struct st_row_data xlsRow;
+typedef	struct st_row_data xlsRow;
+#endif
 
 typedef struct xls_summaryInfo
 {
-	char		*title;
-	char		*subject;
-	char		*author;
-	char		*keywords;
-	char		*comment;
-	char		*lastAuthor;
-	char		*appName;
-	char		*category;
-	char		*manager;
-	char		*company;
+	BYTE		*title;
+	BYTE		*subject;
+	BYTE		*author;
+	BYTE		*keywords;
+	BYTE		*comment;
+	BYTE		*lastAuthor;
+	BYTE		*appName;
+	BYTE		*category;
+	BYTE		*manager;
+	BYTE		*company;
 }
 xlsSummaryInfo;
+
+#endif

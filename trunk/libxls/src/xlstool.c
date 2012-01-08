@@ -18,10 +18,11 @@
  * 
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2009 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <math.h>
 #include <sys/types.h>
 #include <wchar.h>
@@ -38,14 +39,79 @@
 #include <memory.h>
 #include <string.h>
 
-#include <libxls/xls.h>
-#include <libxls/brdb.h>
+//#include "xls.h"
+#include "libxls/xlstypes.h"
+#include "libxls/xlsstruct.h"
+#include "libxls/xlstool.h"
+#include "libxls/brdb.h"
+
+extern int xls_debug;
 
 static void xls_showBOUNDSHEET(void* bsheet);
 
-void dumpbuf(char* fname,long size,BYTE* buf)
+static const DWORD colors[] =
+    {
+        0x000000,
+        0xFFFFFF,
+        0xFF0000,
+        0x00FF00,
+        0x0000FF,
+        0xFFFF00,
+        0xFF00FF,
+        0x00FFFF,
+        0x800000,
+        0x008000,
+        0x000080,
+        0x808000,
+        0x800080,
+        0x008080,
+        0xC0C0C0,
+        0x808080,
+        0x9999FF,
+        0x993366,
+        0xFFFFCC,
+        0xCCFFFF,
+        0x660066,
+        0xFF8080,
+        0x0066CC,
+        0xCCCCFF,
+        0x000080,
+        0xFF00FF,
+        0xFFFF00,
+        0x00FFFF,
+        0x800080,
+        0x800000,
+        0x008080,
+        0x0000FF,
+        0x00CCFF,
+        0xCCFFFF,
+        0xCCFFCC,
+        0xFFFF99,
+        0x99CCFF,
+        0xFF99CC,
+        0xCC99FF,
+        0xFFCC99,
+        0x3366FF,
+        0x33CCCC,
+        0x99CC00,
+        0xFFCC00,
+        0xFF9900,
+        0xFF6600,
+        0x666699,
+        0x969696,
+        0x003366,
+        0x339966,
+        0x003300,
+        0x333300,
+        0x993300,
+        0x993366,
+        0x333399,
+        0x333333
+    };
+
+void dumpbuf(BYTE* fname,long size,BYTE* buf)
 {
-    FILE *f = fopen (fname, "wb");
+    FILE *f = fopen((char *)fname, "wb");
     fwrite (buf, 1, size, f);
     fclose(f);
 
@@ -59,12 +125,12 @@ void verbose(char* str)
 }
 
 // Convert unicode string to to_enc encoding
-char* unicode_decode(const BYTE *s, int len, int *newlen, const char* to_enc)
+BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 {
 #if HAVE_ICONV
 	// Do iconv conversion
     const char *from_enc = "UTF-16LE";
-    char* outbuf = 0;
+    BYTE* outbuf = 0;
     
     if(s && len && from_enc && to_enc)
     {
@@ -72,28 +138,28 @@ char* unicode_decode(const BYTE *s, int len, int *newlen, const char* to_enc)
         int outlen = len;
         size_t inlenleft = len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        char* src_ptr = (char*) s;
-        char* out_ptr = 0;
+        BYTE* src_ptr = (BYTE*) s;
+        BYTE* out_ptr = 0;
 
         if(ic != (iconv_t)-1)
         {
             size_t st; 
-            outbuf = (char*)malloc(outlen + 1);
+            outbuf = (BYTE*)malloc(outlen + 1);
 
 			if(outbuf)
             {
-                out_ptr = (char*)outbuf;
+                out_ptr = (BYTE*)outbuf;
                 while(inlenleft)
                 {
-                    st = iconv(ic, &src_ptr, &inlenleft, &out_ptr,(size_t *) &outlenleft);
+                    st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
                     if(st == (size_t)(-1))
                     {
                         if(errno == E2BIG)
                         {
-                            int diff = out_ptr - outbuf;
+                            size_t diff = out_ptr - outbuf;
                             outlen += inlenleft;
                             outlenleft += inlenleft;
-                            outbuf = (char*)realloc(outbuf, outlen + 1);
+                            outbuf = (BYTE*)realloc(outbuf, outlen + 1);
                             if(!outbuf)
                             {
                                 break;
@@ -152,16 +218,14 @@ char* unicode_decode(const BYTE *s, int len, int *newlen, const char* to_enc)
 }
 
 // Read and decode string
-char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
+BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 {
     WORD ln;
     DWORD ofs;
-    DWORD sz;
-    WORD rt;
     BYTE flag;
     BYTE* str;
-    char* ret;
-    int new_len;
+    BYTE* ret;
+    size_t new_len;
 	
 	new_len = 0;
 	flag = 0;
@@ -186,43 +250,32 @@ char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 	}
     if (flag&0x8)
     {
-        rt=*(WORD*)(str+ofs);
+		// WORD rt;
+        // rt=*(WORD*)(str+ofs); // unused
         ofs+=2;
     }
     if (flag&0x4)
     {
-        sz=*(DWORD*)(str+ofs);
+		// DWORD sz;
+        // sz=*(DWORD*)(str+ofs); // unused
         ofs+=4;
     }
-#if 0
-    OLD
-    if (flag&0x1) {
-        ret=unicode_decode(str+ofs,ln*2, &new_len,charset);
-        ofs+=ln*2;
-    } else {
-        ret=(char *)malloc(ln+1);
-        memcpy (ret,(str+ofs),ln);
-        *(char*)(ret+ln)=0;
-        ofs+=ln;
-    }
-#else
     if(flag & 0x1)
     {
         WORD *pTemp = (WORD *)calloc(ln+1, sizeof(WORD));
         memcpy(pTemp,str+ofs,ln*2);
         ret = unicode_decode((BYTE *)pTemp,ln*2, &new_len,charset);
         free(pTemp);
-        ofs += ln*2;
     } else {
-        ret=(char *)malloc(ln+1);
+        ret=(BYTE *)malloc(ln+1);
         memcpy (ret,(str+ofs),ln);
-        *(char*)(ret+ln)=0;
-        ofs+=ln;
+        *(BYTE*)(ret+ln)=0;
     }
-#endif
 
 #if 0	// debugging
 	if(xls_debug == 100) {
+		ofs += (flag & 0x1) ? ln*2 : ln;
+
 		printf("ofs=%d ret[0]=%d\n", ofs, *ret);
 		{
 			unsigned char *ptr;
@@ -233,11 +286,6 @@ char* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 			printf("%s\n", ret);
 		}
 	}
-	// not used now
-    if (flag&0x8)
-        ofs+=4*rt;
-    if (flag&0x4)
-        ofs+=sz;
 #endif
 
     return ret;
@@ -428,10 +476,10 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
+BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 {
     struct st_xf_data*  xf;
-    char* out;
+    BYTE* out;
 	WORD	len, *lPtr;
     static char ret[10240];	// don't want this on the stack, and no recursion so static OK
 
@@ -461,7 +509,7 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 			//printf("Found BIFF8/ASCII string of len=%d \"%s\"\n", len, ret);
 		} else {
 			//printf("Found unicode str len=%d\n", len);
-			int newlen;			
+			size_t newlen;			
 			lPtr = (WORD *)((char *)lPtr + 1);	// skip format
 #if 0 // debugging			
 			int x;
@@ -495,11 +543,8 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
             sprintf(ret,"%.1e",cell->d);
             break;
         case 14:
-            {
-                //ret=ctime(cell->d);
-                sprintf(ret,"%.0f",cell->d);
-                break;
-            }
+			//ret=ctime(cell->d);
+			sprintf(ret,"%.0f",cell->d);
             break;
         default:
 			// sprintf(ret,"%.4.2f (%i)",cell->d,xf->format);break;
@@ -509,17 +554,15 @@ char*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
         break;
     }
 
-    out=(char *)malloc(strlen(ret)+1);
-    memcpy(out,ret,strlen(ret)+1);
+	size_t nlen = strlen((char *)ret)+1;
+    out=(BYTE *)malloc(nlen);
+    memcpy(out,ret,nlen);
     return out;
 }
 
 char* xls_getCSS(xlsWorkBook* pWB)
 {
-    char ret[65535];
-    char buf[65535];
     char color[255];
-    char* out;
     char* align;
     char* valign;
     char borderleft[255];
@@ -534,6 +577,10 @@ char* xls_getCSS(xlsWorkBook* pWB)
     struct st_xf_data* xf;
     DWORD background;
     DWORD i;
+
+    char *ret = malloc(65535);
+    char *buf = malloc(4096);
+	ret[0] = '\0';
 
     for (i=0;i<pWB->xfs.count;i++)
     {
@@ -638,9 +685,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
             size=10;
 
         if (xf->font)
-        {
             sprintf(fontname,"%s",pWB->fonts.font[xf->font-1].name);
-        }
         else
             sprintf(fontname,"Arial");
 
@@ -648,12 +693,10 @@ char* xls_getCSS(xlsWorkBook* pWB)
         sprintf(buf,".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6X;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
                 i,size,fontname,background,align,valign,borderleft,borderright,bordertop,borderbottom,color,italic,bold,underline);
 
-        if (i==0)
-            strcpy(ret,buf);
-        else
-            strcat(ret,buf);
+		strcat(ret,buf);
     }
-    out=(char *)malloc(strlen(ret)+1);
-    memcpy(out,ret,strlen(ret)+1);
-    return out;
+	ret = realloc(ret, strlen(ret)+1);
+	free(buf);
+
+    return ret;
 }

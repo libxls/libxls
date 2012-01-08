@@ -17,7 +17,7 @@
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2004 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
 // THIS FILE LETS YOU QUICKLY FEED A .xls FILE FOR PARSING
@@ -27,15 +27,13 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <libxls/xls.h>
+#include "libxls/xls.h"
 
 int main(int argc, char *argv[])
 {
     xlsWorkBook* pWB;
     xlsWorkSheet* pWS;
     unsigned int i;
-
-	xls_debug=0;
 
 	if(argc != 2) {
 		printf("Need file arg\n");
@@ -54,8 +52,10 @@ int main(int argc, char *argv[])
         pWS=xls_getWorkSheet(pWB,0);
         xls_parseWorkSheet(pWS);
 
+printf("pWS->rows.lastrow %d\n", pWS->rows.lastrow);
         for (t=0;t<=pWS->rows.lastrow;t++)
         {
+printf("DO IT");
             row=&pWS->rows.row[t];
             xls_showROW(row);
             for (tt=0;tt<=pWS->rows.lastcol;tt++)

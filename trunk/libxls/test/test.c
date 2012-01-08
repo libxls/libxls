@@ -17,7 +17,7 @@
  * along with libxls.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2004 Christophe Leitienne
- * Copyright 2008 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
 #include <stdio.h>
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <libxls/xls.h>
+#include "libxls/xls.h"
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
     struct st_row_data* row;
     WORD t,tt;
-    pWB=xls_open("files/test2.xls", "ASCII"); // "KOI8-R"
+    pWB=xls_open("files/test2.xls", "UTF-8");
 
     if (pWB!=NULL)
     {
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
             fprintf(f,"<tr>");
             for (tt=0;tt<=pWS->rows.lastcol;tt++)
             {
-                if (!row->cells.cell[tt].ishiden)
+                if (!row->cells.cell[tt].isHidden)
                 {
                     fprintf(f,"<td");
                     if (row->cells.cell[tt].colspan)

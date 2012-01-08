@@ -18,31 +18,51 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006-2009 Christophe Leitienne
- * Copyright 2008-2009 David Hoerl
+ * Copyright 2008-2012 David Hoerl
  */
 
-#include <libxls/xlstool.h>
+#ifndef XLS_INCLUDE
+#define XLS_INCLUDE
+ 
+#ifdef __cplusplus
+namespace xls {
+extern "C" {
+#endif
+
+#include "xlstypes.h"
+#include "xlsstruct.h"
+#include "xlstool.h"
+
+
+#define BLANK_CELL		0x0201
+
+
 
 extern const char* xls_getVersion(void);
 
-extern int xls_debug;
+extern int xls(int debug);	// Set debug. Force library to load?
 
-extern int xls(void);
-
-extern void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size);
-extern void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size);
-
-extern void xls_addFormat(xlsWorkBook* pWB,FORMAT* format);
 extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 
-extern xlsWorkBook* xls_open(char *file,char* charset);	// charset used to interpret 16 bit strings withing the spread sheet. file is treated as a UTF-8 string
+extern xlsWorkBook* xls_open(const char *file,const char *charset);	// convert 16bit strings within the spread sheet to this 8-bit encoding (UTF-8 default)
 #define xls_close xls_close_WB                  // historical
 extern void xls_close_WB(xlsWorkBook* pWB);     // preferred name
 
 extern xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
 extern void xls_close_WS(xlsWorkSheet* pWS);
 
+extern xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
+extern void xls_close_summaryInfo(xlsSummaryInfo *pSI);
+
 // utility function
 xlsRow *xls_row(xlsWorkSheet* pWS, WORD cellRow);
 xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol);
+
+#ifdef __cplusplus
+} // extern c block
+} // namespace
+#endif
+
+#endif
+
