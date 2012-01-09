@@ -55,7 +55,7 @@ namespace xls
 		
 		cellContent(void) :
 			type(cellBlank),
-			colStr(""),
+			colStr(),
 			col(0),
 			row(0),
 			val(0) { }

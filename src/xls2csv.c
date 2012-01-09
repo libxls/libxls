@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 			for (cellCol = 0; cellCol <= pWS->rows.lastcol; cellCol++) {
                 //printf("Processing row=%d col=%d\n", cellRow+1, cellCol+1);
 
-				XLS_WIDE_STRINGS *cell = xls_cell(pWS, cellRow, cellCol);
+				xlsCell *cell = xls_cell(pWS, cellRow, cellCol);
 
 				if ((!cell) || (cell->isHidden)) {
 					continue;
