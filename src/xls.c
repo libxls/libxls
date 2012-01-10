@@ -490,7 +490,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell=&row->cells.cell[((COL*)buf)->col + i];
             //cell=&row->cells.cell[((COL*)buf)->col - row->fcell + i];  DFH - inconsistent
             //				col=row->cols[i];
-            cell->id=0x027E; // DFH use to be bof->id;
+            cell->id=0x027E; // DFH now RK, use to be bof->id;
             cell->xf=*((WORD *)(buf+(4+i*6)));
             cell->d=NumFromRk((BYTE *)(buf+(4+i*6+2)));
             cell->str=xls_getfcell(pWS->workbook,cell);
@@ -503,7 +503,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell=&row->cells.cell[((COL*)buf)->col + i];
             //cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
             //				col=row->cols[i];
-            cell->id=0x0201; // DFH use to be bof->id;
+            cell->id=0x0201; // DFH blank, use to be bof->id;
             cell->xf=*((WORD *)(buf+(4+i*2)));
             cell->str=xls_getfcell(pWS->workbook,cell);
         }
