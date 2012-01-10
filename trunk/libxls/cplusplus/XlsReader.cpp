@@ -46,7 +46,7 @@ static const uint8_t* error = (const uint8_t *)"Error";
 #if XLS_WIDE_STRINGS == 1
 static const char *outConv = 
 #ifndef __APPLE__
-	"wchar";
+	"wchar_t";
 #else
 	"UCS-4-INTERNAL";
 #endif
@@ -84,6 +84,9 @@ WorkBook::WorkBook(const string& fileName, int debug) :
 }
 WorkBook::~WorkBook()
 {
+#if XLS_WIDE_STRINGS == 1
+	iconv_close(iconvCD);
+#endif
 	xls_close_summaryInfo(summary);
 	xls_close_WS(activeWorkSheet);
 	xls_close_WB(workBook);	// handles nil parameter
