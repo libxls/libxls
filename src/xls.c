@@ -1269,6 +1269,8 @@ xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
 
 void xls_close_summaryInfo(xlsSummaryInfo *pSI)
 {
+	if(!pSI) return;
+
 	if(pSI->title)		free(pSI->title);
 	if(pSI->subject)	free(pSI->subject);
 	if(pSI->author)		free(pSI->author);
