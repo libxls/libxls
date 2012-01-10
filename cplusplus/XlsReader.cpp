@@ -85,6 +85,7 @@ WorkBook::WorkBook(const string& fileName, int debug) :
 WorkBook::~WorkBook()
 {
 	xls_close_summaryInfo(summary);
+	xls_close_WS(activeWorkSheet);
 	xls_close_WB(workBook);	// handles nil parameter
 }
 
