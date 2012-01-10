@@ -494,9 +494,6 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     case 0x201:		//BLANK
         sprintf(ret,"%s", "");
         break;
-    case 0x0BE:		//MULBLANK
-        sprintf(ret,"%s", "");
-        break;
     case 0x0204:	//LABEL (xlslib generates these)
 		lPtr = (WORD *)cell->l;
 		len = *lPtr++;
@@ -520,6 +517,11 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 			return unicode_decode((const BYTE *)lPtr, len*2, &newlen, pWB->charset);
 		}
         break;
+    case 0x027E:	//RK
+    case 0x0203:	//NUMBER
+        sprintf(ret,"%lf", cell->d);
+		break;
+
         //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
         switch (xf->format)
