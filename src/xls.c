@@ -509,8 +509,10 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         }
         break;
     case 0x00FD:	//LABELSST
-        cell->l=*(WORD_UA *)&((LABELSST*)buf)->value;
+    case 0x0204:	//LABEL
         cell->str=xls_getfcell(pWS->workbook,cell);
+		sscanf((char *)cell->str, "%d", &cell->l);
+		sscanf((char *)cell->str, "%lf", &cell->d);
 		break;
     case 0x027E:	//RK
         cell->d=NumFromRk(((RK*)buf)->value);
@@ -519,12 +521,9 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x0201:	//BLANK
         break;
     case 0x0203:	//NUMBER
-        cell->d=*(double *)&((BR_NUMBER*)buf)->value;
+		memcpy(&cell->d, &((BR_NUMBER*)buf)->value, sizeof(double) );
+        //cell->d=*(DFLOAT_UA *)&((BR_NUMBER*)buf)->value;
         cell->str=xls_getfcell(pWS->workbook,cell);
-        break;
-    case 0x0204:	//LABEL
-		cell->l = (long)&((LABEL*)buf)->value;
-		cell->str=xls_getfcell(pWS->workbook,cell);
         break;
     default:
         cell->str=xls_getfcell(pWS->workbook,cell);
