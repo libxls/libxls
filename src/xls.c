@@ -461,7 +461,8 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         if (((FORMULA*)buf)->res!=0xffff) {
 			cell->l=0;
 			// if a double, then set double and clear l
-            cell->d=*(DFLOAT_UA *)&((FORMULA*)buf)->resid;
+			memcpy(&cell->d, &((FORMULA*)buf)->resid, sizeof(double) );
+            //cell->d=*(DFLOAT_UA *)&((FORMULA*)buf)->resid;
 			cell->str=xls_getfcell(pWS->workbook,cell);
 		} else {
 			cell->l = 0xFFFF;
@@ -469,11 +470,13 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 			case 0:		// String
 				return cell;	// cell is half complete, get the STRING next record
 			case 1:		// Boolean
-				cell->d = (double)((FORMULA*)buf)->resdata[2];
+				memcpy(&cell->d, &((FORMULA*)buf)->resdata[2], sizeof(double) );
+				//cell->d = (double)((FORMULA*)buf)->resdata[2];
 				sprintf((char *)(cell->str = malloc(5)), "bool");
 				break;
 			case 2:		// error
-				cell->d = (double)((FORMULA*)buf)->resdata[2];
+				memcpy(&cell->d, &((FORMULA*)buf)->resdata[2], sizeof(double) );
+				//cell->d = (double)((FORMULA*)buf)->resdata[2];
 				sprintf((char *)(cell->str = malloc(6)), "error");
 				break;
 			case 3:		// empty string
