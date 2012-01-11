@@ -145,7 +145,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         }
         else
         {
-            ln=*(WORD*)(buf+ofs);
+            ln=*(WORD_UA *)(buf+ofs);
             rt = 0;
             sz = 0;
 
@@ -161,20 +161,20 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             ||(  (pWB->sst.continued)
                &&(ln != 0) ) )
         {
-            flag=*(BYTE*)(buf+ofs);
+            flag=*(BYTE *)(buf+ofs);
             ofs++;
 
             // Count of rich text formatting runs
             if (flag & 0x8)
             {
-                rt=*(WORD*)(buf+ofs);
+                rt=*(WORD_UA *)(buf+ofs);
                 ofs+=2;
             }
 
             // Size of asian phonetic settings block
             if (flag & 0x4)
             {
-                sz=*(DWORD*)(buf+ofs);
+                sz=*(DWORD_UA *)(buf+ofs);
                 ofs+=4;
 
 				if (xls_debug) {
@@ -296,7 +296,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 static double NumFromRk(BYTE* rk)
 {
     DWORD drk;
-    drk=*(DWORD*)rk;
+    drk=*(DWORD_UA *)rk;
 	union 
 	{
 		double d;
@@ -461,7 +461,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         if (((FORMULA*)buf)->res!=0xffff) {
 			cell->l=0;
 			// if a double, then set double and clear l
-            cell->d=*(DFLOAT *)&((FORMULA*)buf)->resid;
+            cell->d=*(DFLOAT_UA *)&((FORMULA*)buf)->resid;
 			cell->str=xls_getfcell(pWS->workbook,cell);
 		} else {
 			cell->l = 0xFFFF;
@@ -484,32 +484,32 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         break;
     case 0x00BD:	//MULRK
 
-        for (i = 0; i <= *(WORD *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
+        for (i = 0; i <= *(WORD_UA *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
 	       			i <= row->lcell - row->fcell - ((COL *)buf)->col; i++)
         {
             cell=&row->cells.cell[((COL*)buf)->col + i];
             //cell=&row->cells.cell[((COL*)buf)->col - row->fcell + i];  DFH - inconsistent
             //				col=row->cols[i];
             cell->id=0x027E; // DFH now RK, use to be bof->id;
-            cell->xf=*((WORD *)(buf+(4+i*6)));
+            cell->xf=*((WORD_UA *)(buf+(4+i*6)));
             cell->d=NumFromRk((BYTE *)(buf+(4+i*6+2)));
             cell->str=xls_getfcell(pWS->workbook,cell);
         }
         break;
     case 0x00BE:	//MULBLANK
-        for (i = 0; i <= *(WORD *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
+        for (i = 0; i <= *(WORD_UA *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
 	       			i <= row->lcell - row->fcell - ((COL *)buf)->col; i++)
         {
             cell=&row->cells.cell[((COL*)buf)->col + i];
             //cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
             //				col=row->cols[i];
             cell->id=0x0201; // DFH blank, use to be bof->id;
-            cell->xf=*((WORD *)(buf+(4+i*2)));
+            cell->xf=*((WORD_UA *)(buf+(4+i*2)));
             cell->str=xls_getfcell(pWS->workbook,cell);
         }
         break;
     case 0x00FD:	//LABELSST
-        cell->l=*(WORD *)&((LABELSST*)buf)->value;
+        cell->l=*(WORD_UA *)&((LABELSST*)buf)->value;
         cell->str=xls_getfcell(pWS->workbook,cell);
 		break;
     case 0x027E:	//RK
@@ -675,7 +675,7 @@ void xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
 
 void xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
-    int count=*((WORD*)buf);
+    int count=*((WORD_UA *)buf);
     int i,c,r;
     struct MERGEDCELLS* span;
     verbose("Merged Cells");
@@ -738,7 +738,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
             break;
 
         case 0x042:		// CODEPAGE
-            pWB->codepage=*(WORD*)buf;
+            pWB->codepage=*(WORD_UA *)buf;
 			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
             break;
 
@@ -856,7 +856,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				unsigned char *p = buf + 2;
 				int idx, len;
 
-				len = *(WORD *)buf;
+				len = *(WORD_UA *)buf;
 				for(idx=0; idx<len; ++idx) {
 					printf("   Index=0x%2.2x %2.2x%2.2x%2.2x\n", idx+8, p[0], p[1], p[2] );
 					p += 4;
@@ -866,7 +866,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
 		case 0x0022: // 1904
 			if(xls_debug) {
-				printf("   mode: 0x%x\n", *(WORD *)buf);
+				printf("   mode: 0x%x\n", *(WORD_UA *)buf);
 			}
 			break;
 
@@ -901,7 +901,7 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
         switch (tmp.id)
         {
         case 0x55:     //DEFCOLWIDTH
-            pWS->defcolwidth=*(WORD*)buf*256;
+            pWS->defcolwidth=*(WORD_UA *)buf*256;
             break;
         case 0x7D:     //COLINFO
             xls_addColinfo(pWS,(COLINFO*)buf);
@@ -970,7 +970,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 		long lastPos = offset;
 
 		if(xls_debug > 10) {
-			printf("LASTPOS=%ld pos=%zd filePos=%d filePos=%ld\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
+			printf("LASTPOS=%ld pos=%zd filePos=%d filePos=%d\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
 		}
         ole2_read(&tmp, 1,4,pWS->workbook->olestr);
         buf=(BYTE *)malloc(tmp.size);
@@ -990,15 +990,15 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
             xls_addRow(pWS,(ROW*)buf);
             break;
 		case 0x55:
-			if(xls_debug > 10) printf("DEFAULT COL WIDTH: %d\n", *(WORD *)buf);
+			if(xls_debug > 10) printf("DEFAULT COL WIDTH: %d\n", *(WORD_UA *)buf);
 			break;
 		case 0x225:
-			if(xls_debug > 10) printf("DEFAULT ROW Height: 0x%x %d\n", ((WORD *)buf)[0], ((WORD *)buf)[1]);
+			if(xls_debug > 10) printf("DEFAULT ROW Height: 0x%x %d\n", ((WORD_UA *)buf)[0], ((WORD_UA *)buf)[1]);
 			break;
 		case 0xD7:
 			if(xls_debug > 10) {
 				printf("DBCELL: size %d\n", tmp.size);
-				DWORD *foo = (DWORD *)buf;
+				DWORD *foo = (DWORD_UA *)buf;
 				printf("DBCELL OFFSET=%4.4u -> ROW %ld\n", foo[0], lastPos-foo[0]);
 				++foo;
 				WORD *goo = (WORD *)foo;
@@ -1008,7 +1008,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
         case 0x20B:		//INDEX
 			if(xls_debug > 10) {
 				printf("INDEX: size %d\n", tmp.size);
-				DWORD *foo = (DWORD *)buf;
+				DWORD *foo = (DWORD_UA *)buf;
 				for(int i=0; i<5; ++i) printf("FOO[%d]=%4.4x %u\n", i, foo[i], foo[i]);
 			}
 #if 0

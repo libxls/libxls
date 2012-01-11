@@ -235,7 +235,7 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 
     if (is2) {
 		// length is two bytes
-        ln=*(WORD*)str;
+        ln=*(WORD_UA *)str;
         ofs+=2;
     } else {
 		// single byte length
@@ -419,7 +419,7 @@ void xls_showCell(struct st_cell_data* cell)
 		return;
 	}
     printf(" double: %f\n",cell->d);
-    printf("   long: %ld\n",cell->l);
+    printf("    int: %d\n",cell->l);
     if (cell->str!=NULL)
         printf("    str: %s\n",cell->str);
 }
@@ -507,7 +507,7 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 		} else {
 			//printf("Found unicode str len=%d\n", len);
 			size_t newlen;			
-			lPtr = (WORD *)((char *)lPtr + 1);	// skip format
+			lPtr = (WORD_UA *)((char *)lPtr + 1);	// skip format
 #if 0 // debugging			
 			int x;
 			for(x=0; x<len; ++x) {			

@@ -234,6 +234,7 @@ FORMAT;
 #pragma pack(pop)
 
 //---------------------------------------------------------
+
 typedef	struct st_sheet
 {
     DWORD count;        //Count of sheets
@@ -311,7 +312,6 @@ typedef	struct st_sst
     DWORD lastsz;
     struct str_sst_string
     {
-        //	long len;
         BYTE* str;
     }
     * string;
@@ -328,13 +328,13 @@ typedef	struct st_cell
         WORD	row;
         WORD	col;
         WORD	xf;
-        double	d;
-        long	l;
         BYTE*	str;		// String value;
-        BYTE	isHidden;	// Is cell hidden
+        double	d;
+        int32_t	l;
         WORD	width;		// Width of col
         WORD	colspan;
         WORD	rowspan;
+        BYTE	isHidden;	// Is cell hidden
     }
     * cell;
 }
@@ -381,7 +381,7 @@ typedef struct xlsWorkBook
 {
     //FILE*		file;		//
     OLE2Stream*	olestr;
-    long		filepos;	//position in file
+    int32_t		filepos;	//position in file
 
     //From Header (BIFF)
     BYTE		is5ver;
