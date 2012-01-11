@@ -27,9 +27,13 @@
 
 #include <stdint.h>
 
-typedef unsigned char		BYTE	__attribute__ ((aligned (1)));	// 1 bytes
-typedef uint16_t			WORD	__attribute__ ((aligned (1)));	// 2 bytes
-typedef uint32_t			DWORD	__attribute__ ((aligned (1)));	// 4 bytes
-typedef double				DFLOAT	__attribute__ ((aligned (1)));	// 8 bytes
+typedef unsigned char		BYTE	;//__attribute__ ((aligned (1)));	// 1 bytes
+typedef uint16_t			WORD	;//__attribute__ ((aligned (1)));	// 2 bytes
+typedef uint32_t			DWORD	;// __attribute__ ((aligned (1)));	// 4 bytes
+
+//typedef unsigned char		BYTE_UA		__attribute__ ((aligned (1)));	// 1 bytes
+typedef uint16_t			WORD_UA		__attribute__ ((aligned (1)));	// 2 bytes
+typedef uint32_t			DWORD_UA	__attribute__ ((aligned (1)));	// 4 bytes
+typedef double				DFLOAT_UA	__attribute__ ((aligned (1)));	// 8 bytes
 
 #endif

@@ -491,7 +491,7 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
            // read content
            for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
 		   {
-              DWORD s = *(DWORD *)(sector + posInSector*4);
+              DWORD s = *(DWORD_UA *)(sector + posInSector*4);
 				//printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
               if (s != FREESECT)
@@ -501,7 +501,7 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
                  sectorNum++;
                 }
 			}
-			sid = *(DWORD *)(sector + posInSector*4);
+			sid = *(DWORD_UA *)(sector + posInSector*4);
 		}
 		free(sector);
     }
