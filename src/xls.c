@@ -510,6 +510,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         break;
     case 0x00FD:	//LABELSST
     case 0x0204:	//LABEL
+		cell->l=*(WORD_UA *)&((LABEL*)buf)->value;	// LABEL and LABELSST same struct
         cell->str=xls_getfcell(pWS->workbook,cell);
 		sscanf((char *)cell->str, "%d", &cell->l);
 		sscanf((char *)cell->str, "%lf", &cell->d);
@@ -978,22 +979,22 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 		// xls_showBOF(&tmp);
         switch (tmp.id)
         {
-        case 0x0A:		//EOF
+        case 0x000A:		//EOF
             break;
-        case 0x0E5: 	//MERGEDCELLS
+        case 0x00E5:		//MERGEDCELLS
             xls_mergedCells(pWS,&tmp,buf);
             break;
-        case 0x208:		//ROW
+        case 0x0208:		//ROW
 			if(xls_debug > 10) printf("ROW: %x at pos=%ld\n", tmp.id, lastPos);
             xls_addRow(pWS,(ROW*)buf);
             break;
-		case 0x55:
+		case 0x0055:
 			if(xls_debug > 10) printf("DEFAULT COL WIDTH: %d\n", *(WORD_UA *)buf);
 			break;
-		case 0x225:
+		case 0x0225:
 			if(xls_debug > 10) printf("DEFAULT ROW Height: 0x%x %d\n", ((WORD_UA *)buf)[0], ((WORD_UA *)buf)[1]);
 			break;
-		case 0xD7:
+		case 0x00D7:
 			if(xls_debug > 10) {
 				printf("DBCELL: size %d\n", tmp.size);
 				DWORD *foo = (DWORD_UA *)buf;
@@ -1003,7 +1004,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 				for(int i=0; i<5; ++i) printf("goo[%d]=%4.4x %u\n", i, goo[i], goo[i]);
 			}
 			break;
-        case 0x20B:		//INDEX
+        case 0x020B:		//INDEX
 			if(xls_debug > 10) {
 				printf("INDEX: size %d\n", tmp.size);
 				DWORD *foo = (DWORD_UA *)buf;
@@ -1017,17 +1018,17 @@ Absolute stream position of the DEFCOLWIDTH record (➜5.32) of the current shee
 Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row Block
 #endif
             break;
-        case 0x0BD:		//MULRK
-        case 0x0BE:		//MULBLANK
-        case 0x203:		//NUMBER
-        case 0x27e:		//RK
-        case 0xFD:		//LABELSST
-        case 0x201:		//BLANK
-        case 0x204:		//LABEL
-        case 0x06:		//FORMULA
+        case 0x00BD:		//MULRK
+        case 0x00BE:		//MULBLANK
+        case 0x0203:		//NUMBER
+        case 0x027e:		//RK
+        case 0x00FD:		//LABELSST
+        case 0x0201:		//BLANK
+        case 0x0204:		//LABEL
+        case 0x0006:		//FORMULA
             cell = xls_addCell(pWS,&tmp,buf);
             break;
-		case 0x207:		//STRING, only follows a formula
+		case 0x0207:		//STRING, only follows a formula
 			if(cell && cell->id == 0x06) { // formula
 				cell->str = get_string(buf, !pWB->is5ver, pWB->is5ver, pWB->charset);
 				if (xls_debug) xls_showCell(cell);
