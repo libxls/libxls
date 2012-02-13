@@ -488,13 +488,13 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     //LABELSST
     switch (cell->id)
     {
-    case 0x0FD:		//LABELSST
+    case 0x00FD:		//LABELSST
         sprintf(ret,"%s",pWB->sst.string[cell->l].str);
         break;
-    case 0x201:		//BLANK
+    case 0x0201:		//BLANK
         sprintf(ret,"%s", "");
         break;
-    case 0x0204:	//LABEL (xlslib generates these)
+    case 0x0204:		//LABEL (xlslib generates these)
 		lPtr = (WORD *)cell->l;
 		len = *lPtr++;
 		if(pWB->is5ver) {

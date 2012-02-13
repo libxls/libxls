@@ -118,15 +118,6 @@ typedef struct RK
 }
 RK;
 
-typedef struct LABELSST
-{
-    WORD	row;
-    WORD	col;
-    WORD	xf;
-    BYTE	value[1];
-}
-LABELSST;
-
 typedef struct BLANK
 {
     WORD	row;
@@ -143,6 +134,7 @@ typedef struct LABEL
     BYTE	value[1]; // var
 }
 LABEL;
+typedef LABEL LABELSST;
 
 typedef struct SST
 {
