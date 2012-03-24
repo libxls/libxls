@@ -504,12 +504,11 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
+BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 {
-    struct st_xf_data*  xf;
-    BYTE* out;
+    struct st_xf_data *xf;
 	WORD	len, *lPtr;
-    static char ret[10240];	// don't want this on the stack, and no recursion so static OK
+    char	*ret = NULL;
 
     xf=&pWB->xfs.xf[cell->xf];
 
@@ -517,68 +516,64 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     switch (cell->id)
     {
     case 0x00FD:		//LABELSST
-        sprintf(ret,"%s",pWB->sst.string[cell->l].str);
+        asprintf(&ret,"%s",pWB->sst.string[cell->l].str);
         break;
     case 0x0201:		//BLANK
-        sprintf(ret,"%s", "");
+        asprintf(&ret, "");
         break;
     case 0x0204:		//LABEL (xlslib generates these)
 		lPtr = (WORD *)cell->l;
 		len = *lPtr++;
 		if(pWB->is5ver) {
-			sprintf(ret,"%.*s", len, (char *)lPtr);
+			asprintf(&ret,"%.*s", len, (char *)lPtr);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
 		if((*(BYTE *)lPtr & 0x01) == 0) {
-			return utf8_decode((BYTE *)lPtr + 1, len, pWB->charset);
+			ret = (char *)utf8_decode((BYTE *)lPtr + 1, len, pWB->charset);
 		} else {
 			size_t newlen;			
-			return unicode_decode((BYTE *)lPtr + 1, len*2, &newlen, pWB->charset);
+			ret = (char *)unicode_decode((BYTE *)lPtr + 1, len*2, &newlen, pWB->charset);
 		}
         break;
     case 0x027E:		//RK
     case 0x0203:		//NUMBER
-        sprintf(ret,"%lf", cell->d);
+        asprintf(&ret,"%lf", cell->d);
 		break;
-
-        //		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
+		//		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
         switch (xf->format)
         {
         case 0:
-            sprintf(ret,"%d",(int)cell->d);
+            asprintf(&ret,"%d",(int)cell->d);
             break;
         case 1:
-            sprintf(ret,"%d",(int)cell->d);
+            asprintf(&ret,"%d",(int)cell->d);
             break;
         case 2:
-            sprintf(ret,"%.1f",cell->d);
+            asprintf(&ret,"%.1f",cell->d);
             break;
         case 9:
-            sprintf(ret,"%d",(int)cell->d);
+            asprintf(&ret,"%d",(int)cell->d);
             break;
         case 10:
-            sprintf(ret,"%.2f",cell->d);
+            asprintf(&ret,"%.2f",cell->d);
             break;
         case 11:
-            sprintf(ret,"%.1e",cell->d);
+            asprintf(&ret,"%.1e",cell->d);
             break;
         case 14:
 			//ret=ctime(cell->d);
-			sprintf(ret,"%.0f",cell->d);
+			asprintf(&ret,"%.0f",cell->d);
             break;
         default:
-			// sprintf(ret,"%.4.2f (%i)",cell->d,xf->format);break;
-            sprintf(ret,"%.2f",cell->d);
+			// asprintf(&ret,"%.4.2f (%i)",cell->d,xf->format);break;
+            asprintf(&ret,"%.2f",cell->d);
             break;
         }
         break;
     }
 
-	size_t nlen = strlen((char *)ret)+1;
-    out=(BYTE *)malloc(nlen);
-    memcpy(out,ret,nlen);
-    return out;
+    return (BYTE *)ret;
 }
 
 char* xls_getCSS(xlsWorkBook* pWB)
