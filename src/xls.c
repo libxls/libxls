@@ -117,11 +117,11 @@ void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
 
 void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 {
-    DWORD ln; // String character count
-    DWORD ofs; // Current offset in SST buffer
-    DWORD rt; // Count or rich text formatting runs
-    DWORD sz; // Size of asian phonetic settings block
-    BYTE flag; // String flags
+    DWORD ln;	// String character count
+    DWORD ofs;	// Current offset in SST buffer
+    DWORD rt;	// Count of rich text formatting runs
+    DWORD sz;	// Size of asian phonetic settings block
+    BYTE flag;	// String flags
     BYTE* ret;
 
     if (xls_debug) {
@@ -157,9 +157,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 		}
 
         // Read flags
-        if (  (!pWB->sst.continued)
-            ||(  (pWB->sst.continued)
-               &&(ln != 0) ) )
+        if ( (!pWB->sst.continued) || ( (pWB->sst.continued) && (ln != 0) ) )
         {
             flag=*(BYTE *)(buf+ofs);
             ofs++;
@@ -193,10 +191,9 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         {
             if (flag & 0x1)
             {
-                size_t new_len = 0;
                 ln_toread = min((size-ofs)/2, ln);
-
-                ret=unicode_decode(buf+ofs,ln_toread*2, &new_len,pWB->charset);
+                size_t new_len = 0;
+                ret=unicode_decode(buf+ofs,ln_toread*2,&new_len,pWB->charset);
 
                 if (ret == NULL)
                 {
@@ -211,22 +208,20 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                 ofs+=ln_toread*2;
 
                 if (xls_debug) {
-	                printf("String16: %s(%zd)\n",ret,new_len);
+	                printf("String16SST: %s(%zd)\n",ret,new_len);
                 }
             }
             else
             {
                 ln_toread = min((size-ofs), ln);
 
-                ret = (BYTE *)malloc(ln_toread + 1);
-                memcpy (ret, (buf+ofs),ln_toread);
-                *(BYTE*)(ret+ln_toread)=0;
+				ret = utf8_decode((buf+ofs), ln_toread, pWB->charset);
 
-                ln -= ln_toread;
-                ofs+=ln_toread;
+                ln  -= ln_toread;
+                ofs +=ln_toread;
 
                 if (xls_debug) {
-                	printf("String8: %s(%u) \n",ret,ln);
+                	printf("String8SST: %s(%u) \n",ret,ln);
                 }
             }
         }
@@ -717,10 +712,10 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
         ole2_read(buf, 1, bof1.size, pWB->olestr);
 
         switch (bof1.id) {
-        case 0x00A:		// EOF
+        case 0x000A:	// EOF
             //verbose("EOF");
             break;
-        case 0x809:		// BIFF5-8
+        case 0x0809:	// BIFF5-8
 			{
 				BIFF *b = (BIFF*)buf;
 				if (b->ver==0x600)
@@ -736,12 +731,12 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			}
             break;
 
-        case 0x042:		// CODEPAGE
+        case 0x0042:	// CODEPAGE
             pWB->codepage=*(WORD_UA *)buf;
 			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
             break;
 
-        case 0x03c:		// CONTINUE
+        case 0x003c:	// CONTINUE
 			if(once) {
 				if (bof2.id==0xfc)
 					xls_appendSST(pWB,buf,bof1.size);
@@ -767,15 +762,16 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			}
 			break;
 
-        case 0x0fc:		// SST
+        case 0x00fc:	// SST
+			//if(xls_debug) dumpbuf((BYTE *)"/tmp/SST",bof1.size,buf);
             xls_addSST(pWB,(SST*)buf,bof1.size);
             break;
 
-        case 0x0ff:		// EXTSST
-            if(xls_debug) dumpbuf((BYTE *)"EXTSST",bof1.size,buf);
+        case 0x00ff:	// EXTSST
+            //if(xls_debug > 1000) dumpbuf((BYTE *)"/tmp/EXTSST",bof1.size,buf);
             break;
 
-        case 0x085:		// BOUNDSHEET
+        case 0x0085:	// BOUNDSHEET
 			{
 				BOUNDSHEET *bs = (BOUNDSHEET *)buf;
 				//char *s;
@@ -784,7 +780,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			}
             break;
 
-        case 0x0e0:  	// XF
+        case 0x00e0:  	// XF
 			if(pWB->is5ver) {
 				XF5 *xf;
 				xf = (XF5 *)buf;
@@ -811,7 +807,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			}
             break;
 
-        case 0x031:		// FONT
+        case 0x0031:	// FONT
 			{
 				BYTE *s;
 				FONT *f = (FONT*)buf;
@@ -830,7 +826,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			}
 			break;
 
-        case 0x41E:		//FORMAT
+        case 0x041E:	//FORMAT
             xls_addFormat(pWB,(FORMAT*)buf);
             break;
 
@@ -870,14 +866,13 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
         default:
-			if(xls_debug) printf("UNKNOWN BOF=%Xh\n", bof1.id);
+			if(xls_debug) printf("Not Processed in parseWoorkBook():  BOF=0x%4.4X\n", bof1.id);
             break;
         }
 		free(buf);
 
         bof2=bof1;
 		once=1;
-
     }
     while ((!pWB->olestr->eof)&&(bof1.id!=0x0A));
 }
