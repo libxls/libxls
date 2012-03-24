@@ -124,6 +124,40 @@ void verbose(char* str)
         printf("libxls : %s\n",str);
 }
 
+BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
+{
+	int utf8_chars = 0;
+	BYTE *ret;
+	
+	for(DWORD i=0; i<len; ++i) {
+		if(str[i] & (BYTE)0x80) {
+			++utf8_chars;
+		}
+	}
+	
+	if(utf8_chars == 0 || strcmp(encoding, "UTF-8")) {
+		ret = (BYTE *)malloc(len+1);
+		memcpy(ret, str, len);
+		ret[len] = 0;
+	} else {
+		// UTF-8 encoding inline
+		ret = (BYTE *)malloc(len+utf8_chars+1);
+		BYTE *out = ret;
+		for(DWORD i=0; i<len; ++i) {
+			BYTE c = str[i];
+			if(c & (BYTE)0x80) {
+				*out++ = (BYTE)0xC0 | (c >> 6);
+				*out++ = (BYTE)0x80 | (c & 0x3F);
+			} else {
+				*out++ = c;
+			}
+		}
+		*out = 0;
+	}
+
+	return ret;
+}
+
 // Convert unicode string to to_enc encoding
 BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 {
@@ -225,9 +259,7 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
     BYTE flag;
     BYTE* str;
     BYTE* ret;
-    size_t new_len;
 	
-	new_len = 0;
 	flag = 0;
     str=s;
 
@@ -262,14 +294,10 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
     }
     if(flag & 0x1)
     {
-        WORD *pTemp = (WORD *)calloc(ln+1, sizeof(WORD));
-        memcpy(pTemp,str+ofs,ln*2);
-        ret = unicode_decode((BYTE *)pTemp,ln*2, &new_len,charset);
-        free(pTemp);
+		size_t new_len = 0;
+        ret = unicode_decode(str+ofs,ln*2, &new_len,charset);
     } else {
-        ret=(BYTE *)malloc(ln+1);
-        memcpy (ret,(str+ofs),ln);
-        *(BYTE*)(ret+ln)=0;
+		ret = utf8_decode((str+ofs), ln, charset);
     }
 
 #if 0	// debugging
@@ -501,24 +529,15 @@ BYTE*  xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
 			sprintf(ret,"%.*s", len, (char *)lPtr);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
-		if((*(char *)lPtr & 0x01) == 0) {
-			sprintf(ret,"%.*s", len, (char *)lPtr + 1);	// 1 is the format
-			//printf("Found BIFF8/ASCII string of len=%d \"%s\"\n", len, ret);
+		if((*(BYTE *)lPtr & 0x01) == 0) {
+			return utf8_decode((BYTE *)lPtr + 1, len, pWB->charset);
 		} else {
-			//printf("Found unicode str len=%d\n", len);
 			size_t newlen;			
-			lPtr = (WORD_UA *)((char *)lPtr + 1);	// skip format
-#if 0 // debugging			
-			int x;
-			for(x=0; x<len; ++x) {			
-				printf("wide_char[i] = %x\n", lPtr[x]);
-			}
-#endif						
-			return unicode_decode((const BYTE *)lPtr, len*2, &newlen, pWB->charset);
+			return unicode_decode((BYTE *)lPtr + 1, len*2, &newlen, pWB->charset);
 		}
         break;
-    case 0x027E:	//RK
-    case 0x0203:	//NUMBER
+    case 0x027E:		//RK
+    case 0x0203:		//NUMBER
         sprintf(ret,"%lf", cell->d);
 		break;
 
