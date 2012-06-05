@@ -447,7 +447,8 @@ static int sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 {
 	size_t num;
 	size_t seeked;
-	
+
+	//printf("sector_read: sid=%zu (0x%zx) lsector=%u sector_pos=%zu\n", sid, sid, ole2->lsector, sector_pos(ole2, sid) );
     seeked = fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
 	if(seeked != 0) {
 		printf("seek: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
@@ -484,32 +485,30 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 
     // Add additionnal sectors of the MSAT
     {
-        unsigned int sid = ole2->difstart;
+        DWORD sid = ole2->difstart;
 
-		//printf("sid=%d (0x%x)\n", sid, sid);
 		BYTE *sector = malloc(ole2->lsector);
-        while (sid != ENDOFCHAIN)
+		//printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
+        while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Excel bug?)
 		{
-           int posInSector;
-
            // read MSAT sector
-			assert((int)sid >= 0);
-			sector_read(ole2, sector, sid);
+           sector_read(ole2, sector, sid);
 
            // read content
+           int posInSector;
            for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
 		   {
               DWORD s = *(DWORD_UA *)(sector + posInSector*4);
-				//printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
+              //printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
               if (s != FREESECT)
                 {
-				 assert((int)s >= 0);
                  sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
                  sectorNum++;
                 }
 			}
 			sid = *(DWORD_UA *)(sector + posInSector*4);
+			//printf("   s[%d]=%d (0x%x)\n", posInSector, sid, sid);
 		}
 		free(sector);
     }
