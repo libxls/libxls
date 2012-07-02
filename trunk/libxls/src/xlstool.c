@@ -117,6 +117,29 @@ static const DWORD colors[] =
         0x333333
     };
 
+#if HAVE_ASPRINTF != 1
+
+#include <stdarg.h>
+
+static int asprintf(char **ret, const char *format, ...)
+{
+	int i;
+	va_list ap;
+
+	va_start(ap, format); 
+
+	i = vsnprintf(NULL, 0, format, ap) + 1;
+	char *str = (char *)malloc(i);
+	i = vsnprintf(str, i, format, ap);
+
+	va_end(ap);
+
+	*ret = str;
+	return i > 255 ? 255 : i;
+}
+#endif
+
+
 void dumpbuf(BYTE* fname,long size,BYTE* buf)
 {
     FILE *f = fopen((char *)fname, "wb");
