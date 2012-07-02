@@ -872,7 +872,75 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 				printf("   mode: 0x%x\n", *(WORD_UA *)buf);
 			}
 			break;
+#if 0
+		case 0x00eb:
+		{
+printf("DRAWING! %u\n", bof1.size);
+			struct foo {
+				unsigned int rec : 4;
+				unsigned int instance : 12;
+				unsigned int type : 16;
+				unsigned int len : 32;
+			} fooper;
+			unsigned int off = 0;
+			memcpy(&fooper, buf, 8);	// F000 - overall header - has total record size
+			printf("rec=%x instance=%x type=%x len=%d\n", fooper.rec, fooper.instance, fooper.type, fooper.len);
 
+			off = 8;
+			memcpy(&fooper, buf+off, 8); // OfficeArtFDG F006
+			printf("rec=%x instance=%x type=%x len=%d\n", fooper.rec, fooper.instance, fooper.type, fooper.len);
+			off += 8;
+			{
+				struct {
+					uint32_t spidMax;
+					uint32_t cidcl;
+					uint32_t cspSaved;
+					uint32_t cdgSaved;
+				} fog;
+				memcpy(&fog, buf+off, 16); // OfficeArtRecordHeader F001 - specified BLIP - this is the imaged 
+				printf("SpidMax=%d cidcl=%d cspSaved=%d cdgSaved=%d\n", fog.spidMax, fog.cidcl, fog.cspSaved, fog.cdgSaved);
+				off += 16, fooper.len -= 16;
+			}
+			for(int i=0; i<fooper.len/8; ++i) {
+				struct {
+					uint32_t dgid;
+					uint32_t cspidCur;
+				} fog;
+				memcpy(&fog, buf+off, 8); // OfficeArtRecordHeader F001 - specified BLIP - this is the imaged 
+				printf("  dgid=%d cspidCur=%d\n", fog.dgid, fog.cspidCur);
+				off += 8;
+			}
+
+			memcpy(&fooper, buf+off, 8); // OfficeArtRecordHeader F001 - specified BLIP - this is the image
+			printf("rec=%x instance=%x type=%x len=%d\n", fooper.rec, fooper.instance, fooper.type, fooper.len);
+
+			off += 8 + fooper.len;
+			memcpy(&fooper, buf+off, 8); //
+			printf("rec=%x instance=%x type=%x len=%d\n", fooper.rec, fooper.instance, fooper.type, fooper.len);
+			off += 8;
+			int properties = fooper.len/6;
+			for(int i=0; i<properties; ++i) {
+				struct foo {
+					unsigned int type : 16;
+					//unsigned int blip : 1;
+					//unsigned int complex : 1;
+					unsigned int val : 32;
+				} fog;
+				memcpy(&fog, buf+off, 6); //
+				//printf("  prop type=%x blip=%x complex=%x val=%x\n", fog.type, fog.blip, fog.complex, fog.val);
+				printf("  prop type=%x val=%x\n", fog.type, fog.val);
+				off += 6;
+			}
+			memcpy(&fooper, buf+off, 8); //
+			printf("rec=%x instance=%x type=%x len=%d\n", fooper.rec, fooper.instance, fooper.type, fooper.len);
+			off += 8 + fooper.len;
+
+			memcpy(&fooper, buf+off, 8); //
+			printf("rec=%x instance=%x type=%x len=%d [size=%d off=%d]\n", fooper.rec, fooper.instance, fooper.type, fooper.len, bof1.size, off);
+			off += 8 + fooper.len;
+			
+		}	break;
+#endif
         default:
 			if(xls_debug) printf("Not Processed in parseWoorkBook():  BOF=0x%4.4X\n", bof1.id);
             break;
@@ -1063,7 +1131,7 @@ Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row
 #endif
         default:
 			if(xls_debug) {
-				printf("UNKNOWN: %x at pos=%lu\n", tmp.id, lastPos);
+				printf("UNKNOWN: %x at pos=%lu size=%u\n", tmp.id, lastPos, tmp.size);
 			}
             break;
         }
