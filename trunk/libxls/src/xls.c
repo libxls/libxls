@@ -405,12 +405,13 @@ void xls_addRow(xlsWorkSheet* pWS,ROW* row)
 
 void xls_makeTable(xlsWorkSheet* pWS)
 {
-    WORD i,t;
+    DWORD i,t;
     struct st_row_data* tmp;
     verbose ("xls_makeTable");
 
     pWS->rows.row=(struct st_row_data *)calloc((pWS->rows.lastrow+1),sizeof(struct st_row_data));
 
+	// printf("ALLOC: rows=%d cols=%d\n", pWS->rows.lastrow, pWS->rows.lastcol);
     for (t=0;t<=pWS->rows.lastrow;t++)
     {
         tmp=&pWS->rows.row[t];
@@ -964,10 +965,13 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
     ole2_seek(pWS->workbook->olestr,pWS->filepos);
     do
     {
-        ole2_read(&tmp, 1,4,pWS->workbook->olestr);
+		size_t read;
+        read = ole2_read(&tmp, 1,4,pWS->workbook->olestr);
+		assert(read == 4);
         buf=(BYTE *)malloc(tmp.size);
-        ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
-        //	xls_showBOF(&tmp);
+        read = ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
+		assert(read == tmp.size);
+		// xls_showBOF(&tmp);
         switch (tmp.id)
         {
         case 0x55:     //DEFCOLWIDTH
@@ -979,8 +983,9 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
         case 0x208:		//ROW
             if (pWS->rows.lastcol<((ROW*)buf)->lcell)
                 pWS->rows.lastcol=((ROW*)buf)->lcell;
-            if (pWS->rows.lastrow<((ROW*)buf)->index)
+            if (pWS->rows.lastrow<((ROW*)buf)->index) {
                 pWS->rows.lastrow=((ROW*)buf)->index;
+			}
             break;
         }
         free(buf);
