@@ -466,7 +466,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 			cell->l=0;
 			// if a double, then set double and clear l
 			memcpy(&cell->d, &((FORMULA*)buf)->resid, sizeof(double));	// Required for ARM
-			cell->str=xls_getfcell(pWS->workbook,cell);
+			cell->str=xls_getfcell(pWS->workbook,cell, NULL);
 		} else {
 			cell->l = 0xFFFF;
 			switch(((FORMULA*)buf)->resid) {
@@ -497,7 +497,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             cell->id=0x027E; // DFH now RK, use to be bof->id;
             cell->xf=*((WORD_UA *)(buf+(4+i*6)));
             cell->d=NumFromRk((BYTE *)(buf+(4+i*6+2)));
-            cell->str=xls_getfcell(pWS->workbook,cell);
+            cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
     case 0x00BE:	//MULBLANK
@@ -509,28 +509,27 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             //				col=row->cols[i];
             cell->id=0x0201; // DFH blank, use to be bof->id;
             cell->xf=*((WORD_UA *)(buf+(4+i*2)));
-            cell->str=xls_getfcell(pWS->workbook,cell);
+            cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
     case 0x00FD:	//LABELSST
     case 0x0204:	//LABEL
-		cell->l=*(WORD_UA *)&((LABEL*)buf)->value;	// LABEL and LABELSST same struct
-        cell->str=xls_getfcell(pWS->workbook,cell);
+		cell->str=xls_getfcell(pWS->workbook,cell,(WORD_UA *)&((LABEL*)buf)->value);
 		sscanf((char *)cell->str, "%d", &cell->l);
 		sscanf((char *)cell->str, "%lf", &cell->d);
 		break;
     case 0x027E:	//RK
         cell->d=NumFromRk(((RK*)buf)->value);
-        cell->str=xls_getfcell(pWS->workbook,cell);
+        cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
     case 0x0201:	//BLANK
         break;
     case 0x0203:	//NUMBER
 		memcpy(&cell->d, &((BR_NUMBER*)buf)->value, sizeof(double)); // Required for ARM
-        cell->str=xls_getfcell(pWS->workbook,cell);
+        cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
     default:
-        cell->str=xls_getfcell(pWS->workbook,cell);
+        cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
     }
     if (xls_debug) xls_showCell(cell);
@@ -869,8 +868,9 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
 		case 0x0022: // 1904
+			pWB->is1904 = *(WORD_UA *)buf;
 			if(xls_debug) {
-				printf("   mode: 0x%x\n", *(WORD_UA *)buf);
+				printf("   mode: 0x%x\n", pWB->is1904);
 			}
 			break;
 #if 0
