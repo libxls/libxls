@@ -535,10 +535,10 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
+BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
 {
     struct st_xf_data *xf;
-	WORD	len, *lPtr;
+	WORD	len;
     char	*ret = NULL;
 
     xf=&pWB->xfs.xf[cell->xf];
@@ -547,23 +547,22 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell)
     switch (cell->id)
     {
     case 0x00FD:		//LABELSST
-        asprintf(&ret,"%s",pWB->sst.string[cell->l].str);
+        asprintf(&ret,"%s",pWB->sst.string[*label].str);
         break;
     case 0x0201:		//BLANK
         asprintf(&ret, "");
         break;
     case 0x0204:		//LABEL (xlslib generates these)
-		lPtr = (WORD *)cell->l;
-		len = *lPtr++;
+		len = *label++;
 		if(pWB->is5ver) {
-			asprintf(&ret,"%.*s", len, (char *)lPtr);
+			asprintf(&ret,"%.*s", len, (char *)label);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
-		if((*(BYTE *)lPtr & 0x01) == 0) {
-			ret = (char *)utf8_decode((BYTE *)lPtr + 1, len, pWB->charset);
+		if ((*(BYTE *)label & 0x01) == 0) {
+			ret = (char *)utf8_decode((BYTE *)label + 1, len, pWB->charset);
 		} else {
 			size_t newlen;			
-			ret = (char *)unicode_decode((BYTE *)lPtr + 1, len*2, &newlen, pWB->charset);
+			ret = (char *)unicode_decode((BYTE *)label + 1, len*2, &newlen, pWB->charset);
 		}
         break;
     case 0x027E:		//RK

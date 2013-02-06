@@ -110,7 +110,7 @@
 { 0xA9, "COORDLIST",	"Polygon Object Vertex Coordinates" },
 { 0xAB, "GCW",	"Global Column-Width Flags" },
 { 0xAE, "SCENMAN",	"Scenario Output Data" },
-{ 0xAF, "SCENARIO",	"Scenario Dataç" },
+{ 0xAF, "SCENARIO",	"Scenario Data" },
 { 0xB0, "SXVIEW",	"View Definition" },
 { 0xB1, "SXVD",	"View Fields" },
 { 0xB2, "SXVI",	"View Item" },

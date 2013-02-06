@@ -385,6 +385,7 @@ typedef struct xlsWorkBook
 
     //From Header (BIFF)
     BYTE		is5ver;
+    BYTE		is1904;
     WORD		type;
 
     //Other data
