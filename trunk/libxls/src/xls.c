@@ -300,28 +300,24 @@ static double NumFromRk(BYTE* rk)
 {
     DWORD drk;
     drk=*(DWORD_UA *)rk;
-	union 
-	{
-		double d;
-		DWORD dw[2];
-	} num;
+	double ret;
 
 	// What kind of value is this ?
     if (drk & 0x02) {
-    	// Floating point value;
-        num.d = (double)(drk >> 2);
-    } else {
     	// Integer value
-		num.dw[1] = drk & 0xfffffffc;
-		num.dw[0] = 0;
+		int32_t tmp = (int32_t)drk >> 2;	// cast to keep it negative in < 0
+        ret = (double)tmp;
+    } else {
+    	// Floating point value;
+		int64_t tmp = (int32_t)drk & 0xfffffffc;
+		tmp <<= 32;
+		memcpy(&ret, &tmp, sizeof(int64_t));
     }
-
     // Is value multiplied by 100 ?
     if (drk & 0x01) {
-        num.d /= 100.0;
+        ret /= 100.0;
     }
-
-    return num.d;
+    return ret;
 }
 
 BYTE* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
