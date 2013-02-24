@@ -489,7 +489,7 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 
 		BYTE *sector = malloc(ole2->lsector);
 		//printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
-        while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Excel bug?)
+        while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
 		{
            // read MSAT sector
            sector_read(ole2, sector, sid);
