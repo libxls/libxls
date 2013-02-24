@@ -135,15 +135,15 @@ progpath="$0"
 
 : ${CP="cp -f"}
 test "${ECHO+set}" = set || ECHO=${as_echo-'printf %s\n'}
-: ${EGREP="/usr/bin/grep -E"}
-: ${FGREP="/usr/bin/grep -F"}
-: ${GREP="/usr/bin/grep"}
+: ${EGREP="grep -E"}
+: ${FGREP="grep -F"}
+: ${GREP="grep"}
 : ${LN_S="ln -s"}
 : ${MAKE="make"}
 : ${MKDIR="mkdir"}
 : ${MV="mv -f"}
 : ${RM="rm -f"}
-: ${SED="/usr/bin/sed"}
+: ${SED="sed"}
 : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
 : ${Xsed="$SED -e 1s/^X//"}
 
