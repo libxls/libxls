@@ -73,6 +73,8 @@ int main(int argc, char *argv[]) {
         Usage(argv[0]);
     }
 
+	//fprintf(stderr, "DIR: %s\n\n", getcwd(NULL, 1024));
+
     optind = 2; // skip file arg
 
     int ch;
@@ -113,7 +115,7 @@ int main(int argc, char *argv[]) {
 	// check if the requested sheet (if any) exists
 	if (sheetName[0]) {
 		for (i = 0; i < pWB->sheets.count; i++) {
-			if (strcmp(sheetName, pWB->sheets.sheet[i].name) == 0) {
+			if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) == 0) {
 				break;
 			}
 		}
@@ -137,7 +139,7 @@ int main(int argc, char *argv[]) {
 
 		// check if this the sheet we want
 		if (sheetName[0]) {
-			if (strcmp(sheetName, pWB->sheets.sheet[i].name) != 0) {
+			if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) != 0) {
 				continue;
 			}
 		}
@@ -187,19 +189,19 @@ int main(int argc, char *argv[]) {
 					{
 						OutputNumber(cell->d);
 					} else {
-						if (!strcmp(cell->str, "bool")) // its boolean, and test cell->d
+						if (!strcmp((char *)cell->str, "bool")) // its boolean, and test cell->d
 						{
 							OutputString((int) cell->d ? "true" : "false");
-						} else if (!strcmp(cell->str, "error")) // formula is in error
+						} else if (!strcmp((char *)cell->str, "error")) // formula is in error
 						{
 							OutputString("*error*");
 						} else // ... cell->str is valid as the result of a string formula.
 						{
-							OutputString(cell->str);
+							OutputString((char *)cell->str);
 						}
 					}
 				} else if (cell->str != NULL) {
-					OutputString(cell->str);
+					OutputString((char *)cell->str);
 				} else {
 					OutputString("");
 				}

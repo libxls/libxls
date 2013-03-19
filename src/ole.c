@@ -252,6 +252,10 @@ OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file)
 
     for (i=0;i<ole->files.count;i++) {
 		BYTE *str = ole->files.file[i].name;
+#ifdef OLE_DEBUG
+		printf("----------------------------------------------\n");
+		printf("ole2_fopen found %s\n", str);
+#endif
         if (str && strcmp((char *)str,(char *)file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
         {
             olest=ole2_sopen(ole,ole->files.file[i].start,ole->files.file[i].size);
