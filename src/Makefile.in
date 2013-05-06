@@ -96,7 +96,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libxlsreader_la_LIBADD =
-am_libxlsreader_la_OBJECTS = xlstool.lo ole.lo xls.lo
+am_libxlsreader_la_OBJECTS = xlstool.lo endian.lo ole.lo xls.lo
 libxlsreader_la_OBJECTS = $(am_libxlsreader_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -304,6 +304,7 @@ xls2csv_SOURCES = \
 xls2csv_LDADD = libxlsreader.la
 libxlsreader_la_SOURCES = \
 	xlstool.c				\
+	endian.c				\
 	ole.c					\
 	xls.c
 
@@ -443,6 +444,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xls2csv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xlstool.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/endian.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
