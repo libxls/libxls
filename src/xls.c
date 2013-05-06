@@ -884,7 +884,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
 		case 0x0022: // 1904
-			pWB->is1904 = shortVal(*(WORD_UA *)buf);
+			pWB->is1904 = *(BYTE *)buf;	// the field is a short, but with little endian the first byte is 0 or 1
 			if(xls_debug) {
 				printf("   mode: 0x%x\n", pWB->is1904);
 			}
