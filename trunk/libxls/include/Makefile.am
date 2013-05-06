@@ -10,6 +10,7 @@ libxls/xls.h
 nobase_include_HEADERS =	\
 libxls/brdb.c.h				\
 libxls/brdb.h				\
+libxls/endian.h				\
 libxls/ole.h				\
 libxls/xlsstruct.h			\
 libxls/xlstypes.h			\

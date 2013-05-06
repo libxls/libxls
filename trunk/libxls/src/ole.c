@@ -25,7 +25,8 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
@@ -41,6 +42,7 @@
 
 #include "libxls/ole.h"
 #include "libxls/xlstool.h"
+#include "libxls/endian.h"
 
 extern int xls_debug;
 
@@ -63,7 +65,7 @@ void ole2_bufread(OLE2Stream* olest)
 	assert(olest);
 	assert(olest->ole);
 
-    if (olest->fatpos!=ENDOFCHAIN)
+    if ((DWORD)olest->fatpos!=ENDOFCHAIN)
     {
 		if(olest->sfat) {
 			assert(olest->ole->SSAT);
@@ -73,7 +75,7 @@ void ole2_bufread(OLE2Stream* olest)
 			ptr = olest->ole->SSAT + olest->fatpos*olest->ole->lssector;
 			memcpy(olest->buf, ptr, olest->bufsize); 
 
-			olest->fatpos=olest->ole->SSecID[olest->fatpos];
+			olest->fatpos=intVal(olest->ole->SSecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
 		} else {
@@ -91,7 +93,7 @@ void ole2_bufread(OLE2Stream* olest)
 			assert((int)olest->fatpos >= 0);
 			sector_read(olest->ole, olest->buf, olest->fatpos);
 			//printf("Fat val: %d[0x%X]\n",olest->fatpos,olest->ole->SecID[olest->fatpos], olest->ole->SecID[olest->fatpos]);
-			olest->fatpos=olest->ole->SecID[olest->fatpos];
+			olest->fatpos=intVal(olest->ole->SecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
 		}
@@ -109,7 +111,7 @@ size_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest)
 	totalReadCount=size*count;
 
 	// olest->size inited to -1
-	//printf("===== ole2_read(%ld bytes)\n", totalReadCount);
+	// printf("===== ole2_read(%ld bytes)\n", totalReadCount);
 
     if ((long)olest->size>=0 && !olest->sfat)	// directory is -1
     {
@@ -145,7 +147,7 @@ size_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest)
 		}
 		assert(didReadCount <= totalReadCount);
 		//printf("  if(fatpos=0x%X==EOC=0x%X) && (pos=%d >= bufsize=%d)\n", olest->fatpos, ENDOFCHAIN, olest->pos, olest->bufsize);
-		if ((olest->fatpos == ENDOFCHAIN) && (olest->pos >= olest->bufsize))
+		if (((DWORD)olest->fatpos == ENDOFCHAIN) && (olest->pos >= olest->bufsize))
 		{
 			olest->eof=1;
 		}
@@ -212,7 +214,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 		if (div_rez.quot!=0)
 		{
 			for (i=0;i<div_rez.quot;i++)
-				olest->fatpos=olest->ole->SSecID[olest->fatpos];
+				olest->fatpos=intVal(olest->ole->SSecID[olest->fatpos]);
 		}
 
 		ole2_bufread(olest);
@@ -228,7 +230,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 		if (div_rez.quot!=0)
 		{
 			for (i=0;i<div_rez.quot;i++)
-				olest->fatpos=olest->ole->SecID[olest->fatpos];
+				olest->fatpos=intVal(olest->ole->SecID[olest->fatpos]);
 		}
 
 		ole2_bufread(olest);
@@ -291,6 +293,7 @@ OLE2* ole2_open(const BYTE *file)
     // read header and check magic numbers
     oleh=(OLE2Header*)malloc(512);
     fread(oleh,1,512,ole->file);
+    convertHeader(oleh);
 
 	// make sure the file looks good. Note: this code only works on Little Endian machines
 	if(oleh->id[0] != 0xE011CFD0 || oleh->id[1] != 0xE11AB1A1 || oleh->byteorder != 0xFFFE) {
@@ -346,7 +349,7 @@ OLE2* ole2_open(const BYTE *file)
     do
     {
         ole2_read(pss,1,sizeof(PSS),olest);
-
+        convertPss(pss);
         name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
 #ifdef OLE_DEBUG	
 		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
@@ -406,7 +409,7 @@ OLE2* ole2_open(const BYTE *file)
 					fseek(ole->file,sector*ole->lsector+512,0);
 					fread(wptr,1,ole->lsector,ole->file);
 					wptr += ole->lsector;
-					sector = ole->SecID[sector];
+					sector = intVal(ole->SecID[sector]);
 				}
 			}	
 		} else {
@@ -423,9 +426,10 @@ OLE2* ole2_open(const BYTE *file)
 
 void ole2_close(OLE2* ole2)
 {
+    int i;
 	fclose(ole2->file);
 
-	for(int i=0; i<ole2->files.count; ++i) {
+	for(i=0; i<ole2->files.count; ++i) {
 		free(ole2->files.file[i].name);
 	}
 	free(ole2->files.file);
@@ -495,11 +499,11 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 		//printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
         while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
 		{
+           int posInSector;
            // read MSAT sector
            sector_read(ole2, sector, sid);
 
            // read content
-           int posInSector;
            for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
 		   {
               DWORD s = *(DWORD_UA *)(sector + posInSector*4);

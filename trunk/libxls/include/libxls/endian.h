@@ -23,28 +23,37 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Copyright 2004 Komarov Valery
- * Copyright 2006 Christophe Leitienne
  * Copyright 2013 Bob Colbert
- * Copyright 2008-2013 David Hoerl
  *
  */
 
-#ifndef XLS_TYPES_INC
-#define XLS_TYPES_INC
+#include <libxls/xlsstruct.h>
 
-#include <stdint.h>
+int is_bigendian();
+int intVal (int i);
+short shortVal (short s);
 
-typedef unsigned char		BYTE;
-typedef uint16_t			WORD;
-typedef uint32_t			DWORD;
+void convertHeader(OLE2Header *h);
+void convertPss(PSS* pss);
 
-#ifdef NO_ALIGN
-typedef uint16_t			WORD_UA;
-typedef uint32_t			DWORD_UA;
-#else
-typedef uint16_t			WORD_UA		__attribute__ ((aligned (1)));	// 2 bytes
-typedef uint32_t			DWORD_UA	__attribute__ ((aligned (1)));	// 4 bytes
-#endif
+void convertDouble(BYTE *d);
+void convertBof(BOF *b);
+void convertBiff(BIFF *b);
+void convertWindow(WIND1 *w);
+void convertSst(SST *s);
+void convertXf5(XF5 *x);
+void convertXf8(XF8 *x);
+void convertFont(FONT *f);
+void convertFormat(FORMAT *f);
+void convertBoundsheet(BOUNDSHEET *b);
+void convertColinfo(COLINFO *c);
+void convertRow(ROW *r);
+void convertMergedcells(MERGEDCELLS *m);
+void convertCol(COL *c);
+void convertFormula(FORMULA *f);
+void convertHeader(OLE2Header *h);
+void convertPss(PSS* pss);
+void convertUnicode(wchar_t *w, char *s, int len);
 
-#endif
+#define W_ENDIAN(a) a=shortVal(a)
+#define D_ENDIAN(a) a=intVal(a)

@@ -25,11 +25,12 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
-#include "xlsstruct.h"
+#include "libxls/xlsstruct.h"
 
 extern void dumpbuf(BYTE* fname,long size,BYTE* buf);
 extern void verbose(char* str);

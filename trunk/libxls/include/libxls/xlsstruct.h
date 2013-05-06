@@ -25,16 +25,21 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
 #ifndef XLS_STRUCT_INC
 #define XLS_STRUCT_INC
 
-#include "ole.h"
+#include "libxls/ole.h"
 
+#ifdef AIX
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct BOF
 {
@@ -237,7 +242,7 @@ FORMAT;
 
 typedef	struct st_sheet
 {
-    DWORD count;        //Count of sheets
+    DWORD count;        // Count of sheets
     struct st_sheet_data
     {
         DWORD filepos;
@@ -251,7 +256,7 @@ st_sheet;
 
 typedef	struct st_font
 {
-    DWORD count;		//Count of FONT's
+    DWORD count;		// Count of FONT's
     struct st_font_data
     {
         WORD	height;
@@ -270,7 +275,7 @@ st_font;
 
 typedef struct st_format
 {
-    DWORD count;		//Count of FORMAT's
+    DWORD count;		// Count of FORMAT's
     struct st_format_data
     {
          WORD index;
@@ -282,7 +287,7 @@ st_format;
 
 typedef	struct st_xf
 {
-    DWORD count;	//Count of XF
+    DWORD count;	// Count of XF
     //	XF** xf;
     struct st_xf_data
     {
@@ -364,7 +369,7 @@ st_row;
 
 typedef	struct st_colinfo
 {
-    DWORD count;	//Count of COLINFO
+    DWORD count;				//Count of COLINFO
     struct st_colinfo_data
     {
         WORD	first;
@@ -379,9 +384,9 @@ st_colinfo;
 
 typedef struct xlsWorkBook
 {
-    //FILE*		file;		//
+    //FILE*		file;
     OLE2Stream*	olestr;
-    int32_t		filepos;	//position in file
+    int32_t		filepos;		// position in file
 
     //From Header (BIFF)
     BYTE		is5ver;
@@ -389,13 +394,13 @@ typedef struct xlsWorkBook
     WORD		type;
 
     //Other data
-    WORD		codepage;	//Charset codepage
+    WORD		codepage;		//Charset codepage
     char*		charset;
     st_sheet	sheets;
-    st_sst		sst;		//SST table
-    st_xf		xfs;		//XF table
+    st_sst		sst;			//SST table
+    st_xf		xfs;			//XF table
     st_font		fonts;
-    st_format	formats;	//FORMAT table
+    st_format	formats;		//FORMAT table
 
 	char		*summary;		// ole file
 	char		*docSummary;	// ole file
