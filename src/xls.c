@@ -25,7 +25,8 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
@@ -42,9 +43,12 @@
 #include <wchar.h>
 #include <assert.h>
 
+#include "libxls/endian.h"
 #include "libxls/xls.h"
 
+#ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
 
 int xls_debug=0;	// now global, so users can turn it on
 
@@ -68,7 +72,11 @@ extern void xls_formatColumn(xlsWorkSheet* pWS);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
 extern void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo	*pSI);
 
+#ifdef AIX
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct {
 	uint32_t		format[4];
@@ -153,7 +161,7 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         }
         else
         {
-            ln=*(WORD_UA *)(buf+ofs);
+            ln=shortVal(*(WORD_UA *)(buf+ofs));
             rt = 0;
             sz = 0;
 
@@ -173,14 +181,14 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             // Count of rich text formatting runs
             if (flag & 0x8)
             {
-                rt=*(WORD_UA *)(buf+ofs);
+                rt=shortVal(*(WORD_UA *)(buf+ofs));
                 ofs+=2;
             }
 
             // Size of asian phonetic settings block
             if (flag & 0x4)
             {
-                sz=*(DWORD_UA *)(buf+ofs);
+                sz=intVal(*(DWORD_UA *)(buf+ofs));
                 ofs+=4;
 
 				if (xls_debug) {
@@ -199,8 +207,8 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
         {
             if (flag & 0x1)
             {
-                ln_toread = min((size-ofs)/2, ln);
                 size_t new_len = 0;
+                ln_toread = min((size-ofs)/2, ln);
                 ret=unicode_decode(buf+ofs,ln_toread*2,&new_len,pWB->charset);
 
                 if (ret == NULL)
@@ -299,8 +307,8 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 static double NumFromRk(BYTE* rk)
 {
     DWORD drk;
-    drk=*(DWORD_UA *)rk;
 	double ret;
+    drk=intVal(*(DWORD_UA *)rk);
 
 	// What kind of value is this ?
     if (drk & 0x02) {
@@ -444,21 +452,22 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 
 	verbose ("xls_addCell");
 
-    row=&pWS->rows.row[((COL*)buf)->row];
+    row=&pWS->rows.row[shortVal(((COL*)buf)->row)];
     //cell=&row->cells.cell[((COL*)buf)->col - row->fcell]; DFH - inconsistent
-    cell=&row->cells.cell[((COL*)buf)->col];
+    cell=&row->cells.cell[shortVal(((COL*)buf)->col)];
 //if(((COL*)buf)->col != cell->col)
 //{
 //printf("buf->col=%d cell->col=%d  row->fcell=%d\n", ((COL*)buf)->col , cell->col,  row->fcell);
 //}
     cell->id=bof->id;
-    cell->xf=((COL*)buf)->xf;
+    cell->xf=shortVal(((COL*)buf)->xf);
 
     switch (bof->id)
     {
     case 0x0006:	//FORMULA
 		// test for formula, if
         if (((FORMULA*)buf)->res!=0xffff) {
+            convertFormula((FORMULA *)buf);
 			cell->l=0;
 			// if a double, then set double and clear l
 			memcpy(&cell->d, &((FORMULA*)buf)->resid, sizeof(double));	// Required for ARM
@@ -484,27 +493,27 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         break;
     case 0x00BD:	//MULRK
 
-        for (i = 0; i <= *(WORD_UA *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
-	       			i <= row->lcell - row->fcell - ((COL *)buf)->col; i++)
+        for (i = 0; i <= shortVal(*(WORD_UA *)(buf + (bof->size - 2))) - shortVal(((COL *)buf)->col) &&
+	       			i <= row->lcell - row->fcell - shortVal(((COL *)buf)->col); i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col + i];
+            cell=&row->cells.cell[shortVal(((COL*)buf)->col) + i];
             //cell=&row->cells.cell[((COL*)buf)->col - row->fcell + i];  DFH - inconsistent
             //				col=row->cols[i];
             cell->id=0x027E; // DFH now RK, use to be bof->id;
-            cell->xf=*((WORD_UA *)(buf+(4+i*6)));
+            cell->xf=shortVal(*((WORD_UA *)(buf+(4+i*6))));
             cell->d=NumFromRk((BYTE *)(buf+(4+i*6+2)));
             cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
     case 0x00BE:	//MULBLANK
-        for (i = 0; i <= *(WORD_UA *)(buf + (bof->size - 2)) - ((COL *)buf)->col &&
-	       			i <= row->lcell - row->fcell - ((COL *)buf)->col; i++)
+        for (i = 0; i <= shortVal(*(WORD_UA *)(buf + (bof->size - 2))) - shortVal(((COL *)buf)->col) &&
+	       			i <= row->lcell - row->fcell - shortVal(((COL *)buf)->col); i++)
         {
-            cell=&row->cells.cell[((COL*)buf)->col + i];
+            cell=&row->cells.cell[shortVal(((COL*)buf)->col) + i];
             //cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
             //				col=row->cols[i];
             cell->id=0x0201; // DFH blank, use to be bof->id;
-            cell->xf=*((WORD_UA *)(buf+(4+i*2)));
+            cell->xf=shortVal(*((WORD_UA *)(buf+(4+i*2))));
             cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
@@ -521,6 +530,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     case 0x0201:	//BLANK
         break;
     case 0x0203:	//NUMBER
+        convertDouble((BYTE *)&((BR_NUMBER*)buf)->value);
 		memcpy(&cell->d, &((BR_NUMBER*)buf)->value, sizeof(double)); // Required for ARM
         cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
@@ -578,7 +588,7 @@ void xls_addFormat(xlsWorkBook* pWB, FORMAT* format)
 
     tmp=&pWB->formats.format[pWB->formats.count];
     tmp->index=format->index;
-    tmp->value=get_string(format->value, !pWB->is5ver, pWB->is5ver, pWB->charset);
+    tmp->value=get_string(format->value, (BYTE)!pWB->is5ver, (BYTE)pWB->is5ver, pWB->charset);
     if(xls_debug) xls_showFormat(tmp);
     pWB->formats.count++;
 }
@@ -632,7 +642,7 @@ void xls_addXF5(xlsWorkBook* pWB,XF5* xf)
     tmp->font=xf->font;
     tmp->format=xf->format;
     tmp->type=xf->type;
-    tmp->align=xf->align;
+    tmp->align=(BYTE)xf->align;
 /*
     tmp->rotation=xf->rotation;
     tmp->ident=xf->ident;
@@ -673,13 +683,14 @@ void xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
 
 void xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
-    int count=*((WORD_UA *)buf);
+    int count=shortVal(*((WORD_UA *)buf));
     int i,c,r;
     struct MERGEDCELLS* span;
     verbose("Merged Cells");
     for (i=0;i<count;i++)
     {
         span=(struct MERGEDCELLS*)(buf+(2+i*sizeof(struct MERGEDCELLS)));
+        convertMergedcells(span);
         //		printf("Merged Cells: [%i,%i] [%i,%i] \n",span->colf,span->rowf,span->coll,span->rowl);
         for (r=span->rowf;r<=span->rowl;r++)
             for (c=span->colf;c<=span->coll;c++)
@@ -710,6 +721,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 		}
 
         ole2_read(&bof1, 1, 4, pWB->olestr);
+        convertBof(&bof1);
  		if(xls_debug) xls_showBOF(&bof1);
 
         buf=(BYTE *)malloc(bof1.size);
@@ -722,6 +734,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
         case 0x0809:	// BIFF5-8
 			{
 				BIFF *b = (BIFF*)buf;
+                convertBiff(b);
 				if (b->ver==0x600)
 					pWB->is5ver=0;
 				else
@@ -736,7 +749,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
             break;
 
         case 0x0042:	// CODEPAGE
-            pWB->codepage=*(WORD_UA *)buf;
+            pWB->codepage=shortVal(*(WORD_UA *)buf);
 			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
             break;
 
@@ -751,6 +764,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 		case 0x003D:	// WINDOW1
 			{
 				WIND1 *w = (WIND1*)buf;
+                convertWindow(w);
 				if(xls_debug) {
 					printf("WINDOW1: ");
 					printf("xWn    : %d\n", w->xWn/20);
@@ -768,6 +782,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
         case 0x00fc:	// SST
 			//if(xls_debug) dumpbuf((BYTE *)"/tmp/SST",bof1.size,buf);
+            convertSst((SST *)buf);
             xls_addSST(pWB,(SST*)buf,bof1.size);
             break;
 
@@ -778,6 +793,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
         case 0x0085:	// BOUNDSHEET
 			{
 				BOUNDSHEET *bs = (BOUNDSHEET *)buf;
+                convertBoundsheet(bs);
 				//char *s;
 				// different for BIFF5 and BIFF8
 				/*s = */ xls_addSheet(pWB,bs);
@@ -788,6 +804,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			if(pWB->is5ver) {
 				XF5 *xf;
 				xf = (XF5 *)buf;
+                convertXf5(xf);
 
 				xls_addXF5(pWB,xf);
 				if(xls_debug) {
@@ -803,6 +820,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			} else {
 				XF8 *xf;
 				xf = (XF8 *)buf;
+                convertXf8(xf);
 
 				xls_addXF8(pWB,xf);
 				if(xls_debug) {
@@ -815,6 +833,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			{
 				BYTE *s;
 				FONT *f = (FONT*)buf;
+                convertFont(f);
 				s = xls_addFont(pWB,f);
 				if(xls_debug) {
 					printf(" height: %d\n", f->height);
@@ -831,6 +850,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
         case 0x041E:	//FORMAT
+            convertFormat((FORMAT *)buf);
             xls_addFormat(pWB,(FORMAT*)buf);
             break;
 
@@ -864,7 +884,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
 		case 0x0022: // 1904
-			pWB->is1904 = *(WORD_UA *)buf;
+			pWB->is1904 = shortVal(*(WORD_UA *)buf);
 			if(xls_debug) {
 				printf("   mode: 0x%x\n", pWB->is1904);
 			}
@@ -964,6 +984,7 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
 		size_t read;
         read = ole2_read(&tmp, 1,4,pWS->workbook->olestr);
 		assert(read == 4);
+        convertBof(&tmp);
         buf=(BYTE *)malloc(tmp.size);
         read = ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
 		assert(read == tmp.size);
@@ -971,12 +992,14 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
         switch (tmp.id)
         {
         case 0x55:     //DEFCOLWIDTH
-            pWS->defcolwidth=*(WORD_UA *)buf*256;
+            pWS->defcolwidth=shortVal(*(WORD_UA *)buf)*256;
             break;
         case 0x7D:     //COLINFO
+            convertColinfo((COLINFO*)buf);
             xls_addColinfo(pWS,(COLINFO*)buf);
             break;
         case 0x208:		//ROW
+            convertRow((ROW*)buf);
             if (pWS->rows.lastcol<((ROW*)buf)->lcell)
                 pWS->rows.lastcol=((ROW*)buf)->lcell;
             if (pWS->rows.lastrow<((ROW*)buf)->index) {
@@ -1044,6 +1067,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			printf("LASTPOS=%ld pos=%zd filePos=%d filePos=%d\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
 		}
         ole2_read(&tmp, 1,4,pWS->workbook->olestr);
+        convertBof((BOF *)&tmp);
         buf=(BYTE *)malloc(tmp.size);
         ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
 		offset += 4 + tmp.size;
@@ -1058,6 +1082,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
             break;
         case 0x0208:		//ROW
 			if(xls_debug > 10) printf("ROW: %x at pos=%ld\n", tmp.id, lastPos);
+            convertRow((ROW *)buf);
             xls_addRow(pWS,(ROW*)buf);
             break;
 		case 0x0055:
@@ -1068,19 +1093,22 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			break;
 		case 0x00D7:
 			if(xls_debug > 10) {
-				printf("DBCELL: size %d\n", tmp.size);
 				DWORD *foo = (DWORD_UA *)buf;
+                WORD *goo;
+				int i;
+                printf("DBCELL: size %d\n", tmp.size);
 				printf("DBCELL OFFSET=%4.4u -> ROW %ld\n", foo[0], lastPos-foo[0]);
 				++foo;
-				WORD *goo = (WORD *)foo;
-				for(int i=0; i<5; ++i) printf("goo[%d]=%4.4x %u\n", i, goo[i], goo[i]);
+				goo = (WORD *)foo;
+				for(i=0; i<5; ++i) printf("goo[%d]=%4.4x %u\n", i, goo[i], goo[i]);
 			}
 			break;
         case 0x020B:		//INDEX
 			if(xls_debug > 10) {
 				printf("INDEX: size %d\n", tmp.size);
 				DWORD *foo = (DWORD_UA *)buf;
-				for(int i=0; i<5; ++i) printf("FOO[%d]=%4.4x %u\n", i, foo[i], foo[i]);
+                int i;
+				for(i=0; i<5; ++i) printf("FOO[%d]=%4.4x %u\n", i, foo[i], foo[i]);
 			}
 #if 0
 0	4 4	4 8	4
@@ -1102,7 +1130,7 @@ Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row
             break;
 		case 0x0207:		//STRING, only follows a formula
 			if(cell && cell->id == 0x06) { // formula
-				cell->str = get_string(buf, !pWB->is5ver, pWB->is5ver, pWB->charset);
+				cell->str = get_string(buf, (BYTE)!pWB->is5ver, pWB->is5ver, pWB->charset);
 				if (xls_debug) xls_showCell(cell);
 			}
 			break;

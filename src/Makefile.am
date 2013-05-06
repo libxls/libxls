@@ -12,6 +12,7 @@ xls2csv_LDADD = libxlsreader.la
 
 libxlsreader_la_SOURCES =	\
 	xlstool.c				\
+	endian.c				\
 	ole.c					\
 	xls.c
 

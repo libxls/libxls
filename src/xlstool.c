@@ -25,7 +25,8 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
@@ -52,6 +53,7 @@
 #include "libxls/xlsstruct.h"
 #include "libxls/xlstool.h"
 #include "libxls/brdb.h"
+#include "libxls/endian.h"
 
 extern int xls_debug;
 
@@ -121,15 +123,60 @@ static const DWORD colors[] =
 
 #include <stdarg.h>
 
+#ifdef MSDN
+static int asprintf(char **ret, const char *format, ...)
+{
+	int i, size=100;
+    char *p, *np;
+
+	va_list ap;
+
+	if ((p = (char *)malloc(size)) == NULL)
+        return -1;
+
+    while (1) {
+	    va_start(ap, format); 
+
+	    i = _vsnprintf(p, size, format, ap);
+
+	    va_end(ap);
+
+        if (i > -1 && i < size)
+        {
+            i++;
+            break;
+        }
+
+        if (i > -1)     /* glibc 2.1 */
+            size = i+1; /* precisely what is needed */
+        else            /* glibc 2.0 */
+            size *= 2;  /* twice the old size */
+
+        if ((np = realloc (p, size)) == NULL) {
+            free(p);
+            return -1;
+        } else {
+            p = np;
+        }
+    }
+
+	*ret = p;
+	return i > 255 ? 255 : i;
+}
+
+#else
+
 static int asprintf(char **ret, const char *format, ...)
 {
 	int i;
+    char *str;
+
 	va_list ap;
 
 	va_start(ap, format); 
 
 	i = vsnprintf(NULL, 0, format, ap) + 1;
-	char *str = (char *)malloc(i);
+	str = (char *)malloc(i);
 	i = vsnprintf(str, i, format, ap);
 
 	va_end(ap);
@@ -137,6 +184,8 @@ static int asprintf(char **ret, const char *format, ...)
 	*ret = str;
 	return i > 255 ? 255 : i;
 }
+#endif
+
 #endif
 
 
@@ -159,8 +208,9 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 {
 	int utf8_chars = 0;
 	BYTE *ret;
+    DWORD i;
 	
-	for(DWORD i=0; i<len; ++i) {
+	for(i=0; i<len; ++i) {
 		if(str[i] & (BYTE)0x80) {
 			++utf8_chars;
 		}
@@ -171,10 +221,12 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 		memcpy(ret, str, len);
 		ret[len] = 0;
 	} else {
+        DWORD i;
+        BYTE *out;
 		// UTF-8 encoding inline
 		ret = (BYTE *)malloc(len+utf8_chars+1);
-		BYTE *out = ret;
-		for(DWORD i=0; i<len; ++i) {
+		out = ret;
+		for(i=0; i<len; ++i) {
 			BYTE c = str[i];
 			if(c & (BYTE)0x80) {
 				*out++ = (BYTE)0xC0 | (c >> 6);
@@ -192,11 +244,15 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 // Convert unicode string to to_enc encoding
 BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 {
-#if HAVE_ICONV
+#ifdef HAVE_ICONV
 	// Do iconv conversion
+#ifdef AIX
+    const char *from_enc = "UTF-16le";
+#else
     const char *from_enc = "UTF-16LE";
+#endif
     BYTE* outbuf = 0;
-    
+
     if(s && len && from_enc && to_enc)
     {
         size_t outlenleft = len;
@@ -206,41 +262,59 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
         BYTE* src_ptr = (BYTE*) s;
         BYTE* out_ptr = 0;
 
-        if(ic != (iconv_t)-1)
+        if(ic == (iconv_t)-1)
         {
-            size_t st; 
-            outbuf = (BYTE*)malloc(outlen + 1);
-
-			if(outbuf)
+            // Something went wrong.
+            if (errno == EINVAL)
             {
-                out_ptr = (BYTE*)outbuf;
-                while(inlenleft)
+                if (!strcmp(to_enc, "ASCII"))
                 {
-                    st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
-                    if(st == (size_t)(-1))
+                    ic = iconv_open("UTF-8", from_enc);
+                    if(ic == (iconv_t)-1)
                     {
-                        if(errno == E2BIG)
-                        {
-                            size_t diff = out_ptr - outbuf;
-                            outlen += inlenleft;
-                            outlenleft += inlenleft;
-                            outbuf = (BYTE*)realloc(outbuf, outlen + 1);
-                            if(!outbuf)
-                            {
-                                break;
-                            }
-                            out_ptr = outbuf + diff;
-                        }
-                        else
-                        {
-                            free(outbuf), outbuf = NULL;
-                            break;
-                        }
+                        printf("conversion from '%s' to '%s' not available", from_enc, to_enc);
+                        return outbuf;
                     }
                 }
             }
-            iconv_close(ic);
+            else
+            {
+                printf ("iconv_open: error=%d", errno);
+                return outbuf;
+            }
         }
+        size_t st; 
+        outbuf = (BYTE*)malloc(outlen + 1);
+
+		if(outbuf)
+        {
+            out_ptr = (BYTE*)outbuf;
+            while(inlenleft)
+            {
+                st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
+                if(st == (size_t)(-1))
+                {
+                    if(errno == E2BIG)
+                    {
+                        size_t diff = out_ptr - outbuf;
+                        outlen += inlenleft;
+                        outlenleft += inlenleft;
+                        outbuf = (BYTE*)realloc(outbuf, outlen + 1);
+                        if(!outbuf)
+                        {
+                            break;
+                        }
+                        out_ptr = outbuf + diff;
+                    }
+                    else
+                    {
+                        free(outbuf), outbuf = NULL;
+                        break;
+                    }
+                }
+            }
+        }
+        iconv_close(ic);
         outlen -= outlenleft;
 
         if (newlen)
@@ -256,21 +330,34 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 #else
 	// Do wcstombs conversion
 	char *converted = NULL;
-	int count, count2;
-
+	int count, count2, i;
+	wchar_t *w;
+    short *x;
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		printf("setlocale failed: %d\n", errno);
 		return "*null*";
 	}
 
-	count = wcstombs(NULL, (wchar_t*)s, 0);
+    x=(short *)s;
+
+    w = (wchar_t*)malloc((len+1)*sizeof(wchar_t));
+
+    for(i=0; i<len; i++)
+    {
+        w[i]=shortVal(x[i]);
+    }
+    w[len] = '\0';
+
+    count = wcstombs(NULL, w, 0);
+
 	if (count <= 0) {
 		if (newlen) *newlen = 0;
 		return NULL;
 	}
 
 	converted = calloc(count+1, sizeof(char));
-	count2 = wcstombs(converted, (wchar_t*)s, count+1);
+	count2 = wcstombs(converted, w, count);
+    free(w);
 	if (count2 <= 0) {
 		printf("wcstombs failed (%d)\n", len);
 		if (newlen) *newlen = 0;
@@ -298,7 +385,7 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 
     if (is2) {
 		// length is two bytes
-        ln=*(WORD_UA *)str;
+        ln=shortVal(*(WORD_UA *)str);
         ofs+=2;
     } else {
 		// single byte length
@@ -547,13 +634,14 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
     switch (cell->id)
     {
     case 0x00FD:		//LABELSST
-        asprintf(&ret,"%s",pWB->sst.string[*label].str);
+        asprintf(&ret,"%s",pWB->sst.string[shortVal(*label)].str);
         break;
     case 0x0201:		//BLANK
         asprintf(&ret, "");
         break;
     case 0x0204:		//LABEL (xlslib generates these)
-		len = *label++;
+		len = shortVal(*label);
+        label++;
 		if(pWB->is5ver) {
 			asprintf(&ret,"%.*s", len, (char *)label);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
@@ -561,8 +649,8 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
 		if ((*(BYTE *)label & 0x01) == 0) {
 			ret = (char *)utf8_decode((BYTE *)label + 1, len, pWB->charset);
 		} else {
-			size_t newlen;			
-			ret = (char *)unicode_decode((BYTE *)label + 1, len*2, &newlen, pWB->charset);
+			size_t newlen;
+		    ret = (char *)unicode_decode((BYTE *)label + 1, len*2, &newlen, pWB->charset);
 		}
         break;
     case 0x027E:		//RK

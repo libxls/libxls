@@ -25,7 +25,8 @@
  *
  * Copyright 2004 Komarov Valery
  * Copyright 2006 Christophe Leitienne
- * Copyright 2008-2012 David Hoerl
+ * Copyright 2013 Bob Colbert
+ * Copyright 2008-2013 David Hoerl
  *
  */
 
@@ -34,9 +35,13 @@
 
 #include <stdio.h>			// FILE *
 
-#include "xlstypes.h"
+#include "libxls/xlstypes.h"
 
+#ifdef AIX
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct TIME_T
 {
@@ -124,7 +129,11 @@ typedef struct OLE2Stream
 }
 OLE2Stream;
 
+#ifdef AIX
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct PSS
 {
