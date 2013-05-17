@@ -1105,17 +1105,17 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 			break;
         case 0x020B:		//INDEX
 			if(xls_debug > 10) {
-				printf("INDEX: size %d\n", tmp.size);
 				DWORD *foo = (DWORD_UA *)buf;
                 int i;
+				printf("INDEX: size %d\n", tmp.size);
 				for(i=0; i<5; ++i) printf("FOO[%d]=%4.4x %u\n", i, foo[i], foo[i]);
 			}
 #if 0
-0	4 4	4 8	4
-12	4 16	4∙nm
-Not used Index to first used row (rf, 0-based) Index to first row of unused tail of sheet (rl, last used row + 1, 0-based)
-Absolute stream position of the DEFCOLWIDTH record (➜5.32) of the current sheet. If this record does not exist, the offset points to the record at the position where the DEFCOLWIDTH record would occur.
-Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row Block
+			0	4 4	4 8	4
+			12	4 16	4∙nm
+			Not used Index to first used row (rf, 0-based) Index to first row of unused tail of sheet (rl, last used row + 1, 0-based)
+			Absolute stream position of the DEFCOLWIDTH record (➜5.32) of the current sheet. If this record does not exist, the offset points to the record at the position where the DEFCOLWIDTH record would occur.
+			Array of nm absolute stream positions to the DBCELL record (➜5.29) of each Row Block
 #endif
             break;
         case 0x00BD:		//MULRK
