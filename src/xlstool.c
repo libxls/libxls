@@ -557,7 +557,7 @@ void xls_showCell(struct st_cell_data* cell)
 {
     printf("  -----------\n");
     printf("     ID: %.4Xh %s (%s)\n",cell->id, brdb[get_brbdnum(cell->id)].name, brdb[get_brbdnum(cell->id)].desc);
-    printf("   Cell: %c:%u\n",cell->col+'A',cell->row+1);
+    printf("   Cell: %c:%u  [%u:%u]\n",cell->col+'A',cell->row+1,cell->col,cell->row);
 //    printf("   Cell: %u:%u\n",cell->col+1,cell->row+1);
     printf("     xf: %i\n",cell->xf);
 	if(cell->id == 0x0201) {
@@ -634,6 +634,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
     switch (cell->id)
     {
     case 0x00FD:		//LABELSST
+		//printf("WORD: %u short: %u str: %s\n", *label, shortVal(*label), pWB->sst.string[shortVal(*label)].str );
         asprintf(&ret,"%s",pWB->sst.string[shortVal(*label)].str);
         break;
     case 0x0201:		//BLANK
