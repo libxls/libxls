@@ -127,9 +127,30 @@ typedef struct RK
     WORD	row;
     WORD	col;
     WORD	xf;
-    BYTE	value[1]; // var
+    DWORD_UA value;
 }
 RK;
+
+typedef struct MULRK
+{
+    WORD	row;
+    WORD	col;
+	struct {
+		WORD	xf;
+		DWORD_UA value;
+	}		rk[];
+	//WORD	last_col;
+}
+MULRK;
+
+typedef struct MULBLANK
+{
+    WORD	row;
+    WORD	col;
+    WORD	xf[];
+	//WORD	last_col;
+}
+MULBLANK;
 
 typedef struct BLANK
 {

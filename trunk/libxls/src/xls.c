@@ -50,9 +50,9 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-int xls_debug=0;	// now global, so users can turn it on
+int xls_debug;
 
-static double NumFromRk(BYTE* rk);
+static double NumFromRk(DWORD_UA drk);
 
 extern void xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size);
 extern void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size);
@@ -304,11 +304,9 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
 	}
 }
 
-static double NumFromRk(BYTE* rk)
+static double NumFromRk(DWORD_UA drk)
 {
-    DWORD drk;
 	double ret;
-    drk=intVal(*(DWORD_UA *)rk);
 
 	// What kind of value is this ?
     if (drk & 0x02) {
@@ -452,13 +450,10 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 
 	verbose ("xls_addCell");
 
+	// printf("ROW: %u COL: %u\n", shortVal(((COL*)buf)->row), shortVal(((COL*)buf)->col));
     row=&pWS->rows.row[shortVal(((COL*)buf)->row)];
     //cell=&row->cells.cell[((COL*)buf)->col - row->fcell]; DFH - inconsistent
     cell=&row->cells.cell[shortVal(((COL*)buf)->col)];
-//if(((COL*)buf)->col != cell->col)
-//{
-//printf("buf->col=%d cell->col=%d  row->fcell=%d\n", ((COL*)buf)->col , cell->col,  row->fcell);
-//}
     cell->id=bof->id;
     cell->xf=shortVal(((COL*)buf)->xf);
 
@@ -492,28 +487,23 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 		}
         break;
     case 0x00BD:	//MULRK
-
-        for (i = 0; i <= shortVal(*(WORD_UA *)(buf + (bof->size - 2))) - shortVal(((COL *)buf)->col) &&
-	       			i <= row->lcell - row->fcell - shortVal(((COL *)buf)->col); i++)
+        for (i = 0; i < (bof->size - 6)/6; i++)
         {
-            cell=&row->cells.cell[shortVal(((COL*)buf)->col) + i];
-            //cell=&row->cells.cell[((COL*)buf)->col - row->fcell + i];  DFH - inconsistent
-            //				col=row->cols[i];
-            cell->id=0x027E; // DFH now RK, use to be bof->id;
-            cell->xf=shortVal(*((WORD_UA *)(buf+(4+i*6))));
-            cell->d=NumFromRk((BYTE *)(buf+(4+i*6+2)));
+            cell=&row->cells.cell[shortVal(((MULRK*)buf)->col + i)];
+			// printf("i=%d col=%d\n", i, shortVal(((MULRK*)buf)->col + i) );
+            cell->id=0x027E;
+            cell->xf=shortVal(((MULRK*)buf)->rk[i].xf);
+            cell->d=NumFromRk(((MULRK*)buf)->rk[i].value);
+			// printf("val=%lf\n", cell->d);
             cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
     case 0x00BE:	//MULBLANK
-        for (i = 0; i <= shortVal(*(WORD_UA *)(buf + (bof->size - 2))) - shortVal(((COL *)buf)->col) &&
-	       			i <= row->lcell - row->fcell - shortVal(((COL *)buf)->col); i++)
+        for (i = 0; (bof->size - 6)/2; i++)
         {
-            cell=&row->cells.cell[shortVal(((COL*)buf)->col) + i];
-            //cell=&row->cells.cell[((COL*)buf)->col-row->fcell+i];
-            //				col=row->cols[i];
-            cell->id=0x0201; // DFH blank, use to be bof->id;
-            cell->xf=shortVal(*((WORD_UA *)(buf+(4+i*2))));
+            cell=&row->cells.cell[shortVal(((MULBLANK*)buf)->col) + i];
+            cell->id=0x0201;
+            cell->xf=shortVal(((MULBLANK*)buf)->xf[i]);
             cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         }
         break;
@@ -781,6 +771,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 
         case 0x00fc:	// SST
+			//printf("ADD SST\n");
 			//if(xls_debug) dumpbuf((BYTE *)"/tmp/SST",bof1.size,buf);
             convertSst((SST *)buf);
             xls_addSST(pWB,(SST*)buf,bof1.size);
@@ -792,6 +783,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
         case 0x0085:	// BOUNDSHEET
 			{
+				//printf("ADD SHEET\n");
 				BOUNDSHEET *bs = (BOUNDSHEET *)buf;
                 convertBoundsheet(bs);
 				//char *s;
@@ -1160,7 +1152,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 #endif
         default:
 			if(xls_debug) {
-				printf("UNKNOWN: %x at pos=%lu size=%u\n", tmp.id, lastPos, tmp.size);
+				printf("UNKNOWN [%d:%d]: %x at pos=%lu size=%u\n", shortVal(((COL*)&tmp)->col), shortVal(((COL*)&tmp)->row), tmp.id, lastPos, tmp.size);
 			}
             break;
         }
@@ -1211,6 +1203,23 @@ xlsWorkBook* xls_open(const char *file,const char* charset)
 		ole2_read(pWB->docSummary, 4096, 1, pWB->olestr);
 		ole2_fclose(pWB->olestr);
 	}
+
+#if 0
+	if(xls_debug) {
+		printf("summary=%d docsummary=%d\n", pWB->summary ? 1 : 0, pWB->docSummary ? 1 : 0);
+		xlsSummaryInfo *si = xls_summaryInfo(pWB);
+		printf("title=%s\n", si->title);
+		printf("subject=%s\n", si->subject);
+		printf("author=%s\n", si->author);
+		printf("keywords=%s\n", si->keywords);
+		printf("comment=%s\n", si->comment);
+		printf("lastAuthor=%s\n", si->lastAuthor);
+		printf("appName=%s\n", si->appName);
+		printf("category=%s\n", si->category);
+		printf("manager=%s\n", si->manager);
+		printf("company=%s\n", si->company);
+	}
+#endif
 
     // open Workbook
     if (!(pWB->olestr=ole2_fopen(ole,(BYTE *)"Workbook")) && !(pWB->olestr=ole2_fopen(ole,(BYTE *)"Book")))
