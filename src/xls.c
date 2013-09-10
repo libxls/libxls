@@ -994,9 +994,33 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
             convertRow((ROW*)buf);
             if (pWS->rows.lastcol<((ROW*)buf)->lcell)
                 pWS->rows.lastcol=((ROW*)buf)->lcell;
-            if (pWS->rows.lastrow<((ROW*)buf)->index) {
+            if (pWS->rows.lastrow<((ROW*)buf)->index)
                 pWS->rows.lastrow=((ROW*)buf)->index;
-			}
+            break;
+        /* If the ROW record is incorrect or missing, infer the information from
+         * cell data. */
+        case 0x00BD:        //MULRK
+            if (pWS->rows.lastcol<shortVal(((MULRK*)buf)->col) + (tmp.size - 6)/6 - 1)
+                pWS->rows.lastcol=shortVal(((MULRK*)buf)->col) + (tmp.size - 6)/6 - 1;
+            if (pWS->rows.lastrow<shortVal(((MULRK*)buf)->row))
+                pWS->rows.lastrow=shortVal(((MULRK*)buf)->row);
+            break;
+        case 0x00BE:        //MULBLANK
+            if (pWS->rows.lastcol<shortVal(((MULBLANK*)buf)->col) + (tmp.size - 6)/2 - 1)
+                pWS->rows.lastcol=shortVal(((MULBLANK*)buf)->col) + (tmp.size - 6)/2 - 1;
+            if (pWS->rows.lastrow<shortVal(((MULBLANK*)buf)->row))
+                pWS->rows.lastrow=shortVal(((MULBLANK*)buf)->row);
+            break;
+        case 0x0203:        //NUMBER
+        case 0x027e:        //RK
+        case 0x00FD:        //LABELSST
+        case 0x0201:        //BLANK
+        case 0x0204:        //LABEL
+        case 0x0006:        //FORMULA
+            if (pWS->rows.lastcol<shortVal(((COL*)buf)->col))
+                pWS->rows.lastcol=shortVal(((COL*)buf)->col);
+            if (pWS->rows.lastrow<shortVal(((COL*)buf)->row))
+                pWS->rows.lastrow=shortVal(((COL*)buf)->row);
             break;
         }
         free(buf);
