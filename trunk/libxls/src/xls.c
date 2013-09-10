@@ -499,7 +499,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         }
         break;
     case 0x00BE:	//MULBLANK
-        for (i = 0; (bof->size - 6)/2; i++)
+        for (i = 0; i < (bof->size - 6)/2; i++)
         {
             cell=&row->cells.cell[shortVal(((MULBLANK*)buf)->col) + i];
             cell->id=0x0201;
