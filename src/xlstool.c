@@ -638,6 +638,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
         asprintf(&ret,"%s",pWB->sst.string[shortVal(*label)].str);
         break;
     case 0x0201:		//BLANK
+    case 0x00BE:		//MULBLANK
         asprintf(&ret, "");
         break;
     case 0x0204:		//LABEL (xlslib generates these)
@@ -658,6 +659,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
     case 0x0203:		//NUMBER
         asprintf(&ret,"%lf", cell->d);
 		break;
+		//		if( RK || MULRK || NUMBER || FORMULA)
 		//		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
         switch (xf->format)

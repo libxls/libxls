@@ -70,7 +70,7 @@ int intVal (int i)
     }
 }
 
-short shortVal (short s)
+unsigned short shortVal (short s)
 {
     unsigned char c1, c2;
     
