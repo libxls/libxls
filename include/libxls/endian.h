@@ -31,7 +31,7 @@
 
 int is_bigendian();
 int intVal (int i);
-short shortVal (short s);
+unsigned short shortVal (short s);
 
 void convertHeader(OLE2Header *h);
 void convertPss(PSS* pss);
