@@ -23,40 +23,76 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Copyright 2013 Bob Colbert
+ * Copyright 2014 David Hoerl
+ *
+ * USAGE: set the dump hander early on in your libxls code, before parsing a file: 
+ *    xls_set_formula_hander(dump_formula);
  *
  */
 
-#include <libxls/xlsstruct.h>
+#ifndef libXlsTester_xlsformula_h
+#define libXlsTester_xlsformula_h
 
-int xls_is_bigendian();
-int xlsIntVal (int i);
-unsigned short xlsShortVal (short s);
-
-void xlsConvertHeader(OLE2Header *h);
-void xlsConvertPss(PSS* pss);
-
-void xlsConvertDouble(BYTE *d);
-void xlsConvertBof(BOF *b);
-void xlsConvertBiff(BIFF *b);
-void xlsConvertWindow(WIND1 *w);
-void xlsConvertSst(SST *s);
-void xlsConvertXf5(XF5 *x);
-void xlsConvertXf8(XF8 *x);
-void xlsConvertFont(FONT *f);
-void xlsConvertFormat(FORMAT *f);
-void xlsConvertBoundsheet(BOUNDSHEET *b);
-void xlsConvertColinfo(COLINFO *c);
-void xlsConvertRow(ROW *r);
-void xlsConvertMergedcells(MERGEDCELLS *m);
-void xlsConvertCol(COL *c);
-void xlsConvertFormula(FORMULA *f);
-void xlsConvertFormulaArray(FARRAY *f);
-void xlsConvertHeader(OLE2Header *h);
-void xlsConvertPss(PSS* pss);
-#if 0 // unused
-void xlsConvertUnicode(wchar_t *w, char *s, int len);
+#ifdef AIX
+#pragma pack(1)
+#else
+#pragma pack(push, 1)
 #endif
 
-#define W_ENDIAN(a) a=xlsShortVal(a)
-#define D_ENDIAN(a) a=xlsIntVal(a)
+#if defined(BLANK_CELL)
+
+#include <libxls/xlstypes.h>
+#include <libxls/xlsstruct.h>
+
+#else 
+
+
+// taken from the libxls files xlstypes.h and xlsstruct.h
+#include <stdint.h>
+
+typedef unsigned char		BYTE;
+typedef uint16_t			WORD;
+typedef uint32_t			DWORD;
+
+#ifdef NO_ALIGN
+typedef uint16_t			WORD_UA;
+typedef uint32_t			DWORD_UA;
+#else
+typedef uint16_t			WORD_UA		__attribute__ ((aligned (1)));	// 2 bytes
+typedef uint32_t			DWORD_UA	__attribute__ ((aligned (1)));	// 4 bytes
+#endif
+
+typedef struct FORMULA // BIFF8
+{
+    WORD	row;
+    WORD	col;
+    WORD	xf;
+	// next 8 bytes either a IEEE double, or encoded on a byte basis
+    BYTE	resid;
+    BYTE	resdata[5];
+    WORD	res;
+    WORD	flags;
+    BYTE	chn[4]; // BIFF8
+    WORD	len;
+    BYTE	value[1]; //var
+}
+FORMULA;
+
+typedef struct FARRAY // BIFF8
+{
+    WORD	row1;
+    WORD	row2;
+    BYTE	col1;
+    BYTE	col2;
+    WORD	flags;
+    BYTE	chn[4]; // BIFF8
+    WORD	len;
+    BYTE	value[1]; //var
+}
+FARRAY;
+#endif
+
+void dump_formula(WORD bof, WORD len, BYTE *formula);
+
+
+#endif

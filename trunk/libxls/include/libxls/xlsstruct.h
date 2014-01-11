@@ -110,17 +110,29 @@ typedef struct FORMULA // BIFF8
     WORD	row;
     WORD	col;
     WORD	xf;
-    //	ULLONG  res;
+	// next 8 bytes either a IEEE double, or encoded on a byte basis
     BYTE	resid;
     BYTE	resdata[5];
     WORD	res;
-    //	double	res;
     WORD	flags;
     BYTE	chn[4]; // BIFF8
     WORD	len;
     BYTE	value[1]; //var
 }
 FORMULA;
+
+typedef struct FARRAY // BIFF8
+{
+    WORD	row1;
+    WORD	row2;
+    BYTE	col1;
+    BYTE	col2;
+    WORD	flags;
+    BYTE	chn[4]; // BIFF8
+    WORD	len;
+    BYTE	value[1]; //var
+}
+FARRAY;
 
 typedef struct RK
 {
@@ -460,5 +472,7 @@ typedef struct xls_summaryInfo
 	BYTE		*company;
 }
 xlsSummaryInfo;
+
+typedef void (*xls_formula_handler)(WORD bof, WORD len, BYTE *formula);
 
 #endif
