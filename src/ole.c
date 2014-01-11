@@ -48,8 +48,8 @@ extern int xls_debug;
 
 //#define OLE_DEBUG
 
-static const DWORD MSATSECT		= 0xFFFFFFFC;	// -4
-static const DWORD FATSECT		= 0xFFFFFFFD;	// -3
+//static const DWORD MSATSECT		= 0xFFFFFFFC;	// -4
+//static const DWORD FATSECT		= 0xFFFFFFFD;	// -3
 static const DWORD ENDOFCHAIN	= 0xFFFFFFFE;	// -2
 static const DWORD FREESECT		= 0xFFFFFFFF;	// -1
 
@@ -75,7 +75,7 @@ void ole2_bufread(OLE2Stream* olest)
 			ptr = olest->ole->SSAT + olest->fatpos*olest->ole->lssector;
 			memcpy(olest->buf, ptr, olest->bufsize); 
 
-			olest->fatpos=intVal(olest->ole->SSecID[olest->fatpos]);
+			olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
 		} else {
@@ -93,7 +93,7 @@ void ole2_bufread(OLE2Stream* olest)
 			assert((int)olest->fatpos >= 0);
 			sector_read(olest->ole, olest->buf, olest->fatpos);
 			//printf("Fat val: %d[0x%X]\n",olest->fatpos,olest->ole->SecID[olest->fatpos], olest->ole->SecID[olest->fatpos]);
-			olest->fatpos=intVal(olest->ole->SecID[olest->fatpos]);
+			olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
 		}
@@ -214,7 +214,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 		if (div_rez.quot!=0)
 		{
 			for (i=0;i<div_rez.quot;i++)
-				olest->fatpos=intVal(olest->ole->SSecID[olest->fatpos]);
+				olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
 		}
 
 		ole2_bufread(olest);
@@ -230,7 +230,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 		if (div_rez.quot!=0)
 		{
 			for (i=0;i<div_rez.quot;i++)
-				olest->fatpos=intVal(olest->ole->SecID[olest->fatpos]);
+				olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
 		}
 
 		ole2_bufread(olest);
@@ -293,7 +293,7 @@ OLE2* ole2_open(const BYTE *file)
     // read header and check magic numbers
     oleh=(OLE2Header*)malloc(512);
     fread(oleh,1,512,ole->file);
-    convertHeader(oleh);
+    xlsConvertHeader(oleh);
 
 	// make sure the file looks good. Note: this code only works on Little Endian machines
 	if(oleh->id[0] != 0xE011CFD0 || oleh->id[1] != 0xE11AB1A1 || oleh->byteorder != 0xFFFE) {
@@ -349,7 +349,7 @@ OLE2* ole2_open(const BYTE *file)
     do
     {
         ole2_read(pss,1,sizeof(PSS),olest);
-        convertPss(pss);
+        xlsConvertPss(pss);
         name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
 #ifdef OLE_DEBUG	
 		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
@@ -409,7 +409,7 @@ OLE2* ole2_open(const BYTE *file)
 					fseek(ole->file,sector*ole->lsector+512,0);
 					fread(wptr,1,ole->lsector,ole->file);
 					wptr += ole->lsector;
-					sector = intVal(ole->SecID[sector]);
+					sector = xlsIntVal(ole->SecID[sector]);
 				}
 			}	
 		} else {

@@ -48,6 +48,7 @@ extern "C" {
 extern const char* xls_getVersion(void);
 
 extern int xls(int debug);	// Set debug. Force library to load?
+extern void xls_set_formula_hander(xls_formula_handler handler);
 
 extern void xls_parseWorkBook(xlsWorkBook* pWB);
 extern void xls_parseWorkSheet(xlsWorkSheet* pWS);

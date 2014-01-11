@@ -344,7 +344,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 
     for(i=0; i<len; i++)
     {
-        w[i]=shortVal(x[i]);
+        w[i]=xlsShortVal(x[i]);
     }
     w[len] = '\0';
 
@@ -385,7 +385,7 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 
     if (is2) {
 		// length is two bytes
-        ln=shortVal(*(WORD_UA *)str);
+        ln=xlsShortVal(*(WORD_UA *)str);
         ofs+=2;
     } else {
 		// single byte length
@@ -634,15 +634,15 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
     switch (cell->id)
     {
     case 0x00FD:		//LABELSST
-		//printf("WORD: %u short: %u str: %s\n", *label, shortVal(*label), pWB->sst.string[shortVal(*label)].str );
-        asprintf(&ret,"%s",pWB->sst.string[shortVal(*label)].str);
+		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsShortVal(*label)].str );
+        asprintf(&ret,"%s",pWB->sst.string[xlsShortVal(*label)].str);
         break;
     case 0x0201:		//BLANK
     case 0x00BE:		//MULBLANK
         asprintf(&ret, "");
         break;
     case 0x0204:		//LABEL (xlslib generates these)
-		len = shortVal(*label);
+		len = xlsShortVal(*label);
         label++;
 		if(pWB->is5ver) {
 			asprintf(&ret,"%.*s", len, (char *)label);

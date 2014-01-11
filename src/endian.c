@@ -33,7 +33,7 @@
 #include "libxls/endian.h"
 #include "libxls/ole.h"
 
-int is_bigendian()
+int xls_is_bigendian()
 {
 #if defined (__BIG_ENDIAN__)
     return 1;
@@ -54,11 +54,11 @@ int is_bigendian()
 #endif
 }
 
-int intVal (int i)
+int xlsIntVal (int i)
 {
     unsigned char c1, c2, c3, c4;
 
-    if (is_bigendian()) {
+    if (xls_is_bigendian()) {
         c1 = i & 255;
         c2 = (i >> 8) & 255;
         c3 = (i >> 16) & 255;
@@ -70,11 +70,11 @@ int intVal (int i)
     }
 }
 
-unsigned short shortVal (short s)
+unsigned short xlsShortVal (short s)
 {
     unsigned char c1, c2;
     
-    if (is_bigendian()) {
+    if (xls_is_bigendian()) {
         c1 = s & 255;
         c2 = (s >> 8) & 255;
     
@@ -84,12 +84,12 @@ unsigned short shortVal (short s)
     }
 }
 
-void convertDouble(unsigned char *d)
+void xlsConvertDouble(unsigned char *d)
 {
     unsigned char t;
     int i;
 
-    if (is_bigendian()) {
+    if (xls_is_bigendian()) {
         for (i=0; i<4; i++)
         {
             t = d[7-i];
@@ -99,54 +99,54 @@ void convertDouble(unsigned char *d)
     }
 }
 
-void convertBof(BOF *b)
+void xlsConvertBof(BOF *b)
 {
-    b->id = shortVal(b->id);
-    b->size = shortVal(b->size);
+    b->id = xlsShortVal(b->id);
+    b->size = xlsShortVal(b->size);
 }
 
-void convertBiff(BIFF *b)
+void xlsConvertBiff(BIFF *b)
 {
-    b->ver = shortVal(b->ver);
-    b->type = shortVal(b->type);
-    b->id_make = shortVal(b->id_make);
-    b->year = shortVal(b->year);
-    b->flags = intVal(b->flags);
-    b->min_ver = intVal(b->min_ver);
+    b->ver = xlsShortVal(b->ver);
+    b->type = xlsShortVal(b->type);
+    b->id_make = xlsShortVal(b->id_make);
+    b->year = xlsShortVal(b->year);
+    b->flags = xlsIntVal(b->flags);
+    b->min_ver = xlsIntVal(b->min_ver);
 }
 
-void convertWindow(WIND1 *w)
+void xlsConvertWindow(WIND1 *w)
 {
-    w->xWn = shortVal(w->xWn);
-    w->yWn = shortVal(w->yWn);
-    w->dxWn = shortVal(w->dxWn);
-    w->dyWn = shortVal(w->dyWn);
-    w->grbit = shortVal(w->grbit);
-    w->itabCur = shortVal(w->itabCur);
-    w->itabFirst = shortVal(w->itabFirst);
-    w->ctabSel = shortVal(w->ctabSel);
-    w->wTabRatio = shortVal(w->wTabRatio);
+    w->xWn = xlsShortVal(w->xWn);
+    w->yWn = xlsShortVal(w->yWn);
+    w->dxWn = xlsShortVal(w->dxWn);
+    w->dyWn = xlsShortVal(w->dyWn);
+    w->grbit = xlsShortVal(w->grbit);
+    w->itabCur = xlsShortVal(w->itabCur);
+    w->itabFirst = xlsShortVal(w->itabFirst);
+    w->ctabSel = xlsShortVal(w->ctabSel);
+    w->wTabRatio = xlsShortVal(w->wTabRatio);
 }
 
-void convertSst(SST *s)
+void xlsConvertSst(SST *s)
 {
-    s->num=intVal(s->num);
-    s->num=intVal(s->numofstr);
+    s->num=xlsIntVal(s->num);
+    s->num=xlsIntVal(s->numofstr);
 }
 
-void convertXf5(XF5 *x)
+void xlsConvertXf5(XF5 *x)
 {
-    x->font=shortVal(x->font);
-    x->format=shortVal(x->format);
-    x->type=shortVal(x->type);
-    x->align=shortVal(x->align);
-    x->color=shortVal(x->color);
-    x->fill=shortVal(x->fill);
-    x->border=shortVal(x->border);
-    x->linestyle=shortVal(x->linestyle);
+    x->font=xlsShortVal(x->font);
+    x->format=xlsShortVal(x->format);
+    x->type=xlsShortVal(x->type);
+    x->align=xlsShortVal(x->align);
+    x->color=xlsShortVal(x->color);
+    x->fill=xlsShortVal(x->fill);
+    x->border=xlsShortVal(x->border);
+    x->linestyle=xlsShortVal(x->linestyle);
 }
 
-void convertXf8(XF8 *x)
+void xlsConvertXf8(XF8 *x)
 {
     W_ENDIAN(x->font);
     W_ENDIAN(x->format);
@@ -156,7 +156,7 @@ void convertXf8(XF8 *x)
     W_ENDIAN(x->groundcolor);
 }
 
-void convertFont(FONT *f)
+void xlsConvertFont(FONT *f)
 {
     W_ENDIAN(f->height);
     W_ENDIAN(f->flag);
@@ -165,17 +165,17 @@ void convertFont(FONT *f)
     W_ENDIAN(f->escapement);
 }
 
-void convertFormat(FORMAT *f)
+void xlsConvertFormat(FORMAT *f)
 {
     W_ENDIAN(f->index);
 }
 
-void convertBoundsheet(BOUNDSHEET *b)
+void xlsConvertBoundsheet(BOUNDSHEET *b)
 {
     D_ENDIAN(b->filepos);
 }
 
-void convertColinfo(COLINFO *c)
+void xlsConvertColinfo(COLINFO *c)
 {
     W_ENDIAN(c->first);
     W_ENDIAN(c->last);
@@ -185,7 +185,7 @@ void convertColinfo(COLINFO *c)
     W_ENDIAN(c->notused);
 }
 
-void convertRow(ROW *r)
+void xlsConvertRow(ROW *r)
 {
     W_ENDIAN(r->index);
     W_ENDIAN(r->fcell);
@@ -197,7 +197,7 @@ void convertRow(ROW *r)
     W_ENDIAN(r->xf);
 }
 
-void convertMergedcells(MERGEDCELLS *m)
+void xlsConvertMergedcells(MERGEDCELLS *m)
 {
     W_ENDIAN(m->rowf);
     W_ENDIAN(m->rowl);
@@ -205,75 +205,99 @@ void convertMergedcells(MERGEDCELLS *m)
     W_ENDIAN(m->coll);
 }
 
-void convertCol(COL *c)
+void xlsConvertCol(COL *c)
 {
     W_ENDIAN(c->row);
     W_ENDIAN(c->col);
     W_ENDIAN(c->xf);
 }
 
-void convertFormula(FORMULA *f)
+void xlsConvertFormula(FORMULA *f)
 {
     W_ENDIAN(f->row);
     W_ENDIAN(f->col);
     W_ENDIAN(f->xf);
-    convertDouble((BYTE *)&f->resid);
-/*
-    D_ENDIAN(f->res);
-*/
+	if(f->res == 0xFFFF) {
+		switch(f->resid) {
+		case 0:
+		case 3:
+			break;
+		case 1:
+		case 2:
+			W_ENDIAN(*(WORD *)&f->resdata[1]);
+			break;
+		default:
+			xlsConvertDouble(&f->resid);
+			break;
+		}
+	} else {
+		xlsConvertDouble(&f->resid);
+	}
+
     W_ENDIAN(f->flags);
     W_ENDIAN(f->len);
-    fflush(stdout);
+    //fflush(stdout); left over from debugging?
 }
 
-void convertHeader(OLE2Header *h)
+void xlsConvertFormulaArray(FARRAY *f)
+{
+    W_ENDIAN(f->row1);
+    W_ENDIAN(f->row2);
+    W_ENDIAN(f->col1);
+    W_ENDIAN(f->col2);
+    W_ENDIAN(f->flags);
+    W_ENDIAN(f->len);
+}
+
+void xlsConvertHeader(OLE2Header *h)
 {
     int i;
     for (i=0; i<2; i++)
-        h->id[i] = intVal(h->id[i]);
+        h->id[i] = xlsIntVal(h->id[i]);
     for (i=0; i<4; i++)
-        h->clid[i] = intVal(h->clid[i]);
-    h->verminor  = shortVal(h->verminor);
-    h->verdll    = shortVal(h->verdll);
-    h->byteorder = shortVal(h->byteorder);
-    h->lsectorB  = shortVal(h->lsectorB);
-    h->lssectorB = shortVal(h->lssectorB);
-    h->reserved1 = shortVal(h->reserved1);
-    h->reserved2 = intVal(h->reserved2);
-    h->reserved3 = intVal(h->reserved3);
+        h->clid[i] = xlsIntVal(h->clid[i]);
+    h->verminor  = xlsShortVal(h->verminor);
+    h->verdll    = xlsShortVal(h->verdll);
+    h->byteorder = xlsShortVal(h->byteorder);
+    h->lsectorB  = xlsShortVal(h->lsectorB);
+    h->lssectorB = xlsShortVal(h->lssectorB);
+    h->reserved1 = xlsShortVal(h->reserved1);
+    h->reserved2 = xlsIntVal(h->reserved2);
+    h->reserved3 = xlsIntVal(h->reserved3);
 
-    h->cfat      = intVal(h->cfat);
-    h->dirstart  = intVal(h->dirstart);
+    h->cfat      = xlsIntVal(h->cfat);
+    h->dirstart  = xlsIntVal(h->dirstart);
 
-    h->reserved4 = intVal(h->reserved4);
+    h->reserved4 = xlsIntVal(h->reserved4);
 
-    h->sectorcutoff = intVal(h->sectorcutoff);
-    h->sfatstart = intVal(h->sfatstart);
-    h->csfat = intVal(h->csfat);
-    h->difstart = intVal(h->difstart);
-    h->cdif = intVal(h->cdif);
+    h->sectorcutoff = xlsIntVal(h->sectorcutoff);
+    h->sfatstart = xlsIntVal(h->sfatstart);
+    h->csfat = xlsIntVal(h->csfat);
+    h->difstart = xlsIntVal(h->difstart);
+    h->cdif = xlsIntVal(h->cdif);
     for (i=0; i<109; i++)
-        h->MSAT[i] = intVal(h->MSAT[i]);
+        h->MSAT[i] = xlsIntVal(h->MSAT[i]);
 }
 
-void convertPss(PSS* pss)
+void xlsConvertPss(PSS* pss)
 {
     int i;
-    pss->bsize = shortVal(pss->bsize);
-    pss->left  = intVal(pss->left);
-    pss->right  = intVal(pss->right);
-    pss->child  = intVal(pss->child);
+    pss->bsize = xlsShortVal(pss->bsize);
+    pss->left  = xlsIntVal(pss->left);
+    pss->right  = xlsIntVal(pss->right);
+    pss->child  = xlsIntVal(pss->child);
 
     for(i=0; i<8; i++)
-        pss->guid[i]=shortVal(pss->guid[i]);
-    pss->userflags  = intVal(pss->userflags);
+        pss->guid[i]=xlsShortVal(pss->guid[i]);
+    pss->userflags  = xlsIntVal(pss->userflags);
 /*    TIME_T	time[2]; */
-    pss->sstart  = intVal(pss->sstart);
-    pss->size  = intVal(pss->size);
-    pss->proptype  = intVal(pss->proptype);
+    pss->sstart  = xlsIntVal(pss->sstart);
+    pss->size  = xlsIntVal(pss->size);
+    pss->proptype  = xlsIntVal(pss->proptype);
 }
 
-void convertUnicode(wchar_t *w, char *s, int len)
+#if 0 // not used?
+void xlsConvertUnicode(wchar_t *w, char *s, int len)
 {
     short *x;
     int i;
@@ -283,7 +307,9 @@ void convertUnicode(wchar_t *w, char *s, int len)
 
     for(i=0; i<len; i++)
     {
-        w[i]=shortVal(x[i]);
+        w[i]=xlsShortVal(x[i]);
     }
     w[len] = '\0';
 }
+#endif
+
