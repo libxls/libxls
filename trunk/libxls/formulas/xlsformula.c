@@ -89,7 +89,7 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 		BYTE *b = buf;
 		while((b-buf) < flen) {
 			WORD len = get_token_size(b);
-			if(!len) {
+			if(len == 0) {
 				printf("YIKES: token 0x%2.2x no len!\n", b[0]);
 				return;
 			}
@@ -97,6 +97,15 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			int printBytes = 1;
 			excelNames tn = tokenNames[ b[0] ];
 			switch(b[0]) {
+			case 0x17:
+			{
+				WORD sLen = b[1];
+				BYTE options = b[2];
+				if(options & 1) sLen *= 2;
+				len = 3 + sLen; // token, len, options
+				//printf("len=%u opts=%u total=%u\n", b[1], b[2], len);
+				printf("%s (0x%x): ", tn.xlsName, b[0]);
+			}	break;
 			case 0x21:
 			case 0x41:
 			case 0x61:
@@ -168,9 +177,9 @@ static WORD token_size[128] = {
 	1,
 	1,
 	1,
+	0xFF,	// string
 	0,
-	0,
-	0,
+	4,		// tExpr = 0x19
 	0,
 	0,
 	2,

@@ -474,7 +474,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 			double d = ((FORMULA*)buf)->resdata[1];
 			switch(((FORMULA*)buf)->resid) {
 			case 0:		// String
-				return cell;	// cell is half complete, get the STRING next record
+				break;	// cell is half complete, get the STRING next record
 			case 1:		// Boolean
 				memcpy(&cell->d, &d, sizeof(double)); // Required for ARM
 				sprintf((char *)(cell->str = malloc(5)), "bool");
