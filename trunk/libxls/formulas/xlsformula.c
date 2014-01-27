@@ -112,8 +112,11 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			{
 				unsigned short func = xlsShortVal(*(short *)&b[1]);
 				excelNames fn = functionNames[ func ];
-				printf("%s (0x%x) %s", tn.xlsName, b[0], fn.xlsName);
-				printBytes = 0;
+				printf("%s (0x%x) %s  ", tn.xlsName, b[0], fn.xlsName);
+				switch(func) {
+				default:
+					printBytes = 0;
+				}
 			}	break;
 			case 0x22:
 			case 0x42:
@@ -121,8 +124,14 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			{
 				unsigned short func = xlsShortVal(*(short *)&b[2]);
 				excelNames fn = functionNames[ func ];
-				printf("%s (0x%x) %s arguments=%d", tn.xlsName, b[0], fn.xlsName, b[1]);
-				printBytes = 0;
+				printf("%s (0x%x) %s arguments=%d  ", tn.xlsName, b[0], fn.xlsName, b[1]);
+				switch(func) {
+				case 0x00FF:		// FUNC_UDF:
+					printBytes = 1;
+					break;
+				default:
+					printBytes = 0;
+				}
 			}	break;
 
 			case 0x24:
