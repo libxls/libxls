@@ -50,8 +50,7 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-//#define DEBUG_DRAWINGS
-
+#define DEBUG_DRAWINGS
 int xls_debug;
 
 static double NumFromRk(DWORD_UA drk);
@@ -734,7 +733,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
         ole2_read(&bof1, 1, 4, pWB->olestr);
         xlsConvertBof(&bof1);
-		if(xls_debug)
+		if(xls_debug) ;
 			xls_showBOF(&bof1);
 
         buf=(BYTE *)malloc(bof1.size);
@@ -778,6 +777,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			{
 				WIND1 *w = (WIND1*)buf;
                 xlsConvertWindow(w);
+				pWB->activeSheetIdx = w->itabCur;
 				if(xls_debug) {
 					printf("WINDOW1: ");
 					printf("xWn    : %d\n", w->xWn/20);

@@ -402,7 +402,7 @@ st_row;
 
 typedef	struct st_colinfo
 {
-    DWORD count;				//Count of COLINFO
+    DWORD count;				// Count of COLINFO
     struct st_colinfo_data
     {
         WORD	first;
@@ -425,15 +425,16 @@ typedef struct xlsWorkBook
     BYTE		is5ver;
     BYTE		is1904;
     WORD		type;
+    WORD		activeSheetIdx;	// index of the active sheet
 
     //Other data
-    WORD		codepage;		//Charset codepage
+    WORD		codepage;		// Charset codepage
     char*		charset;
     st_sheet	sheets;
-    st_sst		sst;			//SST table
-    st_xf		xfs;			//XF table
+    st_sst		sst;			// SST table
+    st_xf		xfs;			// XF table
     st_font		fonts;
-    st_format	formats;		//FORMAT table
+    st_format	formats;		// FORMAT table
 
 	char		*summary;		// ole file
 	char		*docSummary;	// ole file
