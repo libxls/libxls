@@ -51,7 +51,7 @@
 #endif
 
 #define DEBUG_DRAWINGS
-int xls_debug;
+int xls_debug = 0;
 
 static double NumFromRk(DWORD_UA drk);
 static xls_formula_handler formula_handler;
@@ -733,8 +733,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 
         ole2_read(&bof1, 1, 4, pWB->olestr);
         xlsConvertBof(&bof1);
-		if(xls_debug) ;
-			xls_showBOF(&bof1);
+ 		if(xls_debug) xls_showBOF(&bof1);
 
         buf=(BYTE *)malloc(bof1.size);
         ole2_read(buf, 1, bof1.size, pWB->olestr);
