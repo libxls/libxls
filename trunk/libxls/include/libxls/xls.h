@@ -42,9 +42,6 @@ extern "C" {
 #include "libxls/xlstool.h"
 
 
-#define BLANK_CELL		0x0201
-
-
 extern const char* xls_getVersion(void);
 
 extern int xls(int debug);	// Set debug. Force library to load?

@@ -560,7 +560,7 @@ void xls_showCell(struct st_cell_data* cell)
     printf("   Cell: %c:%u  [%u:%u]\n",cell->col+'A',cell->row+1,cell->col,cell->row);
 //    printf("   Cell: %u:%u\n",cell->col+1,cell->row+1);
     printf("     xf: %i\n",cell->xf);
-	if(cell->id == 0x0201) {
+	if(cell->id == XLS_RECORD_BLANK) {
 		//printf("BLANK_CELL!\n");
 		return;
 	}
@@ -630,18 +630,17 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
 
     xf=&pWB->xfs.xf[cell->xf];
 
-    //LABELSST
     switch (cell->id)
     {
-    case 0x00FD:		//LABELSST
+    case XLS_RECORD_LABELSST:
 		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsShortVal(*label)].str );
         asprintf(&ret,"%s",pWB->sst.string[xlsShortVal(*label)].str);
         break;
-    case 0x0201:		//BLANK
-    case 0x00BE:		//MULBLANK
+    case XLS_RECORD_BLANK:
+    case XLS_RECORD_MULBLANK:
         asprintf(&ret, "");
         break;
-    case 0x0204:		//LABEL (xlslib generates these)
+    case XLS_RECORD_LABEL:
 		len = xlsShortVal(*label);
         label++;
 		if(pWB->is5ver) {
@@ -655,8 +654,8 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
 		    ret = (char *)unicode_decode((BYTE *)label + 1, len*2, &newlen, pWB->charset);
 		}
         break;
-    case 0x027E:		//RK
-    case 0x0203:		//NUMBER
+    case XLS_RECORD_RK:
+    case XLS_RECORD_NUMBER:
         asprintf(&ret,"%lf", cell->d);
 		break;
 		//		if( RK || MULRK || NUMBER || FORMULA)
