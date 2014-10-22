@@ -31,6 +31,12 @@
 
 #include <xls.h>
 
+#include <limits>
+
+#ifndef UINT32_MAX
+#define UINT32_MAX std::numeric_limits<uint32_t>::max()
+#endif
+
 #define XLS_WIDE_STRINGS 0
 
 #if XLS_WIDE_STRINGS == 0
