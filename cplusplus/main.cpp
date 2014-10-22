@@ -48,10 +48,15 @@ int main(int argc, char *argv[])
 	cellContent cell = foo.GetCell(0, 1, 2);
 	foo.ShowCell(cell);
 	
-	foo.InitIterator(0);
-	while(true) {
-		cellContent c = foo.GetNextCell();
-		if(c.type == cellBlank) break;
-		foo.ShowCell(c);
+	for(int sheetNum = 0; sheetNum < foo.GetSheetCount(); ++sheetNum) {
+		if(sheeNum) printf("\n\n");
+		printf("===>>> SheetName: %s\n\n", foo.GetSheetName(sheetNum).c_str());
+		
+		foo.InitIterator(sheetNum);
+		while(true) {
+			cellContent c = foo.GetNextCell();
+			if(c.type == cellBlank) break;
+			foo.ShowCell(c);
+		}
 	}
 }
