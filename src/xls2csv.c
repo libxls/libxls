@@ -65,7 +65,7 @@ extern int getopt(int nargc, char * const *nargv, const char *ostr);
 int main(int argc, char *argv[]) {
 	xlsWorkBook* pWB;
 	xlsWorkSheet* pWS;
-	unsigned int i;
+	unsigned int i, j;
     int justList = 0;
     char *sheetName = "";
 
@@ -100,9 +100,6 @@ int main(int argc, char *argv[]) {
             break;
         }
      }
-
-	struct st_row_data* row;
-	WORD cellRow, cellCol;
 
 	// open workbook, choose standard conversion
 	pWB = xls_open(argv[1], encoding);
@@ -149,9 +146,10 @@ int main(int argc, char *argv[]) {
 		xls_parseWorkSheet(pWS);
 
 		// process all rows of the sheet
-		for (cellRow = 0; cellRow <= pWS->rows.lastrow; cellRow++) {
+		for (j = 0; j <= (unsigned int)pWS->rows.lastrow; ++j) {
 			int isFirstCol = 1;
-			row = xls_row(pWS, cellRow);
+			WORD cellRow = (WORD)j;
+			struct st_row_data* row = xls_row(pWS, cellRow);
 
 			// process cells
 			if (!isFirstLine) {
@@ -160,6 +158,7 @@ int main(int argc, char *argv[]) {
 				isFirstLine = 0;
 			}
 
+			WORD cellCol;
 			for (cellCol = 0; cellCol <= pWS->rows.lastcol; cellCol++) {
                 //printf("Processing row=%d col=%d\n", cellRow+1, cellCol+1);
 
