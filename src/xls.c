@@ -531,7 +531,7 @@ printf("MULRK: %d\n", bof->size);
         break;
     case XLS_RECORD_LABELSST:
     case XLS_RECORD_LABEL:
-		cell->str=xls_getfcell(pWS->workbook,cell,(WORD_UA *)&((LABEL*)buf)->value);
+		cell->str=xls_getfcell(pWS->workbook,cell,(DWORD_UA *)&((LABEL*)buf)->value);
 		sscanf((char *)cell->str, "%d", &cell->l);
 		sscanf((char *)cell->str, "%lf", &cell->d);
 		break;
@@ -915,9 +915,11 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 			break;
 		
 		case XLS_RECORD_DEFINEDNAME:
-			printf("DEFINEDNAME: ");
-			for(int i=0; i<bof1.size; ++i) printf("%2.2x ", buf[i]);
-			printf("\n");
+			if(xls_debug) {
+				printf("   DEFINEDNAME: ");
+				for(int i=0; i<bof1.size; ++i) printf("%2.2x ", buf[i]);
+				printf("\n");
+			}
 			break;
 			
 #ifdef DEBUG_DRAWINGS
@@ -1332,7 +1334,7 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 				uint8_t		strType;
 			} note;
 			memcpy(&note, buf, sizeof(note));
-			printf("NOTE: row=%d col=%d flags=0x%x idx=%d strLen=%d strType=%d :  ", note.row, note.col, note.flags, note.idx, note.strLen, note.strType);
+			printf("   NOTE: row=%d col=%d flags=0x%x idx=%d strLen=%d strType=%d :  ", note.row, note.col, note.flags, note.idx, note.strLen, note.strType);
 			for(int i=0; i<note.strLen; ++i) printf("%2.2x ", buf[i+sizeof(note)]);
 			printf("\n  %.*s now at %ld len=%d\n", note.strLen, buf + sizeof(note), sizeof(note)+note.strLen, tmp.size);
 
