@@ -43,7 +43,7 @@ using namespace std;
 #define XLS_STR_SPEC "%s"
 #endif
 
-#define THROW_STR "XlsReader: "
+//#define THROW_STR "XlsReader: "
 
 namespace xls
 {
@@ -86,7 +86,7 @@ WorkBook::WorkBook(const string& fileName, int debug) :
 		xls_parseWorkBook(workBook);
 		summary = xls_summaryInfo(workBook);
 	} else {
-		throw std::string(THROW_STR "failed to open the requested file!");
+		throw XlsException("failed to open the requested file!");
 	}
 }
 WorkBook::~WorkBook()
@@ -123,7 +123,7 @@ bool WorkBook::GetSheetVisible(uint32_t sheetNum) const
 void WorkBook::OpenSheet(uint32_t sheetNum)
 {	
 	if(sheetNum >= numSheets) {
-		throw string(THROW_STR "no such sheet exists!");
+		throw XlsException("no such sheet exists!");
 	} else
 	if(sheetNum != activeWorkSheetID) {
 		activeWorkSheetID = sheetNum;
@@ -149,7 +149,7 @@ cellContent WorkBook::GetNextCell(void)
 {
 	cellContent content;
 
-	if(!iterating) throw string(THROW_STR "asked for the next cell, but not iterating!");
+	if(!iterating) throw XlsException("asked for the next cell, but not iterating!");
 	
 	uint32_t numRows = activeWorkSheet->rows.lastrow + 1;
 	uint32_t numCols = activeWorkSheet->rows.lastcol + 1;
@@ -214,17 +214,16 @@ cellContent WorkBook::GetCell(uint32_t workSheetIndex, uint16_t row, uint16_t co
 cellContent WorkBook::GetCell(uint32_t workSheetIndex, uint16_t row, const char *colStr)
 {
 	int32_t col;
-	const char *errStr = THROW_STR "incorrect column specifier";
 	
-	if(strlen(colStr) > 2 || strlen(colStr) == 0) throw string(errStr);
+	if(strlen(colStr) > 2 || strlen(colStr) == 0) throw XlsException("incorrect column specifier");
 
 	col = colStr[0] - 'A';
-	if(col < 0 || col >= 26) throw string(errStr);
+	if(col < 0 || col >= 26) throw string("incorrect column specifier");
 	char c = colStr[1];
 	if(c) {
 		col *= 26;
 		int32_t col2 = c - 'A';
-		if(col2 < 0 || col2 >= 26) throw string(errStr);
+		if(col2 < 0 || col2 >= 26) throw XlsException(errStr);
 		col += col2;
 	}
 	col += 1;

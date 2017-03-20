@@ -28,10 +28,13 @@
  */
 
 #include <string>
+#include <limits>
+#include <stdexcept>
+
+// Inside namespace xls:
 
 #include <xls.h>
 
-#include <limits>
 
 #ifndef UINT32_MAX
 #define UINT32_MAX std::numeric_limits<uint32_t>::max()
@@ -141,5 +144,21 @@ namespace xls
 		bool				iterating;
 		uint32_t			lastRowIndex;
 		uint32_t			lastColIndex;
+	};
+
+	/*
+	 *  This is the exception which can be thrown by the xls reader.
+	 */
+	class XlsException : public std::runtime_error
+	{
+	public:
+		XlsException(const XlsException &ex) throw() 
+			: std::runtime_error(ex)
+		{;}
+		explicit XlsException(const std::string &msg) throw() 
+			: std::runtime_error("XlsReader: " + msg)
+		{;}
+		virtual ~XlsException() throw()
+		{;}
 	};
 }

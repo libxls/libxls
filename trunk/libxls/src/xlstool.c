@@ -622,7 +622,7 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
+BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,DWORD *label)
 {
     struct st_xf_data *xf;
 	WORD	len;
@@ -633,8 +633,8 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,WORD *label)
     switch (cell->id)
     {
     case XLS_RECORD_LABELSST:
-		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsShortVal(*label)].str );
-        asprintf(&ret,"%s",pWB->sst.string[xlsShortVal(*label)].str);
+		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsIntVal(*label)].str );
+        asprintf(&ret,"%s",pWB->sst.string[xlsIntVal(*label)].str);
         break;
     case XLS_RECORD_BLANK:
     case XLS_RECORD_MULBLANK:
