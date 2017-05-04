@@ -340,13 +340,13 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 
     x=(short *)s;
 
-    w = (wchar_t*)malloc((len+1)*sizeof(wchar_t));
+    w = (wchar_t*)malloc((len/2+1)*sizeof(wchar_t));
 
-    for(i=0; i<len; i++)
+    for(i=0; i<len/2; i++)
     {
         w[i]=xlsShortVal(x[i]);
     }
-    w[len] = '\0';
+    w[len/2] = '\0';
 
     count = wcstombs(NULL, w, 0);
 
@@ -360,7 +360,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 	count2 = wcstombs(converted, w, count);
     free(w);
 	if (count2 <= 0) {
-		printf("wcstombs failed (%d)\n", len);
+		printf("wcstombs failed (%d)\n", len/2);
 		if (newlen) *newlen = 0;
 		return converted;
 	} else {
