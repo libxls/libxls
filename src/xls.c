@@ -488,8 +488,8 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 			memcpy(&cell->d, &((FORMULA*)buf)->resid, sizeof(double));	// Required for ARM
 			cell->str=xls_getfcell(pWS->workbook,cell, NULL);
 		} else {
-			cell->l = 0xFFFF;
 			double d = ((FORMULA*)buf)->resdata[1];
+			cell->l = 0xFFFF;
 			switch(((FORMULA*)buf)->resid) {
 			case 0:		// String
 				break;	// cell is half complete, get the STRING next record
@@ -916,8 +916,9 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 		
 		case XLS_RECORD_DEFINEDNAME:
 			if(xls_debug) {
+				int i;
 				printf("   DEFINEDNAME: ");
-				for(int i=0; i<bof1.size; ++i) printf("%2.2x ", buf[i]);
+				for(i=0; i<bof1.size; ++i) printf("%2.2x ", buf[i]);
 				printf("\n");
 			}
 			break;
@@ -1344,7 +1345,9 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 #endif
 
         default:
+#ifdef DEBUG_DRAWINGS
 		  printBOF:
+#endif
 			if(xls_debug)
 			{
 				//xls_showBOF(&tmp);
