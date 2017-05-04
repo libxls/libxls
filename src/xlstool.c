@@ -352,6 +352,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 
 	if (count <= 0) {
 		if (newlen) *newlen = 0;
+		free(w);
 		return NULL;
 	}
 
