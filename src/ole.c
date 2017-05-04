@@ -491,7 +491,7 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
         }
     }
 
-    // Add additionnal sectors of the MSAT
+    // Add additional sectors of the MSAT
     {
         DWORD sid = ole2->difstart;
 
