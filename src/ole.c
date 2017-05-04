@@ -509,7 +509,7 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
               DWORD s = *(DWORD_UA *)(sector + posInSector*4);
               //printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
-              if (s != FREESECT)
+              if (s != ENDOFCHAIN && s != FREESECT) // see patch in Bug 31. For very large files
                 {
                  sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
                  sectorNum++;
