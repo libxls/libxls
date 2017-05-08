@@ -16,7 +16,7 @@ MAINTENANCE
 - create a directory for each arch: arch-<arch-name>
 - call configure and make from within each directory
 
-* Do this when you update configure.in, or when there is an upgrade of autoconf/libtool versions:
+* Do this when you update configure.ac, or when there is an upgrade of autoconf/libtool versions:
 ./bootstrap
 or:
 autoreconf -v --install --force
