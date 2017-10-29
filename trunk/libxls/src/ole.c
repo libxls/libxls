@@ -79,11 +79,11 @@ void ole2_bufread(OLE2Stream* olest)
 			olest->pos=0;
 			olest->cfat++;
 		} else {
-
-			assert(olest->fatpos >= 0);
-
 			//printf("fatpos: %d max=%u\n",olest->fatpos, (olest->ole->cfat*olest->ole->lsector)/4);
-			if(olest->fatpos > (olest->ole->cfat*olest->ole->lsector)/4) exit(-1);
+			if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
+                fprintf(stderr, "Error: fatpos out-of-bounds\n");
+                exit(-1);
+            }
 
 #if 0 // TODO: remove
 			fseek(olest->ole->file,olest->fatpos*olest->ole->lsector+512,0);
@@ -459,15 +459,17 @@ static int sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 	//printf("sector_read: sid=%zu (0x%zx) lsector=%u sector_pos=%zu\n", sid, sid, ole2->lsector, sector_pos(ole2, sid) );
     seeked = fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
 	if(seeked != 0) {
-		printf("seek: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
-	}
-	assert(seeked == 0);
-	
+		fprintf(stderr, "Error: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
+        exit(-1);
+    }
+
 	num = fread(buffer, ole2->lsector, 1, ole2->file);
-	if(num != 1) {
-		fprintf(stderr, "fread: wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
-	}
-	assert(num == 1);
+    //assert(num == 1);
+    if(num != 1) {
+        fprintf(stderr, "Error: fread wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
+        // corrupt file
+        exit(-1);
+    }
 
     return 0;
 }
@@ -478,15 +480,21 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     int sectorNum;
 
     // reconstitution of the MSAT
-    ole2->SecID=malloc(ole2->cfat*ole2->lsector);
+    int count;
+    count = (ole2->cfat < 109) ? ole2->cfat : 109;
+    if(count < 0) {
+        fprintf(stderr, "Error: MSAT count out-of-bounds\n");
+        exit(-1);
+    }
+
+    size_t msize;
+    msize = count*ole2->lsector;
+    ole2->SecID=malloc(msize);
 
     // read first 109 sectors of MSAT from header
     {
-        int count;
-        count = (ole2->cfat < 109) ? ole2->cfat : 109;
         for (sectorNum = 0; sectorNum < count; sectorNum++)
         {
-			assert(sectorNum >= 0);
             sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, oleh->MSAT[sectorNum]);
         }
     }
@@ -510,10 +518,14 @@ static size_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
               //printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
               if (s != ENDOFCHAIN && s != FREESECT) // see patch in Bug 31. For very large files
-                {
-                 sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
-                 sectorNum++;
+              {
+                if((sectorNum*ole2->lsector + s) > msize) {
+                    fprintf(stderr, "Error: MSAT sector out-of-bounds\n");
+                    exit(-1);
                 }
+                sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s);
+                sectorNum++;
+              }
 			}
 			sid = *(DWORD_UA *)(sector + posInSector*4);
 			//printf("   s[%d]=%d (0x%x)\n", posInSector, sid, sid);

@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
             break;
         }
      }
+printf("FILE: %s\n", argv[1]);
 
 	// open workbook, choose standard conversion
 	pWB = xls_open(argv[1], encoding);
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
 		for (j = 0; j <= (unsigned int)pWS->rows.lastrow; ++j) {
 			int isFirstCol = 1;
 			WORD cellRow = (WORD)j;
-			struct st_row_data* row = xls_row(pWS, cellRow);
+			//struct st_row_data* row = xls_row(pWS, cellRow);
 
 			// process cells
 			if (!isFirstLine) {
