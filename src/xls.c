@@ -30,6 +30,7 @@
  *
  */
 
+#define _GNU_SOURCE /* asprintf */
 #include "config.h"
 
 #include <stdio.h>
@@ -50,7 +51,7 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define DEBUG_DRAWINGS
+//#define DEBUG_DRAWINGS
 int xls_debug = 0;
 
 static double NumFromRk(DWORD_UA drk);
@@ -509,7 +510,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 		if(formula_handler) formula_handler(bof->id, bof->size, buf);
         break;
     case XLS_RECORD_MULRK:
-printf("MULRK: %d\n", bof->size);
         for (i = 0; i < (bof->size - 6)/6; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
             cell=&row->cells.cell[xlsShortVal(((MULRK*)buf)->col + i)];
@@ -523,7 +523,12 @@ printf("MULRK: %d\n", bof->size);
     case XLS_RECORD_MULBLANK:
         for (i = 0; i < (bof->size - 6)/2; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
-            cell=&row->cells.cell[xlsShortVal(((MULBLANK*)buf)->col) + i];
+            WORD index = xlsShortVal(((MULBLANK*)buf)->col) + i;
+            if(index >= row->cells.count) {
+                fprintf(stderr, "Error: MULTI-BLANK index out of bounds\n");
+                exit(-1);
+            }
+            cell=&row->cells.cell[index];
             cell->id=XLS_RECORD_BLANK;
             cell->xf=xlsShortVal(((MULBLANK*)buf)->xf[i]);
             cell->str=xls_getfcell(pWS->workbook,cell, NULL);
@@ -531,7 +536,7 @@ printf("MULRK: %d\n", bof->size);
         break;
     case XLS_RECORD_LABELSST:
     case XLS_RECORD_LABEL:
-		cell->str=xls_getfcell(pWS->workbook,cell,(DWORD_UA *)&((LABEL*)buf)->value);
+		cell->str=xls_getfcell(pWS->workbook,cell,(WORD_UA *)&((LABEL*)buf)->value);
 		sscanf((char *)cell->str, "%d", &cell->l);
 		sscanf((char *)cell->str, "%lf", &cell->d);
 		break;
@@ -704,14 +709,28 @@ void xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
 void xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     int count=xlsShortVal(*((WORD_UA *)buf));
+    DWORD limit = 2+count*sizeof(struct MERGEDCELLS);
+    if(limit > (DWORD)bof->size) {
+        verbose("Merged Cells Count out of range");
+        return;
+    }
     int i,c,r;
-    struct MERGEDCELLS* span;
+    struct MERGEDCELLS *span;
     verbose("Merged Cells");
     for (i=0;i<count;i++)
     {
         span=(struct MERGEDCELLS*)(buf+(2+i*sizeof(struct MERGEDCELLS)));
         xlsConvertMergedcells(span);
         //		printf("Merged Cells: [%i,%i] [%i,%i] \n",span->colf,span->rowf,span->coll,span->rowl);
+        // Sanity check:
+        if(!(   span->rowf <= span->rowl &&
+                span->rowl <= pWS->rows.lastrow &&
+                span->colf <= span->coll &&
+                span->coll <= pWS->rows.lastcol
+        )) {
+            continue; // should probably exit(-1)!
+        }
+
         for (r=span->rowf;r<=span->rowl;r++)
             for (c=span->colf;c<=span->coll;c++)
                 pWS->rows.row[r].cells.cell[c].isHidden=1;
@@ -917,7 +936,7 @@ void xls_parseWorkBook(xlsWorkBook* pWB)
 		case XLS_RECORD_DEFINEDNAME:
 			if(xls_debug) {
 				int i;
-				printf("   DEFINEDNAME: ");
+                printf("   DEFINEDNAME: ");
 				for(i=0; i<bof1.size; ++i) printf("%2.2x ", buf[i]);
 				printf("\n");
 			}
@@ -971,12 +990,21 @@ void xls_preparseWorkSheet(xlsWorkSheet* pWS)
     do
     {
 		size_t read;
-        read = ole2_read(&tmp, 1,4,pWS->workbook->olestr);
-		assert(read == 4);
+        read = ole2_read(&tmp, 1, 4, pWS->workbook->olestr);
+		//assert(read == 4);
+		if(read != 4) {
+            fprintf(stderr, "Error: failed to read OLE size\n");
+            exit(-1);
+        }
         xlsConvertBof(&tmp);
         buf=(BYTE *)malloc(tmp.size);
-        read = ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
-		assert(read == tmp.size);
+        read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr);
+		//assert(read == tmp.size);
+		if(read != tmp.size) {
+            fprintf(stderr, "Error: failed to read OLE block\n");
+            exit(-1);
+        }
+
         switch (tmp.id)
         {
         case XLS_RECORD_DEFCOLWIDTH:
@@ -1059,7 +1087,10 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
     BOF tmp;
     BYTE* buf;
 	long offset = pWS->filepos;
+    size_t read;
+#ifdef DEBUG_DRAWINGS
 	int continueRec = 0;
+#endif
 
 	struct st_cell_data *cell;
 	xlsWorkBook *pWB = pWS->workbook;
@@ -1081,10 +1112,23 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 		if(xls_debug > 10) {
 			printf("LASTPOS=%ld pos=%zd filePos=%d filePos=%d\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
 		}
-        ole2_read(&tmp, 1,4,pWS->workbook->olestr);
+        read = ole2_read(&tmp, 1, 4, pWS->workbook->olestr);
+		if(read != 4) {
+            fprintf(stderr, "Error: failed to read OLE size\n");
+            exit(-1);
+        }
+
+		if(read != tmp.size) {
+            fprintf(stderr, "Error: failed to read OLE block\n");
+            exit(-1);
+        }
         xlsConvertBof((BOF *)&tmp);
         buf=(BYTE *)malloc(tmp.size);
-        ole2_read(buf, 1,tmp.size,pWS->workbook->olestr);
+        read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr);
+		if(read != tmp.size) {
+            fprintf(stderr, "Error: failed to read OLE block\n");
+            exit(-1);
+        }
 		offset += 4 + tmp.size;
 
 		if(xls_debug)

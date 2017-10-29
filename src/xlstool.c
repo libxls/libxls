@@ -30,6 +30,7 @@
  *
  */
 
+#define _GNU_SOURCE /* asprintf */
 #include "config.h"
 
 #include <math.h>
@@ -623,10 +624,11 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,DWORD *label)
+BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
 {
     struct st_xf_data *xf;
 	WORD	len;
+    WORD    offset;
     char	*ret = NULL;
 
     xf=&pWB->xfs.xf[cell->xf];
@@ -635,7 +637,10 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell,DWORD *label)
     {
     case XLS_RECORD_LABELSST:
 		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsIntVal(*label)].str );
-        asprintf(&ret,"%s",pWB->sst.string[xlsIntVal(*label)].str);
+        offset = xlsIntVal(*(DWORD *)label);
+        if(offset < pWB->sst.count) {
+            asprintf(&ret,"%s",pWB->sst.string[xlsIntVal(*(DWORD *)label)].str);
+        }
         break;
     case XLS_RECORD_BLANK:
     case XLS_RECORD_MULBLANK:
