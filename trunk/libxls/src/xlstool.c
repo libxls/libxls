@@ -639,7 +639,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
 		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsIntVal(*label)].str );
         offset = xlsIntVal(*(DWORD *)label);
         if(offset < pWB->sst.count) {
-            asprintf(&ret,"%s",pWB->sst.string[xlsIntVal(*(DWORD *)label)].str);
+            asprintf(&ret,"%s",pWB->sst.string[offset].str);
         }
         break;
     case XLS_RECORD_BLANK:
