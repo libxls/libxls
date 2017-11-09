@@ -271,6 +271,9 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             // Concat string if it's a continue, or add string in table
             if (!pWB->sst.continued)
             {
+                if (pWB->sst.lastid >= pWB->sst.count) {
+                    exit(-1);   // hacked file
+                }
                 pWB->sst.lastid++;
                 pWB->sst.string[pWB->sst.lastid-1].str=ret;
             }
@@ -278,6 +281,9 @@ void xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
             {
                 BYTE *tmp;
                 tmp=pWB->sst.string[pWB->sst.lastid-1].str;
+                if (tmp == NULL) {
+                    exit(-1);    // hacked file
+                }
                 tmp=(BYTE *)realloc(tmp,strlen((char *)tmp)+strlen((char *)ret)+1);
                 pWB->sst.string[pWB->sst.lastid-1].str=tmp;
                 memcpy(tmp+strlen((char *)tmp),ret,strlen((char *)ret)+1);
