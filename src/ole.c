@@ -206,6 +206,7 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 // Move in stream
 void ole2_seek(OLE2Stream* olest,DWORD ofs)
 {
+printf("SEEK %x\n", ofs);
 	if(olest->sfat) {
 		ldiv_t div_rez=ldiv(ofs,olest->ole->lssector);
 		int i;
@@ -225,6 +226,7 @@ void ole2_seek(OLE2Stream* olest,DWORD ofs)
 	} else {
 		ldiv_t div_rez=ldiv(ofs,olest->ole->lsector);
 		int i;
+printf("seeking fatpos%lu start %u\n", olest->fatpos, olest->start);
 		olest->fatpos=olest->start;
 
 		if (div_rez.quot!=0)
