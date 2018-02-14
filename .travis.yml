@@ -1,5 +1,5 @@
 language: c
 script:
-    - aclocal --version
     - ./configure
     - make
+    - cd test && ./test && ./test2 files/test2.xls
