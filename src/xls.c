@@ -1407,15 +1407,17 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
 
 xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
 {
-    xlsWorkSheet * pWS;
+    xlsWorkSheet * pWS = NULL;
     verbose ("xls_getWorkSheet");
-    pWS=(xlsWorkSheet *)calloc(1, sizeof(xlsWorkSheet));
-    pWS->filepos=pWB->sheets.sheet[num].filepos;
-    pWS->workbook=pWB;
-    pWS->rows.lastcol=0;
-    pWS->rows.lastrow=0;
-    pWS->colinfo.count=0;
-    return(pWS);
+    if (num >= 0 && num < pWB->sheets.count) {
+        pWS = calloc(1, sizeof(xlsWorkSheet));
+        pWS->filepos=pWB->sheets.sheet[num].filepos;
+        pWS->workbook=pWB;
+        pWS->rows.lastcol=0;
+        pWS->rows.lastrow=0;
+        pWS->colinfo.count=0;
+    }
+    return pWS;
 }
 
 xlsWorkBook* xls_open(const char *file,const char* charset)
