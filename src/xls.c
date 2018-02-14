@@ -1123,11 +1123,6 @@ void xls_parseWorkSheet(xlsWorkSheet* pWS)
             fprintf(stderr, "Error: failed to read OLE size\n");
             exit(-1);
         }
-
-		if(read != tmp.size) {
-            fprintf(stderr, "Error: failed to read OLE block\n");
-            exit(-1);
-        }
         xlsConvertBof((BOF *)&tmp);
         buf=(BYTE *)malloc(tmp.size);
         read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr);
