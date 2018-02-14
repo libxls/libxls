@@ -1,4 +1,5 @@
 language: c
 script:
+    - aclocal --version
     - ./configure
     - make
