@@ -270,11 +270,38 @@ OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file)
     return(NULL);
 }
 
+int ole2_fseek(OLE2 *ole2, size_t pos) {
+    if (ole2->file)
+        return fseek(ole2->file, pos, SEEK_SET);
+
+    if (pos > ole2->buffer_len)
+        return -1;
+
+    ole2->buffer_pos = pos;
+    return 0;
+}
+
+size_t ole2_fread(OLE2 *ole2, void *buffer, size_t size, size_t nitems) {
+    if (ole2->file)
+        return fread(buffer, size, nitems, ole2->file);
+
+    size_t i = 0;
+    for (i=0; i<nitems; i++) {
+        if (ole2->buffer_pos + size > ole2->buffer_len)
+            break;
+
+        memcpy(buffer, (const char *)ole2->buffer + ole2->buffer_pos, size);
+        ole2->buffer_pos += size;
+    }
+    return i;
+}
+
+
 // read header and check magic numbers
 static ssize_t ole2_read_header(OLE2 *ole) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     OLE2Header *oleh = malloc(512);
-    if (fread(oleh, 512, 1, ole->file) != 1) {
+    if (ole2_fread(ole, oleh, 512, 1) != 1) {
         total_bytes_read = -1;
         goto cleanup;
     }
@@ -400,10 +427,8 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				wptr = (BYTE*)ole->SSAT;
 				for(k=0; k<blocks; ++k) {
 					// printf("block %d sector %d\n", k, sector);
-                    if (sector == ENDOFCHAIN ||
-                        fseek(ole->file, sector*ole->lsector+512, 0) != 0 ||
-                        fread(wptr, ole->lsector, 1, ole->file) != 1) {
-                        printf("Unable to read sector #%d\n", sector);
+                    if (sector == ENDOFCHAIN || sector_read(ole, wptr, sector) == -1) {
+                        fprintf(stderr, "Unable to read sector #%d\n", sector);
                         total_bytes_read = -1;
                         goto cleanup;
                     }
@@ -425,20 +450,40 @@ cleanup:
     return total_bytes_read;
 }
 
+// Open in-memory buffer
+OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
+    OLE2 *ole=(OLE2*)calloc(1, sizeof(OLE2));
+
+    ole->buffer = buffer;
+    ole->buffer_len = len;
+
+    if (ole2_read_header(ole) == -1) {
+        free(ole);
+        return NULL;
+    }
+
+    if (ole2_read_body(ole) == -1) {
+        free(ole);
+        return NULL;
+    }
+
+    return ole;
+}
+
 // Open physical file
-OLE2* ole2_open(const BYTE *file)
+OLE2* ole2_open_file(const char *file)
 {
     OLE2* ole = NULL;
 
 #ifdef OLE_DEBUG
     printf("----------------------------------------------\n");
-    printf("ole2_open %s\n", file);
+    printf("ole2_open_file %s\n", file);
 #endif
 
 	if(xls_debug) printf("ole2_open: %s\n", file);
     ole=(OLE2*)calloc(1, sizeof(OLE2));
 
-    if (!(ole->file=fopen((char *)file,"rb"))) {
+    if (!(ole->file=fopen(file, "rb"))) {
         if(xls_debug) printf("File not found\n");
         free(ole);
         return NULL;
@@ -462,7 +507,8 @@ OLE2* ole2_open(const BYTE *file)
 void ole2_close(OLE2* ole2)
 {
     int i;
-	fclose(ole2->file);
+    if (ole2->file)
+        fclose(ole2->file);
 
 	for(i=0; i<ole2->files.count; ++i) {
 		free(ole2->files.file[i].name);
@@ -492,14 +538,13 @@ static ssize_t sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 	size_t seeked;
 
 	//printf("sector_read: sid=%zu (0x%zx) lsector=%u sector_pos=%zu\n", sid, sid, ole2->lsector, sector_pos(ole2, sid) );
-    seeked = fseek(ole2->file, sector_pos(ole2, sid), SEEK_SET);
+    seeked = ole2_fseek(ole2, sector_pos(ole2, sid));
 	if(seeked != 0) {
 		fprintf(stderr, "Error: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
         return -1;
     }
 
-	num = fread(buffer, ole2->lsector, 1, ole2->file);
-    //assert(num == 1);
+	num = ole2_fread(ole2, buffer, ole2->lsector, 1);
     if(num != 1) {
         fprintf(stderr, "Error: fread wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
         return -1;
@@ -592,9 +637,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
 		sector = ole2->sfatstart;
 		wptr=(BYTE*)ole2->SSecID;
 		for(k=0; k<ole2->csfat; ++k) {
-			if (sector == ENDOFCHAIN ||
-                fseek(ole2->file, sector*ole2->lsector+512, 0) != 0 ||
-                fread(wptr, ole2->lsector, 1, ole2->file) != 1) {
+			if (sector == ENDOFCHAIN || sector_read(ole2, wptr, sector) == -1) {
                 total_bytes_read = -1;
                 goto cleanup;
             }
