@@ -1,4 +1,10 @@
 language: c
+compiler:
+    - gcc
+    - clang
+os:
+    - linux
+    - osx
 script:
     - ./configure
     - make
