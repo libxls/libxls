@@ -36,7 +36,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "libxls/xls.h"
+#include "xls.h"
 
 int main(int argc, char *argv[])
 {

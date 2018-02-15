@@ -34,7 +34,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "libxls/xls.h"
+#include "xls.h"
 
 int main(int argc, char *argv[])
 {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
     struct st_row_data* row;
     WORD t,tt;
-    pWB=xls_open("files/test2.xls", "UTF-8");
+    pWB=xls_open("test/files/test2.xls", "UTF-8");
 
     if (pWB == NULL)
         return 1;
