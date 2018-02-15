@@ -38,5 +38,5 @@ test_script:
       }
       else
       {
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/readstat && ./test && ./test2 files/test2.xls"
+        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./test && ./test2 files/test2.xls"
       }
