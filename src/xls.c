@@ -1714,11 +1714,11 @@ void xls_close_WB(xlsWorkBook* pWB)
 	if(!pWB) return;
 
     // OLE first
-	ole=pWB->olestr->ole;
-	
-	ole2_fclose(pWB->olestr);
-
-	ole2_close(ole);
+    if (pWB->olestr) {
+        ole=pWB->olestr->ole;
+        ole2_fclose(pWB->olestr);
+        ole2_close(ole);
+    }
 
     // WorkBook
     free(pWB->charset);

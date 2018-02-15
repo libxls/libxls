@@ -560,7 +560,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
     case XLS_RECORD_LABELSST:
 		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsIntVal(*label)].str );
         offset = xlsIntVal(*(DWORD *)label);
-        if(offset < pWB->sst.count) {
+        if(offset < pWB->sst.count && pWB->sst.string[offset].str) {
             ret = strdup(pWB->sst.string[offset].str);
         }
         break;

@@ -73,6 +73,10 @@ int ole2_bufread(OLE2Stream* olest)
 
     if ((DWORD)olest->fatpos!=ENDOFCHAIN)
     {
+        if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
+            if (xls_debug) fprintf(stderr, "Error: fatpos out-of-bounds\n");
+            return -1;
+        }
 		if(olest->sfat) {
             if (olest->ole->SSAT == NULL || olest->buf == NULL || olest->ole->SSecID == NULL)
                 return -1;
@@ -84,11 +88,6 @@ int ole2_bufread(OLE2Stream* olest)
 			olest->pos=0;
 			olest->cfat++;
 		} else {
-			if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
-                if (xls_debug) fprintf(stderr, "Error: fatpos out-of-bounds\n");
-                return -1;
-            }
-
 			if ((int)olest->fatpos < 0 ||
                 sector_read(olest->ole, olest->buf, olest->fatpos) == -1) {
                 if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", (int)olest->fatpos);
