@@ -1,8 +1,6 @@
 ## Process this file with automake to create Makefile.in.
 AUTOMAKE_OPTIONS = foreign dist-zip
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-
 includedir = $(prefix)
 
 AM_CPPFLAGS = -Iinclude
@@ -34,7 +32,7 @@ libxlsreader_la_SOURCES = \
 	src/ole.c \
 	src/xls.c
 
-libxlsreader_la_LDFLAGS = -no-undefined -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
+libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
 
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
