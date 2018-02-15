@@ -171,7 +171,7 @@ char *utf8_decode(const char *str, DWORD len, char *encoding)
 }
 
 // Convert unicode string to to_enc encoding
-char* unicode_decode(const char *s, int len, size_t *newlen, const char* to_enc)
+char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
 {
 #ifdef HAVE_ICONV
 	// Do iconv conversion
@@ -300,7 +300,7 @@ char* unicode_decode(const char *s, int len, size_t *newlen, const char* to_enc)
 }
 
 // Read and decode string
-char * get_string(const char *s, BYTE is2, BYTE is5ver, char *charset)
+char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset)
 {
     WORD ln;
     DWORD ofs = 0;
@@ -310,16 +310,25 @@ char * get_string(const char *s, BYTE is2, BYTE is5ver, char *charset)
 	
     if (is2) {
 		// length is two bytes
+        if (ofs + 2 > len) {
+            return NULL;
+        }
         ln=xlsShortVal(*(WORD_UA *)str);
         ofs+=2;
     } else {
 		// single byte length
+        if (ofs + 1 > len) {
+            return NULL;
+        }
         ln=*(BYTE*)str;
         ofs++;
     }
 
 	if(!is5ver) {
 		// unicode strings have a format byte before the string
+        if (ofs + 1 > len) {
+            return NULL;
+        }
 		flag=*(BYTE*)(str+ofs);
 		ofs++;
 	}
@@ -333,11 +342,16 @@ char * get_string(const char *s, BYTE is2, BYTE is5ver, char *charset)
         // sz=*(DWORD*)(str+ofs); // unused
         ofs+=4;
     }
-    if(flag & 0x1)
-    {
+    if(flag & 0x1) {
+        if (ofs + 2*ln > len) {
+            return NULL;
+        }
 		size_t new_len = 0;
         ret = unicode_decode(str+ofs,ln*2, &new_len,charset);
     } else {
+        if (ofs + ln > len) {
+            return NULL;
+        }
 		ret = utf8_decode(str+ofs, ln, charset);
     }
 

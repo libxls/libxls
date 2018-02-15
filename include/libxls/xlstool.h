@@ -36,8 +36,8 @@ extern void dumpbuf(BYTE* fname,long size,BYTE* buf);
 extern void verbose(char* str);
 
 extern char *utf8_decode(const char *str, DWORD len, char *encoding);
-extern char *unicode_decode(const char *s, int len, size_t *newlen, const char* encoding);
-extern char *get_string(const char *s,BYTE is2, BYTE isUnicode, char *charset);
+extern char *unicode_decode(const char *s, size_t len, size_t *newlen, const char* encoding);
+extern char *get_string(const char *s, size_t len, BYTE is2, BYTE isUnicode, char *charset);
 extern DWORD xls_getColor(const WORD color,WORD def);
 
 extern void xls_showBookInfo(xlsWorkBook* pWB);

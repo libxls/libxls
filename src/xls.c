@@ -55,14 +55,14 @@ int xls_debug = 0;
 static double NumFromRk(DWORD_UA drk);
 static xls_formula_handler formula_handler;
 
-extern xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst, DWORD size);
-extern xls_error_t xls_appendSST(xlsWorkBook* pWB,BYTE* buf, DWORD size);
-extern xls_error_t xls_addFormat(xlsWorkBook* pWB,FORMAT* format);
-extern char* xls_addSheet(xlsWorkBook* pWB,BOUNDSHEET* bs);
+extern xls_error_t xls_addSST(xlsWorkBook* pWB, SST* sst, DWORD size);
+extern xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size);
+extern xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size);
+extern char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET* bs, DWORD size);
 extern xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row);
 extern xls_error_t xls_makeTable(xlsWorkSheet* pWS);
 extern struct st_cell_data *xls_addCell(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
-extern char *xls_addFont(xlsWorkBook* pWB, FONT* font);
+extern char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size);
 extern xls_error_t xls_addXF8(xlsWorkBook* pWB, XF8* xf);
 extern xls_error_t xls_addXF5(xlsWorkBook* pWB, XF5* xf);
 extern xls_error_t xls_addColinfo(xlsWorkSheet* pWS, COLINFO* colinfo);
@@ -347,7 +347,7 @@ static double NumFromRk(DWORD_UA drk)
     return ret;
 }
 
-char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
+char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 {
 	char * name;
 	DWORD filepos;
@@ -359,7 +359,7 @@ char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs)
 
 	// printf("charset=%s uni=%d\n", pWB->charset, unicode);
 	// printf("bs name %.*s\n", bs->name[0], bs->name+1);
-	name=get_string(bs->name, 0, pWB->is5ver, pWB->charset);
+	name = get_string(bs->name, size - sizeof(BOUNDSHEET), 0, pWB->is5ver, pWB->charset);
 	// printf("name=%s\n", name);
 
 	if(xls_debug) {
@@ -591,7 +591,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 	return cell;
 }
 
-char *xls_addFont(xlsWorkBook* pWB, FONT* font)
+char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size)
 {
     struct st_font_data* tmp;
 
@@ -603,7 +603,7 @@ char *xls_addFont(xlsWorkBook* pWB, FONT* font)
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
 
-    tmp->name=get_string(font->name, 0, pWB->is5ver, pWB->charset);
+    tmp->name = get_string(font->name, size - sizeof(FONT), 0, pWB->is5ver, pWB->charset);
 
     tmp->height=font->height;
     tmp->flag=font->flag;
@@ -620,7 +620,7 @@ char *xls_addFont(xlsWorkBook* pWB, FONT* font)
 	return tmp->name;
 }
 
-xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format)
+xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size)
 {
     struct st_format_data* tmp;
 
@@ -629,9 +629,9 @@ xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format)
     if (pWB->formats.format == NULL)
         return LIBXLS_ERROR_MALLOC;
 
-    tmp=&pWB->formats.format[pWB->formats.count];
-    tmp->index=format->index;
-    tmp->value=get_string(format->value, (BYTE)!pWB->is5ver, (BYTE)pWB->is5ver, pWB->charset);
+    tmp = &pWB->formats.format[pWB->formats.count];
+    tmp->index = format->index;
+    tmp->value = get_string(format->value, size - sizeof(FORMAT), (BYTE)!pWB->is5ver, (BYTE)pWB->is5ver, pWB->charset);
     if(xls_debug) xls_showFormat(tmp);
     pWB->formats.count++;
 
@@ -887,7 +887,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
                 xlsConvertBoundsheet(bs);
 				//char *s;
 				// different for BIFF5 and BIFF8
-				/*s = */ xls_addSheet(pWB,bs);
+				/*s = */ xls_addSheet(pWB, bs, bof1.size);
 			}
             break;
 
@@ -943,7 +943,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 				char *s;
 				FONT *f = (FONT*)buf;
                 xlsConvertFont(f);
-				s = xls_addFont(pWB,f);
+				s = xls_addFont(pWB,f, bof1.size);
 				if(xls_debug) {
 					printf(" height: %d\n", f->height);
 					printf("   flag: 0x%x\n", f->flag);
@@ -964,7 +964,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
                 goto cleanup;
             }
             xlsConvertFormat((FORMAT *)buf);
-            if ((retval = xls_addFormat(pWB,(FORMAT*)buf)) != LIBXLS_OK) {
+            if ((retval = xls_addFormat(pWB, (FORMAT*)buf, bof1.size)) != LIBXLS_OK) {
                 goto cleanup;
             }
             break;
@@ -979,7 +979,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 					printf("  ident: 0x%x\n", styl->ident);
 					printf("  level: 0x%x\n", styl->lvl);
 				} else {
-					char *s = get_string((char *)&buf[2], 1, pWB->is5ver, pWB->charset);
+					char *s = get_string((char *)&buf[2], bof1.size - 2, 1, pWB->is5ver, pWB->charset);
 					printf("  name=%s\n", s);
 				}
 			}
@@ -1339,7 +1339,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
 
 		case XLS_RECORD_STRING:
 			if(cell && (cell->id == XLS_RECORD_FORMULA || cell->id == XLS_RECORD_FORMULA_ALT)) {
-				cell->str = get_string((char *)buf, (BYTE)!pWB->is5ver, pWB->is5ver, pWB->charset);
+				cell->str = get_string((char *)buf, tmp.size, (BYTE)!pWB->is5ver, pWB->is5ver, pWB->charset);
 				if (xls_debug) xls_showCell(cell);
 			}
 			break;

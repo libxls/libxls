@@ -221,7 +221,7 @@ typedef struct LABEL
     WORD	row;
     WORD	col;
     WORD	xf;
-    BYTE	value[1]; // var
+    BYTE	value[]; // var
 }
 LABEL;
 typedef LABEL LABELSST;
@@ -312,14 +312,14 @@ typedef struct FONT
     BYTE	family;
     BYTE	charset;
     BYTE	notused;
-    char    name[1];
+    char    name[];
 }
 FONT;
 
 typedef struct FORMAT
 {
     WORD	index;
-    char	value[0];
+    char	value[];
 }
 FORMAT;
 
