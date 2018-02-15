@@ -42,3 +42,14 @@ test_script:
         C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make check"
         C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./test2_libxls test/files/test2.xls"
       }
+
+on_finish:
+  - ps: |
+      if ($env:TOOLCHAIN -eq "msys2")
+      {
+        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && cat ./test-suite.log"
+      }
+      else
+      {
+        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && cat ./test-suite.log"
+      }
