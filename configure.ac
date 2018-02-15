@@ -48,6 +48,9 @@ AS_CASE([$host],
         [*mingw*|*cygwin*], [EXTRA_LDFLAGS="-no-undefined"], [EXTRA_LDFLAGS=""])
 AC_SUBST([EXTRA_LDFLAGS])
 
+AC_CHECK_LIB([Fuzzer], [__libfuzzer_is_present], [true], [false], [-lstdc++])
+AM_CONDITIONAL([HAVE_FUZZER], test "$ac_cv_lib_Fuzzer___libfuzzer_is_present" = yes)
+
 WITH_ICONV=0
 AC_ARG_WITH(iconv, [  --with-iconv[=DIR]        add ICONV support (on)])
 if test "$with_iconv" = "no" ; then

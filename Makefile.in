@@ -91,9 +91,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = xls2csv$(EXEEXT)
-noinst_PROGRAMS = test_libxls$(EXEEXT) test2_libxls$(EXEEXT)
+noinst_PROGRAMS = test_libxls$(EXEEXT) test2_libxls$(EXEEXT) \
+	$(am__EXEEXT_1)
 check_PROGRAMS = test_libxls$(EXEEXT) test2_libxls$(EXEEXT)
 TESTS = test_libxls$(EXEEXT)
+@HAVE_FUZZER_TRUE@am__append_1 = fuzz_xls
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -151,7 +153,12 @@ libxlsreader_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libxlsreader_la_LDFLAGS) $(LDFLAGS) \
 	-o $@
+@HAVE_FUZZER_TRUE@am__EXEEXT_1 = fuzz_xls$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am__fuzz_xls_SOURCES_DIST = fuzz/fuzz_xls.c
+@HAVE_FUZZER_TRUE@am_fuzz_xls_OBJECTS = fuzz/fuzz_xls.$(OBJEXT)
+fuzz_xls_OBJECTS = $(am_fuzz_xls_OBJECTS)
+@HAVE_FUZZER_TRUE@fuzz_xls_DEPENDENCIES = libxlsreader.la
 am_test2_libxls_OBJECTS = test/test2.$(OBJEXT)
 test2_libxls_OBJECTS = $(am_test2_libxls_OBJECTS)
 test2_libxls_DEPENDENCIES = libxlsreader.la
@@ -195,10 +202,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libxlsreader_la_SOURCES) $(test2_libxls_SOURCES) \
-	$(test_libxls_SOURCES) $(xls2csv_SOURCES)
-DIST_SOURCES = $(libxlsreader_la_SOURCES) $(test2_libxls_SOURCES) \
-	$(test_libxls_SOURCES) $(xls2csv_SOURCES)
+SOURCES = $(libxlsreader_la_SOURCES) $(fuzz_xls_SOURCES) \
+	$(test2_libxls_SOURCES) $(test_libxls_SOURCES) \
+	$(xls2csv_SOURCES)
+DIST_SOURCES = $(libxlsreader_la_SOURCES) $(am__fuzz_xls_SOURCES_DIST) \
+	$(test2_libxls_SOURCES) $(test_libxls_SOURCES) \
+	$(xls2csv_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -581,6 +590,8 @@ test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
 test2_libxls_LDADD = libxlsreader.la
+@HAVE_FUZZER_TRUE@fuzz_xls_SOURCES = fuzz/fuzz_xls.c
+@HAVE_FUZZER_TRUE@fuzz_xls_LDADD = libxlsreader.la -lstdc++ -lFuzzer
 
 # Extra files to distribute
 EXTRA_DIST = doc test/files/test2.xls
@@ -752,6 +763,18 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+fuzz/$(am__dirstamp):
+	@$(MKDIR_P) fuzz
+	@: > fuzz/$(am__dirstamp)
+fuzz/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) fuzz/$(DEPDIR)
+	@: > fuzz/$(DEPDIR)/$(am__dirstamp)
+fuzz/fuzz_xls.$(OBJEXT): fuzz/$(am__dirstamp) \
+	fuzz/$(DEPDIR)/$(am__dirstamp)
+
+fuzz_xls$(EXEEXT): $(fuzz_xls_OBJECTS) $(fuzz_xls_DEPENDENCIES) $(EXTRA_fuzz_xls_DEPENDENCIES) 
+	@rm -f fuzz_xls$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fuzz_xls_OBJECTS) $(fuzz_xls_LDADD) $(LIBS)
 test/$(am__dirstamp):
 	@$(MKDIR_P) test
 	@: > test/$(am__dirstamp)
@@ -781,6 +804,7 @@ xls2csv$(EXEEXT): $(xls2csv_OBJECTS) $(xls2csv_DEPENDENCIES) $(EXTRA_xls2csv_DEP
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f fuzz/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
 	-rm -f test/*.$(OBJEXT)
@@ -788,6 +812,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@fuzz/$(DEPDIR)/fuzz_xls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/ole.Plo@am__quote@
@@ -1282,6 +1307,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f fuzz/$(DEPDIR)/$(am__dirstamp)
+	-rm -f fuzz/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 	-rm -f test/$(DEPDIR)/$(am__dirstamp)
@@ -1298,7 +1325,7 @@ clean-am: clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf fuzz/$(DEPDIR) src/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1346,7 +1373,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf fuzz/$(DEPDIR) src/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

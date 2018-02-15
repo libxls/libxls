@@ -638,6 +638,8 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBXLS_LIBS
 WITH_ICONV
+HAVE_FUZZER_FALSE
+HAVE_FUZZER_TRUE
 EXTRA_LDFLAGS
 LIBOBJS
 PKG_CONFIG
@@ -17361,6 +17363,57 @@ case $host in #(
 esac
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __libfuzzer_is_present in -lFuzzer" >&5
+$as_echo_n "checking for __libfuzzer_is_present in -lFuzzer... " >&6; }
+if ${ac_cv_lib_Fuzzer___libfuzzer_is_present+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lFuzzer -lstdc++ $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char __libfuzzer_is_present ();
+int
+main ()
+{
+return __libfuzzer_is_present ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_Fuzzer___libfuzzer_is_present=yes
+else
+  ac_cv_lib_Fuzzer___libfuzzer_is_present=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Fuzzer___libfuzzer_is_present" >&5
+$as_echo "$ac_cv_lib_Fuzzer___libfuzzer_is_present" >&6; }
+if test "x$ac_cv_lib_Fuzzer___libfuzzer_is_present" = xyes; then :
+  true
+else
+  false
+fi
+
+ if test "$ac_cv_lib_Fuzzer___libfuzzer_is_present" = yes; then
+  HAVE_FUZZER_TRUE=
+  HAVE_FUZZER_FALSE='#'
+else
+  HAVE_FUZZER_TRUE='#'
+  HAVE_FUZZER_FALSE=
+fi
+
+
 WITH_ICONV=0
 
 # Check whether --with-iconv was given.
@@ -17605,6 +17658,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_FUZZER_TRUE}" && test -z "${HAVE_FUZZER_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_FUZZER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

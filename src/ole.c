@@ -310,7 +310,7 @@ static ssize_t ole2_read_header(OLE2 *ole) {
 
 	// make sure the file looks good. Note: this code only works on Little Endian machines
 	if(oleh->id[0] != 0xE011CFD0 || oleh->id[1] != 0xE11AB1A1 || oleh->byteorder != 0xFFFE) {
-        printf("Not an excel file\n");
+        if (xls_debug) fprintf(stderr, "Not an excel file\n");
         total_bytes_read = -1;
         goto cleanup;
 	}
@@ -321,7 +321,7 @@ static ssize_t ole2_read_header(OLE2 *ole) {
     ole->lssector=64;
 
 	if (oleh->lsectorB != 9 || oleh->lssectorB != 6) {	// 2**9 == 512, 2**6 == 64
-        printf("Unexpected sector size\n");
+        if (xls_debug) fprintf(stderr, "Unexpected sector size\n");
         total_bytes_read = -1;
         goto cleanup;
     }

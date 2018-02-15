@@ -43,6 +43,13 @@ test2_libxls_LDADD = libxlsreader.la
 check_PROGRAMS = test_libxls test2_libxls
 TESTS = test_libxls
 
+if HAVE_FUZZER
+noinst_PROGRAMS += fuzz_xls
+
+fuzz_xls_SOURCES = fuzz/fuzz_xls.c
+fuzz_xls_LDADD = libxlsreader.la -lstdc++ -lFuzzer
+endif
+
 # Extra files to distribute
 EXTRA_DIST = doc test/files/test2.xls
 
