@@ -588,7 +588,7 @@ cleanup:
 
 // read in short table
 static ssize_t read_MSAT_trailer(OLE2 *ole2) {
-    ssize_t bytes_read = 0, total_bytes_read = 0;
+    ssize_t total_bytes_read = 0;
     DWORD sector, k;
     BYTE *wptr;
 
