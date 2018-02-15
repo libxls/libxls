@@ -16,4 +16,4 @@ libxlsreader_la_SOURCES =	\
 	ole.c					\
 	xls.c
 
-libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
+libxlsreader_la_LDFLAGS = -no-undefined -version-info $(VERSION_INFO) $(LIBXLS_LIBS)

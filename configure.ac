@@ -38,7 +38,7 @@ AC_PROG_CXX
 
 AC_GNU_SOURCE
 
-LT_INIT
+LT_INIT([win32-dll])
 AC_SUBST(LIBTOOL_DEPS)
 
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
@@ -52,7 +52,6 @@ AC_CHECK_HEADERS([wchar.h])
 AC_C_CONST
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-LT_INIT
 AC_TYPE_SIZE_T
 
 # Comment out if your want assertions

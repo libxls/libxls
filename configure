@@ -17140,7 +17140,6 @@ $as_echo "#define realloc rpl_realloc" >>confdefs.h
 fi
 
 
-
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
 if test "x$ac_cv_type_size_t" = xyes; then :
 
