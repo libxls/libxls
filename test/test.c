@@ -48,51 +48,53 @@ int main(int argc, char *argv[])
     WORD t,tt;
     pWB=xls_open("files/test2.xls", "UTF-8");
 
-    if (pWB!=NULL)
+    if (pWB == NULL)
+        return 1;
+
+    f=fopen ("test.htm", "w");
+    for (i=0;i<pWB->sheets.count;i++)
+        printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
+
+    pWS=xls_getWorkSheet(pWB,0);
+    if (xls_parseWorkSheet(pWS) != 0)
+        return 1;
+
+    fprintf(f,"<style type=\"text/css\">\n%s</style>\n",xls_getCSS(pWB));
+    fprintf(f,"<table border=0 cellspacing=0 cellpadding=2>");
+
+    for (t=0;t<=pWS->rows.lastrow;t++)
     {
-        f=fopen ("test.htm", "w");
-        for (i=0;i<pWB->sheets.count;i++)
-            printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
-
-        pWS=xls_getWorkSheet(pWB,0);
-        xls_parseWorkSheet(pWS);
-        fprintf(f,"<style type=\"text/css\">\n%s</style>\n",xls_getCSS(pWB));
-        fprintf(f,"<table border=0 cellspacing=0 cellpadding=2>");
-
-        for (t=0;t<=pWS->rows.lastrow;t++)
+        row=&pWS->rows.row[t];
+        //		xls_showROW(row->row);
+        fprintf(f,"<tr>");
+        for (tt=0;tt<=pWS->rows.lastcol;tt++)
         {
-            row=&pWS->rows.row[t];
-            //		xls_showROW(row->row);
-            fprintf(f,"<tr>");
-            for (tt=0;tt<=pWS->rows.lastcol;tt++)
+            if (!row->cells.cell[tt].isHidden)
             {
-                if (!row->cells.cell[tt].isHidden)
-                {
-                    fprintf(f,"<td");
-                    if (row->cells.cell[tt].colspan)
-                        fprintf(f," colspan=%i",row->cells.cell[tt].colspan);
-                    //				if (t==0) fprintf(f," width=%i",row->cells.cell[tt].width/35);
-                    if (row->cells.cell[tt].rowspan)
-                        fprintf(f," rowspan=%i",row->cells.cell[tt].rowspan);
-                    fprintf(f," class=xf%i",row->cells.cell[tt].xf);
-                    fprintf(f,">");
-                    if (row->cells.cell[tt].str!=NULL && row->cells.cell[tt].str[0]!='\0')
-                        fprintf(f,"%s",row->cells.cell[tt].str);
-                    else
-                        fprintf(f,"%s","&nbsp;");
-                    fprintf(f,"</td>");
-                }
+                fprintf(f,"<td");
+                if (row->cells.cell[tt].colspan)
+                    fprintf(f," colspan=%i",row->cells.cell[tt].colspan);
+                //				if (t==0) fprintf(f," width=%i",row->cells.cell[tt].width/35);
+                if (row->cells.cell[tt].rowspan)
+                    fprintf(f," rowspan=%i",row->cells.cell[tt].rowspan);
+                fprintf(f," class=xf%i",row->cells.cell[tt].xf);
+                fprintf(f,">");
+                if (row->cells.cell[tt].str!=NULL && row->cells.cell[tt].str[0]!='\0')
+                    fprintf(f,"%s",row->cells.cell[tt].str);
+                else
+                    fprintf(f,"%s","&nbsp;");
+                fprintf(f,"</td>");
             }
-            fprintf(f,"</tr>\n");
         }
-        fprintf(f,"</table>");
-        printf("Count of rows: %i\n",pWS->rows.lastrow);
-        printf("Max col: %i\n",pWS->rows.lastcol);
-        printf("Count of sheets: %i\n",pWB->sheets.count);
-
-        fclose(f);
-        xls_showBookInfo(pWB);
+        fprintf(f,"</tr>\n");
     }
+    fprintf(f,"</table>");
+    printf("Count of rows: %i\n",pWS->rows.lastrow);
+    printf("Max col: %i\n",pWS->rows.lastcol);
+    printf("Count of sheets: %i\n",pWB->sheets.count);
+
+    fclose(f);
+    xls_showBookInfo(pWB);
 
     return 0;
 }

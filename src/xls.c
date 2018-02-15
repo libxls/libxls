@@ -1458,7 +1458,7 @@ xlsWorkBook* xls_open(const char *file,const char* charset)
     if ((pWB->olestr=ole2_fopen(ole, (BYTE *)"\005SummaryInformation")))
     {
         pWB->summary = calloc(1,4096);
-		if (ole2_read(pWB->summary, 4096, 1, pWB->olestr) != 4096) {
+		if (ole2_read(pWB->summary, 4096, 1, pWB->olestr) == -1) {
             if (xls_debug) printf("SummaryInformation not found\n");
             xls_close_WB(pWB);
             return NULL;
@@ -1469,7 +1469,7 @@ xlsWorkBook* xls_open(const char *file,const char* charset)
     if ((pWB->olestr=ole2_fopen(ole, (BYTE *)"\005DocumentSummaryInformation")))
     {
         pWB->docSummary = calloc(1,4096);
-		if (ole2_read(pWB->docSummary, 4096, 1, pWB->olestr) != 4096) {
+		if (ole2_read(pWB->docSummary, 4096, 1, pWB->olestr) == -1) {
             if (xls_debug) printf("DocumentSummaryInformation not found\n");
             xls_close_WB(pWB);
             return NULL;

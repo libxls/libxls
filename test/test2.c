@@ -46,39 +46,43 @@ int main(int argc, char *argv[])
 
 	if(argc != 2) {
 		printf("Need file arg\n");
-		exit(0);
-	}
-	
+        exit(0);
+    }
+
     struct st_row_data* row;
     WORD t,tt;
+    xls(10);
     pWB=xls_open(argv[1],"UTF-8");
 
-    if (pWB!=NULL)
+    if (pWB==NULL) {
+        printf("pWB == NULL\n");
+        return 1;
+    }
+
+    for (i=0;i<pWB->sheets.count;i++)
+        printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
+
+    pWS=xls_getWorkSheet(pWB,0);
+    if (xls_parseWorkSheet(pWS) != 0) {
+        printf("Error parsing worksheet\n");
+        return 1;
+    }
+
+    printf("pWS->rows.lastrow %d\n", pWS->rows.lastrow);
+    for (t=0;t<=pWS->rows.lastrow;t++)
     {
-        for (i=0;i<pWB->sheets.count;i++)
-            printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
-
-        pWS=xls_getWorkSheet(pWB,0);
-        xls_parseWorkSheet(pWS);
-
-printf("pWS->rows.lastrow %d\n", pWS->rows.lastrow);
-        for (t=0;t<=pWS->rows.lastrow;t++)
+        printf("DO IT");
+        row=&pWS->rows.row[t];
+        xls_showROW(row);
+        for (tt=0;tt<=pWS->rows.lastcol;tt++)
         {
-printf("DO IT");
-            row=&pWS->rows.row[t];
-            xls_showROW(row);
-            for (tt=0;tt<=pWS->rows.lastcol;tt++)
-            {
-				xls_showCell(&row->cells.cell[tt]);
-            }
+            xls_showCell(&row->cells.cell[tt]);
         }
-        printf("Count of rows: %i\n",pWS->rows.lastrow);
-        printf("Max col: %i\n",pWS->rows.lastcol);
-        printf("Count of sheets: %i\n",pWB->sheets.count);
+    }
+    printf("Count of rows: %i\n",pWS->rows.lastrow);
+    printf("Max col: %i\n",pWS->rows.lastcol);
+    printf("Count of sheets: %i\n",pWB->sheets.count);
 
-        xls_showBookInfo(pWB);
-    } else {
-		printf("pWB == NULL\n");
-	}
+    xls_showBookInfo(pWB);
     return 0;
 }
