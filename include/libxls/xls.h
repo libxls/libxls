@@ -41,7 +41,6 @@ extern "C" {
 #include "libxls/xlsstruct.h"
 #include "libxls/xlstool.h"
 
-
 extern const char* xls_getVersion(void);
 
 extern int xls(int debug);	// Set debug. Force library to load?

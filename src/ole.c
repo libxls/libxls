@@ -96,7 +96,7 @@ int ole2_bufread(OLE2Stream* olest)
 }
 
 // Read part of stream
-ssize_t ole2_read(void* buf, size_t size, size_t count,OLE2Stream* olest)
+ssize_t ole2_read(void* buf, size_t size, size_t count, OLE2Stream* olest)
 {
     size_t didReadCount=0;
     size_t totalReadCount;
