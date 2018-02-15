@@ -77,13 +77,13 @@ int ole2_bufread(OLE2Stream* olest)
 			olest->cfat++;
 		} else {
 			if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
-                fprintf(stderr, "Error: fatpos out-of-bounds\n");
+                if (xls_debug) fprintf(stderr, "Error: fatpos out-of-bounds\n");
                 return -1;
             }
 
 			if ((int)olest->fatpos < 0 ||
                 sector_read(olest->ole, olest->buf, olest->fatpos) == -1) {
-                fprintf(stderr, "Error: Unable to read sector #%d\n", (int)olest->fatpos);
+                if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", (int)olest->fatpos);
                 return -1;
             }
 			olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
@@ -540,13 +540,13 @@ static ssize_t sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 	//printf("sector_read: sid=%zu (0x%zx) lsector=%u sector_pos=%zu\n", sid, sid, ole2->lsector, sector_pos(ole2, sid) );
     seeked = ole2_fseek(ole2, sector_pos(ole2, sid));
 	if(seeked != 0) {
-		fprintf(stderr, "Error: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
+		if (xls_debug) fprintf(stderr, "Error: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
         return -1;
     }
 
 	num = ole2_fread(ole2, buffer, ole2->lsector, 1);
     if(num != 1) {
-        fprintf(stderr, "Error: fread wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
+        if (xls_debug) fprintf(stderr, "Error: fread wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
         return -1;
     }
 
@@ -562,7 +562,7 @@ static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, int count) {
     for (sectorNum = 0; sectorNum < count; sectorNum++)
     {
         if ((bytes_read = sector_read(ole2, sector, oleh->MSAT[sectorNum])) == -1) {
-            fprintf(stderr, "Error: Unable to read sector #%d\n", oleh->MSAT[sectorNum]);
+            if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", oleh->MSAT[sectorNum]);
             return -1;
         }
         sector += ole2->lsector;
@@ -585,7 +585,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset) {
         // read MSAT sector
         if ((bytes_read = sector_read(ole2, sector, sid)) == -1) {
             total_bytes_read = -1;
-            fprintf(stderr, "Error: Unable to read sector #%d\n", sid);
+            if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", sid);
             goto cleanup;
         }
         total_bytes_read += bytes_read;
@@ -599,7 +599,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset) {
             if (s != ENDOFCHAIN && s != FREESECT) // see patch in Bug 31. For very large files
             {
                 if ((bytes_read = sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s)) == -1) {
-                    fprintf(stderr, "Error: Unable to read sector #%d\n", sid);
+                    if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", sid);
                     total_bytes_read = -1;
                     goto cleanup;
                 }
@@ -667,7 +667,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     int count;
     count = (ole2->cfat < 109) ? ole2->cfat : 109;
     if(count < 0) {
-        fprintf(stderr, "Error: MSAT count out-of-bounds\n");
+        if (xls_debug) fprintf(stderr, "Error: MSAT count out-of-bounds\n");
         return -1;
     }
 
