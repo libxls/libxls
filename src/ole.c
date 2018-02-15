@@ -432,7 +432,10 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				BYTE *wptr;
 				
 				blocks = (pss->size + (ole->lsector - 1)) / ole->lsector;	// count partial
-				ole->SSAT = ole_malloc(blocks*ole->lsector);
+				if ((ole->SSAT = ole_malloc(blocks*ole->lsector)) == NULL) {
+                    total_bytes_read = -1;
+                    goto cleanup;
+                }
 				// printf("blocks %d\n", blocks);
 
 				sector = pss->sstart;

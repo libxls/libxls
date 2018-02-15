@@ -177,6 +177,9 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
             rt=pWB->sst.lastrt;
             sz=pWB->sst.lastsz;
         } else {
+            if (ofs + 2 > size) {
+                return LIBXLS_ERROR_PARSE;
+            }
             ln=xlsShortVal(*(WORD_UA *)(buf+ofs));
             rt = 0;
             sz = 0;
@@ -190,17 +193,26 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
 
         // Read flags
         if ( !pWB->sst.continued || (pWB->sst.continued && ln != 0) ) {
+            if (ofs + sizeof(BYTE) > size) {
+                return LIBXLS_ERROR_PARSE;
+            }
             flag=*(BYTE *)(buf+ofs);
             ofs++;
 
             // Count of rich text formatting runs
             if (flag & 0x8) {
+                if (ofs + sizeof(WORD_UA) > size) {
+                    return LIBXLS_ERROR_PARSE;
+                }
                 rt=xlsShortVal(*(WORD_UA *)(buf+ofs));
                 ofs+=2;
             }
 
             // Size of asian phonetic settings block
             if (flag & 0x4) {
+                if (ofs + sizeof(DWORD_UA) > size) {
+                    return LIBXLS_ERROR_PARSE;
+                }
                 sz=xlsIntVal(*(DWORD_UA *)(buf+ofs));
                 ofs+=4;
 
