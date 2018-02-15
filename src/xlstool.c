@@ -30,7 +30,6 @@
  *
  */
 
-#define _GNU_SOURCE /* asprintf */
 #include "config.h"
 
 #include <math.h>

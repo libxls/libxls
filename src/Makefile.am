@@ -17,4 +17,3 @@ libxlsreader_la_SOURCES =	\
 	xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
-
