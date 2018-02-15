@@ -650,7 +650,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
     BYTE *wptr;
 
 	if(ole2->sfatstart != ENDOFCHAIN) {
-		if ((ole2->SSecID = ole_malloc(ole2->csfat*ole2->lsector)) == NULL) {
+		if ((ole2->SSecID = ole_malloc(ole2->csfat*(size_t)ole2->lsector)) == NULL) {
             return -1;
         }
 		sector = ole2->sfatstart;

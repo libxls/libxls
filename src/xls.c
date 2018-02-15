@@ -1619,8 +1619,12 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     pWB->sheets.count=0;
     pWB->xfs.count=0;
     pWB->fonts.count=0;
-    pWB->charset = malloc(strlen(charset) * sizeof(char)+1);
-    strcpy(pWB->charset, charset);
+    if (charset) {
+        pWB->charset = malloc(strlen(charset) * sizeof(char)+1);
+        strcpy(pWB->charset, charset);
+    } else {
+        pWB->charset = strdup("UTF-8");
+    }
 
     retval = xls_parseWorkBook(pWB);
 
