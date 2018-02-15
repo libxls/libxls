@@ -86,7 +86,7 @@ typedef	struct st_olefiles
     long count;
     struct st_olefiles_data
     {
-        BYTE*	name;
+        char*	name;
         DWORD	start;
         DWORD	size;
    }
@@ -141,7 +141,7 @@ OLE2Stream;
 
 typedef struct PSS
 {
-    BYTE	name[64];
+    char	name[64];
     WORD	bsize;
     BYTE	type;		//STGTY
 #define PS_EMPTY		00
@@ -167,7 +167,7 @@ PSS;
 extern ssize_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest);
 extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size);
 extern void ole2_seek(OLE2Stream* olest,DWORD ofs);
-extern OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file);
+extern OLE2Stream*  ole2_fopen(OLE2* ole, const char *file);
 extern void ole2_fclose(OLE2Stream* ole2st);
 extern OLE2* ole2_open_file(const char *file);
 extern OLE2* ole2_open_buffer(const void *buffer, size_t len);

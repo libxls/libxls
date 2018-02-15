@@ -245,7 +245,7 @@ printf("seeking fatpos%lu start %u\n", olest->fatpos, olest->start);
 }
 
 // Open logical file contained in physical OLE file
-OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file)
+OLE2Stream*  ole2_fopen(OLE2* ole, const char *file)
 {
     OLE2Stream* olest;
     int i;
@@ -256,12 +256,12 @@ OLE2Stream*  ole2_fopen(OLE2* ole,BYTE* file)
 #endif
 
     for (i=0;i<ole->files.count;i++) {
-		BYTE *str = ole->files.file[i].name;
+		char *str = ole->files.file[i].name;
 #ifdef OLE_DEBUG
 		printf("----------------------------------------------\n");
 		printf("ole2_fopen found %s\n", str);
 #endif
-        if (str && strcmp((char *)str,(char *)file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
+        if (str && strcmp(str,file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
         {
             olest=ole2_sopen(ole,ole->files.file[i].start,ole->files.file[i].size);
             return(olest);
@@ -371,7 +371,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 	// reuse this buffer
     PSS *pss = malloc(512);
     OLE2Stream *olest=ole2_sopen(ole,ole->dirstart, -1);
-    BYTE* name = NULL;
+    char* name = NULL;
     ssize_t bytes_read = 0, total_bytes_read = 0;
 
     do {

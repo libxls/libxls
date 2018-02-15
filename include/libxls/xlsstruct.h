@@ -123,7 +123,7 @@ typedef struct BOUNDSHEET
     DWORD	filepos;
     BYTE	type;
     BYTE	visible;
-    BYTE	name[];
+    char	name[];
 }
 BOUNDSHEET;
 
@@ -312,14 +312,14 @@ typedef struct FONT
     BYTE	family;
     BYTE	charset;
     BYTE	notused;
-    BYTE	name;
+    char    name[1];
 }
 FONT;
 
 typedef struct FORMAT
 {
     WORD	index;
-    BYTE	value[0];
+    char	value[0];
 }
 FORMAT;
 
@@ -335,7 +335,7 @@ typedef	struct st_sheet
         DWORD filepos;
         BYTE visibility;
         BYTE type;
-        BYTE* name;
+        char * name;
     }
     * sheet;
 }
@@ -354,7 +354,7 @@ typedef	struct st_font
         BYTE	underline;
         BYTE	family;
         BYTE	charset;
-        BYTE*	name;
+        char *	name;
     }
     * font;
 }
@@ -366,7 +366,7 @@ typedef struct st_format
     struct st_format_data
     {
          WORD index;
-         BYTE *value;
+         char *value;
     }
     * format;
 }
@@ -404,7 +404,7 @@ typedef	struct st_sst
     DWORD lastsz;
     struct str_sst_string
     {
-        BYTE* str;
+        char * str;
     }
     * string;
 }
@@ -420,7 +420,7 @@ typedef	struct st_cell
         WORD	row;
         WORD	col;
         WORD	xf;
-        BYTE*	str;		// String value;
+        char *	str;		// String value;
         double	d;
         int32_t	l;
         WORD	width;		// Width of col

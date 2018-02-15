@@ -202,10 +202,10 @@ void verbose(char* str)
         printf("libxls : %s\n",str);
 }
 
-BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
+char *utf8_decode(const char *str, DWORD len, char *encoding)
 {
 	int utf8_chars = 0;
-	BYTE *ret;
+	char *ret = NULL;
     DWORD i;
 	
 	for(i=0; i<len; ++i) {
@@ -220,7 +220,7 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 		ret[len] = 0;
 	} else {
         DWORD i;
-        BYTE *out;
+        char *out;
 		// UTF-8 encoding inline
 		ret = malloc(len+utf8_chars+1);
 		out = ret;
@@ -240,7 +240,7 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 }
 
 // Convert unicode string to to_enc encoding
-BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
+char* unicode_decode(const char *s, int len, size_t *newlen, const char* to_enc)
 {
 #ifdef HAVE_ICONV
 	// Do iconv conversion
@@ -249,7 +249,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 #else
     const char *from_enc = "UTF-16LE";
 #endif
-    BYTE* outbuf = 0;
+    char* outbuf = 0;
 
     if(s && len && from_enc && to_enc)
     {
@@ -257,8 +257,8 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
         int outlen = len;
         size_t inlenleft = len;
         iconv_t ic = iconv_open(to_enc, from_enc);
-        BYTE* src_ptr = (BYTE*) s;
-        BYTE* out_ptr = 0;
+        const char* src_ptr = s;
+        char* out_ptr = 0;
 
         if(ic == (iconv_t)-1)
         {
@@ -286,7 +286,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 
 		if(outbuf)
         {
-            out_ptr = (BYTE*)outbuf;
+            out_ptr = outbuf;
             while(inlenleft)
             {
                 st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
@@ -369,19 +369,14 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 }
 
 // Read and decode string
-BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
+char * get_string(const char *s, BYTE is2, BYTE is5ver, char *charset)
 {
     WORD ln;
-    DWORD ofs;
-    BYTE flag;
-    BYTE* str;
-    BYTE* ret;
+    DWORD ofs = 0;
+    BYTE flag = 0;
+    const char *str = s;
+    char *ret = NULL;
 	
-	flag = 0;
-    str=s;
-
-    ofs=0;
-
     if (is2) {
 		// length is two bytes
         ln=xlsShortVal(*(WORD_UA *)str);
@@ -397,14 +392,12 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 		flag=*(BYTE*)(str+ofs);
 		ofs++;
 	}
-    if (flag&0x8)
-    {
+    if (flag&0x8) {
 		// WORD rt;
         // rt=*(WORD*)(str+ofs); // unused
         ofs+=2;
     }
-    if (flag&0x4)
-    {
+    if (flag&0x4) {
 		// DWORD sz;
         // sz=*(DWORD*)(str+ofs); // unused
         ofs+=4;
@@ -414,7 +407,7 @@ BYTE* get_string(BYTE *s, BYTE is2, BYTE is5ver, char *charset)
 		size_t new_len = 0;
         ret = unicode_decode(str+ofs,ln*2, &new_len,charset);
     } else {
-		ret = utf8_decode((str+ofs), ln, charset);
+		ret = utf8_decode(str+ofs, ln, charset);
     }
 
 #if 0	// debugging
@@ -621,7 +614,7 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
+char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
 {
     struct st_xf_data *xf;
 	WORD	len;
@@ -636,7 +629,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
 		//printf("WORD: %u short: %u str: %s\n", *label, xlsShortVal(*label), pWB->sst.string[xlsIntVal(*label)].str );
         offset = xlsIntVal(*(DWORD *)label);
         if(offset < pWB->sst.count) {
-            asprintf(&ret,"%s",pWB->sst.string[offset].str);
+            ret = strdup(pWB->sst.string[offset].str);
         }
         break;
     case XLS_RECORD_BLANK:
@@ -651,10 +644,10 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
 		if ((*(BYTE *)label & 0x01) == 0) {
-			ret = (char *)utf8_decode((BYTE *)label + 1, len, pWB->charset);
+			ret = utf8_decode((char *)label + 1, len, pWB->charset);
 		} else {
 			size_t newlen;
-		    ret = (char *)unicode_decode((BYTE *)label + 1, len*2, &newlen, pWB->charset);
+		    ret = unicode_decode((char *)label + 1, len*2, &newlen, pWB->charset);
 		}
         break;
     case XLS_RECORD_RK:
@@ -696,7 +689,7 @@ BYTE *xls_getfcell(xlsWorkBook* pWB,struct st_cell_data* cell, WORD *label)
         break;
     }
 
-    return (BYTE *)ret;
+    return ret;
 }
 
 char* xls_getCSS(xlsWorkBook* pWB)
