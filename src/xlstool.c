@@ -572,10 +572,11 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
 		len = xlsShortVal(*label);
         label++;
 		if(pWB->is5ver) {
-            ret = strndup((char *)label, len);
+            ret = malloc(len+1);
+            memcpy(ret, label, len);
+            ret[len] = 0;
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
-		} else
-		if ((*(BYTE *)label & 0x01) == 0) {
+		} else if ((*(BYTE *)label & 0x01) == 0) {
 			ret = utf8_decode((char *)label + 1, len, pWB->charset);
 		} else {
 			size_t newlen;
