@@ -117,75 +117,6 @@ static const DWORD colors[] =
         0x333333
     };
 
-#if HAVE_ASPRINTF != 1
-
-#include <stdarg.h>
-
-#ifdef MSDN
-static int asprintf(char **ret, const char *format, ...)
-{
-	int i, size=100;
-    char *p, *np;
-
-	va_list ap;
-
-	if ((p = malloc(size)) == NULL)
-        return -1;
-
-    while (1) {
-	    va_start(ap, format); 
-
-	    i = _vsnprintf(p, size, format, ap);
-
-	    va_end(ap);
-
-        if (i > -1 && i < size)
-        {
-            i++;
-            break;
-        }
-
-        if (i > -1)     /* glibc 2.1 */
-            size = i+1; /* precisely what is needed */
-        else            /* glibc 2.0 */
-            size *= 2;  /* twice the old size */
-
-        if ((np = realloc(p, size)) == NULL) {
-            free(p);
-            return -1;
-        } else {
-            p = np;
-        }
-    }
-
-	*ret = p;
-	return i > 255 ? 255 : i;
-}
-
-#else
-
-static int asprintf(char **ret, const char *format, ...)
-{
-	int i;
-    char *str;
-
-	va_list ap;
-
-	va_start(ap, format); 
-
-	i = vsnprintf(NULL, 0, format, ap) + 1;
-	str = malloc(i);
-	i = vsnprintf(str, i, format, ap);
-
-	va_end(ap);
-
-	*ret = str;
-	return i > 255 ? 255 : i;
-}
-#endif
-
-#endif
-
 
 void dumpbuf(BYTE* fname,long size,BYTE* buf)
 {
@@ -620,6 +551,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
 	WORD	len;
     WORD    offset;
     char	*ret = NULL;
+    size_t  retlen = 100;
 
     xf=&pWB->xfs.xf[cell->xf];
 
@@ -634,13 +566,13 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
         break;
     case XLS_RECORD_BLANK:
     case XLS_RECORD_MULBLANK:
-        asprintf(&ret, "");
+        ret = strdup("");
         break;
     case XLS_RECORD_LABEL:
 		len = xlsShortVal(*label);
         label++;
 		if(pWB->is5ver) {
-			asprintf(&ret,"%.*s", len, (char *)label);
+            ret = strndup((char *)label, len);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else
 		if ((*(BYTE *)label & 0x01) == 0) {
@@ -652,38 +584,40 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
         break;
     case XLS_RECORD_RK:
     case XLS_RECORD_NUMBER:
-        asprintf(&ret,"%lf", cell->d);
+        ret = malloc(retlen);
+        snprintf(ret, retlen, "%lf", cell->d);
 		break;
 		//		if( RK || MULRK || NUMBER || FORMULA)
 		//		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
+        ret = malloc(retlen);
         switch (xf->format)
         {
         case 0:
-            asprintf(&ret,"%d",(int)cell->d);
+            snprintf(ret, retlen, "%d", (int)cell->d);
             break;
         case 1:
-            asprintf(&ret,"%d",(int)cell->d);
+            snprintf(ret, retlen, "%d", (int)cell->d);
             break;
         case 2:
-            asprintf(&ret,"%.1f",cell->d);
+            snprintf(ret, retlen, "%.1f", cell->d);
             break;
         case 9:
-            asprintf(&ret,"%d",(int)cell->d);
+            snprintf(ret, retlen, "%d", (int)cell->d);
             break;
         case 10:
-            asprintf(&ret,"%.2f",cell->d);
+            snprintf(ret, retlen, "%.2f", cell->d);
             break;
         case 11:
-            asprintf(&ret,"%.1e",cell->d);
+            snprintf(ret, retlen, "%.1e", cell->d);
             break;
         case 14:
 			//ret=ctime(cell->d);
-			asprintf(&ret,"%.0f",cell->d);
+			snprintf(ret, retlen, "%.0f", cell->d);
             break;
         default:
 			// asprintf(&ret,"%.4.2f (%i)",cell->d,xf->format);break;
-            asprintf(&ret,"%.2f",cell->d);
+            snprintf(ret, retlen, "%.2f", cell->d);
             break;
         }
         break;

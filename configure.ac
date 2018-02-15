@@ -37,9 +37,7 @@ AC_PROG_CXX
 
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 
-AC_CHECK_FUNCS([pow])
 AC_CHECK_FUNCS([strdup])
-AC_CHECK_FUNCS([asprintf])
 AC_CHECK_HEADERS([wchar.h])
 AC_C_CONST
 AC_FUNC_MALLOC

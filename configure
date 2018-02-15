@@ -17103,34 +17103,12 @@ fi
 
 
 
-for ac_func in pow
-do :
-  ac_fn_c_check_func "$LINENO" "pow" "ac_cv_func_pow"
-if test "x$ac_cv_func_pow" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_POW 1
-_ACEOF
-
-fi
-done
-
 for ac_func in strdup
 do :
   ac_fn_c_check_func "$LINENO" "strdup" "ac_cv_func_strdup"
 if test "x$ac_cv_func_strdup" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_STRDUP 1
-_ACEOF
-
-fi
-done
-
-for ac_func in asprintf
-do :
-  ac_fn_c_check_func "$LINENO" "asprintf" "ac_cv_func_asprintf"
-if test "x$ac_cv_func_asprintf" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ASPRINTF 1
 _ACEOF
 
 fi
