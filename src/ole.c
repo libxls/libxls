@@ -54,6 +54,14 @@ static const DWORD FREESECT		= 0xFFFFFFFF;	// -1
 static size_t sector_pos(OLE2* ole2, size_t sid);
 static ssize_t sector_read(OLE2* ole2, void *buffer, size_t sid);
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
+static void *ole_malloc(size_t len);
+
+static void *ole_malloc(size_t len) {
+    if (len > (1<<24)) {
+        return NULL;
+    }
+    return malloc(len);
+}
 
 // Read next sector of stream
 int ole2_bufread(OLE2Stream* olest) 
@@ -193,7 +201,7 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 	} else {
 		olest->bufsize=ole->lsector;
 	}
-	olest->buf = malloc(olest->bufsize);
+	olest->buf = ole_malloc(olest->bufsize);
 	ole2_bufread(olest);
 
 	// if(xls_debug) printf("sopen: sector=%d next=%d\n", start, olest->fatpos);
@@ -420,7 +428,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				BYTE *wptr;
 				
 				blocks = (pss->size + (ole->lsector - 1)) / ole->lsector;	// count partial
-				ole->SSAT = malloc(blocks*ole->lsector);
+				ole->SSAT = ole_malloc(blocks*ole->lsector);
 				// printf("blocks %d\n", blocks);
 
 				sector = pss->sstart;
@@ -577,7 +585,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset, int sectorCount) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     int sectorNum = sectorOffset;
 
-    BYTE *sector = malloc(ole2->lsector);
+    BYTE *sector = ole_malloc(ole2->lsector);
     //printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
     while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
     {
@@ -638,7 +646,9 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
     BYTE *wptr;
 
 	if(ole2->sfatstart != ENDOFCHAIN) {
-		ole2->SSecID = malloc(ole2->csfat*ole2->lsector);
+		if ((ole2->SSecID = ole_malloc(ole2->csfat*ole2->lsector)) == NULL) {
+            return -1;
+        }
 		sector = ole2->sfatstart;
 		wptr=(BYTE*)ole2->SSecID;
 		for(k=0; k<ole2->csfat; ++k) {
@@ -680,7 +690,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     ssize_t total_bytes_read = 0;
     ssize_t bytes_read = 0;
     msize = count*ole2->lsector;
-    ole2->SecID = malloc(msize);
+    ole2->SecID = ole_malloc(msize);
 
     if ((bytes_read = read_MSAT_header(ole2, oleh, count)) == -1) {
         total_bytes_read = -1;
