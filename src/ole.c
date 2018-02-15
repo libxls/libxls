@@ -52,7 +52,7 @@ static const DWORD ENDOFCHAIN	= 0xFFFFFFFE;	// -2
 static const DWORD FREESECT		= 0xFFFFFFFF;	// -1
 
 static size_t sector_pos(OLE2* ole2, size_t sid);
-static ssize_t sector_read(OLE2* ole2, BYTE *buffer, size_t sid);
+static ssize_t sector_read(OLE2* ole2, void *buffer, size_t sid);
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
 
 // Read next sector of stream
@@ -532,7 +532,7 @@ static size_t sector_pos(OLE2* ole2, size_t sid)
     return 512 + sid * ole2->lsector;
 }
 // Read one sector from its sid
-static ssize_t sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
+static ssize_t sector_read(OLE2* ole2, void *buffer, size_t sid)
 {
 	size_t num;
 	size_t seeked;
@@ -554,12 +554,12 @@ static ssize_t sector_read(OLE2* ole2, BYTE *buffer, size_t sid)
 }
 
 // read first 109 sectors of MSAT from header
-static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, int count) {
+static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, int sectorCount) {
     BYTE *sector = (BYTE*)ole2->SecID;
     ssize_t bytes_read = 0, total_bytes_read = 0;
     int sectorNum;
 
-    for (sectorNum = 0; sectorNum < count; sectorNum++)
+    for (sectorNum = 0; sectorNum < sectorCount; sectorNum++)
     {
         if ((bytes_read = sector_read(ole2, sector, oleh->MSAT[sectorNum])) == -1) {
             if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", oleh->MSAT[sectorNum]);
@@ -572,7 +572,7 @@ static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, int count) {
 }
 
 // Add additional sectors of the MSAT
-static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset) {
+static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset, int sectorCount) {
     DWORD sid = ole2->difstart;
     ssize_t bytes_read = 0, total_bytes_read = 0;
     int sectorNum = sectorOffset;
@@ -598,8 +598,13 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset) {
 
             if (s != ENDOFCHAIN && s != FREESECT) // see patch in Bug 31. For very large files
             {
+                if (sectorNum == sectorCount) {
+                    if (xls_debug) fprintf(stderr, "Error: Unable to seek to sector #%d\n", s);
+                    total_bytes_read = -1;
+                    goto cleanup;
+                }
                 if ((bytes_read = sector_read(ole2, (BYTE*)(ole2->SecID)+sectorNum*ole2->lsector, s)) == -1) {
-                    if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", sid);
+                    if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", s);
                     total_bytes_read = -1;
                     goto cleanup;
                 }
@@ -666,7 +671,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     // reconstitution of the MSAT
     int count;
     count = (ole2->cfat < 109) ? ole2->cfat : 109;
-    if(count < 0) {
+    if(count <= 0) {
         if (xls_debug) fprintf(stderr, "Error: MSAT count out-of-bounds\n");
         return -1;
     }
@@ -683,7 +688,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     }
     total_bytes_read += bytes_read;
 
-    if ((bytes_read = read_MSAT_body(ole2, total_bytes_read / ole2->lsector)) == -1) {
+    if ((bytes_read = read_MSAT_body(ole2, total_bytes_read / ole2->lsector, count)) == -1) {
         total_bytes_read = -1;
         goto cleanup;
     }
