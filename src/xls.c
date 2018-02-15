@@ -1410,7 +1410,12 @@ int xls_parseWorkSheet(xlsWorkSheet* pWS)
 			if(xls_debug)
 			{
 				//xls_showBOF(&tmp);
-				printf("   [%d:%d]: 0x%X at pos=%lu size=%u\n", xlsShortVal(((COL*)buf)->row), xlsShortVal(((COL*)buf)->col), tmp.id, lastPos, tmp.size);
+                if (tmp.size >= sizeof(COL)) {
+                    printf("   [%d:%d]: 0x%X at pos=%lu size=%u\n", xlsShortVal(((COL*)buf)->row), xlsShortVal(((COL*)buf)->col),
+                            tmp.id, lastPos, tmp.size);
+                } else {
+                    printf("   0x%X at pos=%lu size=%u\n", tmp.id, lastPos, tmp.size);
+                }
 			}
             break;
         }
