@@ -218,12 +218,12 @@ cellContent WorkBook::GetCell(uint32_t workSheetIndex, uint16_t row, const char 
 	if(strlen(colStr) > 2 || strlen(colStr) == 0) throw XlsException("incorrect column specifier");
 
 	col = colStr[0] - 'A';
-	if(col < 0 || col >= 26) throw string("incorrect column specifier");
+	if(col < 0 || col >= 26) throw XlsException("incorrect column specifier");
 	char c = colStr[1];
 	if(c) {
 		col *= 26;
 		int32_t col2 = c - 'A';
-		if(col2 < 0 || col2 >= 26) throw XlsException(errStr);
+		if(col2 < 0 || col2 >= 26) throw XlsException("incorrect column specifier");
 		col += col2;
 	}
 	col += 1;

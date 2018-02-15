@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	foo.ShowCell(cell);
 	
 	for(int sheetNum = 0; sheetNum < foo.GetSheetCount(); ++sheetNum) {
-		if(sheeNum) printf("\n\n");
+		if(sheetNum) printf("\n\n");
 		printf("===>>> SheetName: %s\n\n", foo.GetSheetName(sheetNum).c_str());
 		
 		foo.InitIterator(sheetNum);
