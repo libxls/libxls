@@ -440,7 +440,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				for(k=0; k<blocks; ++k) {
 					// printf("block %d sector %d\n", k, sector);
                     if (sector == ENDOFCHAIN || sector_read(ole, wptr, sector) == -1) {
-                        fprintf(stderr, "Unable to read sector #%d\n", sector);
+                        if (xls_debug) fprintf(stderr, "Unable to read sector #%d\n", sector);
                         total_bytes_read = -1;
                         goto cleanup;
                     }
