@@ -57,7 +57,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
 static void *ole_malloc(size_t len);
 
 static void *ole_malloc(size_t len) {
-    if (len > (1<<24)) {
+    if (len > (1<<24) || len == 0) {
         return NULL;
     }
     return malloc(len);
@@ -389,6 +389,10 @@ static ssize_t ole2_read_body(OLE2 *ole) {
         }
         total_bytes_read += bytes_read;
         xlsConvertPss(pss);
+        if (pss->bsize > sizeof(pss->name)) {
+            total_bytes_read = -1;
+            goto cleanup;
+        }
         name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
 #ifdef OLE_DEBUG	
 		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
