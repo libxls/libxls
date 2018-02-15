@@ -8,5 +8,6 @@ os:
 script:
     - ./configure
     - make
-    - pwd
-    - cd test && ./test && ./test2 files/test2.xls
+    - cd test
+    - ./test
+    - ./test2 files/test2.xls
