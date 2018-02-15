@@ -51,11 +51,13 @@ int main(int argc, char *argv[])
 
     struct st_row_data* row;
     WORD t,tt;
+    xls_error_t code = LIBXLS_OK;
     xls(10);
-    pWB=xls_open(argv[1],"UTF-8");
+    pWB=xls_open_file(argv[1],"UTF-8", &code);
 
     if (pWB==NULL) {
-        printf("pWB == NULL\n");
+        fprintf(stderr, "pWB == NULL\n");
+        fprintf(stderr, "libxls error: %s\n", xls_getError(code));
         return 1;
     }
 
@@ -63,8 +65,8 @@ int main(int argc, char *argv[])
         printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
 
     pWS=xls_getWorkSheet(pWB,0);
-    if (xls_parseWorkSheet(pWS) != 0) {
-        printf("Error parsing worksheet\n");
+    if ((code = xls_parseWorkSheet(pWS)) != LIBXLS_OK) {
+        fprintf(stderr, "Error parsing worksheet: %s\n", xls_getError(code));
         return 1;
     }
 

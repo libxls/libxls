@@ -101,7 +101,6 @@ typedef struct BIFF
     WORD year;
     DWORD flags;
     DWORD min_ver;
-    BYTE buf[100];
 }
 BIFF;
 

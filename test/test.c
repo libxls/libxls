@@ -44,20 +44,25 @@ int main(int argc, char *argv[])
     FILE *f;
     unsigned int i;
 
+    xls_error_t code = LIBXLS_OK;
     struct st_row_data* row;
     WORD t,tt;
-    pWB=xls_open("test/files/test2.xls", "UTF-8");
+    pWB=xls_open_file("test/files/test2.xls", "UTF-8", &code);
 
-    if (pWB == NULL)
+    if (pWB == NULL) {
+        fprintf(stderr, "Unable to open file: %s\n", xls_getError(code));
         return 1;
+    }
 
     f=fopen ("test.htm", "w");
     for (i=0;i<pWB->sheets.count;i++)
         printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
 
     pWS=xls_getWorkSheet(pWB,0);
-    if (xls_parseWorkSheet(pWS) != 0)
+    if ((code = xls_parseWorkSheet(pWS)) != LIBXLS_OK) {
+        fprintf(stderr, "Error parsing worksheet: %s\n", xls_getError(code));
         return 1;
+    }
 
     fprintf(f,"<style type=\"text/css\">\n%s</style>\n",xls_getCSS(pWB));
     fprintf(f,"<table border=0 cellspacing=0 cellpadding=2>");
