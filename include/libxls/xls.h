@@ -47,8 +47,8 @@ extern const char* xls_getVersion(void);
 extern int xls(int debug);	// Set debug. Force library to load?
 extern void xls_set_formula_hander(xls_formula_handler handler);
 
-extern void xls_parseWorkBook(xlsWorkBook* pWB);
-extern void xls_parseWorkSheet(xlsWorkSheet* pWS);
+extern int xls_parseWorkBook(xlsWorkBook* pWB);
+extern int xls_parseWorkSheet(xlsWorkSheet* pWS);
 
 extern xlsWorkBook* xls_open(const char *file,const char *charset);	// convert 16bit strings within the spread sheet to this 8-bit encoding (UTF-8 default)
 #define xls_close xls_close_WB                  // historical
