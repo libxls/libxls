@@ -34,9 +34,11 @@ test_script:
       if ($env:TOOLCHAIN -eq "msys2")
       {
         $env:MSYSTEM="MINGW64"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls/test && ./test && ./test2 files/test2.xls"
+        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && make check"
+        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./test2_libxls test/files/test2.xls"
       }
       else
       {
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls/test && ./test && ./test2 files/test2.xls"
+        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make check"
+        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./test2_libxls test/files/test2.xls"
       }
