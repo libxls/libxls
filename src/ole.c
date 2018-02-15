@@ -193,7 +193,7 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 	} else {
 		olest->bufsize=ole->lsector;
 	}
-	olest->buf=malloc(olest->bufsize);
+	olest->buf = malloc(olest->bufsize);
 	ole2_bufread(olest);
 
 	// if(xls_debug) printf("sopen: sector=%d next=%d\n", start, olest->fatpos);
@@ -364,12 +364,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 #ifdef OLE_DEBUG		
 			printf("OLE TYPE: %s file=%d \n", pss->type == PS_USER_ROOT ? "root" : "user", ole->files.count);
 #endif		
-            if (ole->files.count==0)
-            {
-                ole->files.file=malloc(sizeof(struct st_olefiles_data));
-            } else {
-                ole->files.file=realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
-            }
+            ole->files.file = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
             ole->files.file[ole->files.count].name=name;
             ole->files.file[ole->files.count].start=pss->sstart;
             ole->files.file[ole->files.count].size=pss->size;
@@ -593,7 +588,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
     BYTE *wptr;
 
 	if(ole2->sfatstart != ENDOFCHAIN) {
-		ole2->SSecID = (DWORD *)malloc(ole2->csfat*ole2->lsector);
+		ole2->SSecID = malloc(ole2->csfat*ole2->lsector);
 		sector = ole2->sfatstart;
 		wptr=(BYTE*)ole2->SSecID;
 		for(k=0; k<ole2->csfat; ++k) {
@@ -637,7 +632,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
     ssize_t total_bytes_read = 0;
     ssize_t bytes_read = 0;
     msize = count*ole2->lsector;
-    ole2->SecID=malloc(msize);
+    ole2->SecID = malloc(msize);
 
     if ((bytes_read = read_MSAT_header(ole2, oleh, count)) == -1) {
         total_bytes_read = -1;

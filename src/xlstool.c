@@ -129,7 +129,7 @@ static int asprintf(char **ret, const char *format, ...)
 
 	va_list ap;
 
-	if ((p = (char *)malloc(size)) == NULL)
+	if ((p = malloc(size)) == NULL)
         return -1;
 
     while (1) {
@@ -150,7 +150,7 @@ static int asprintf(char **ret, const char *format, ...)
         else            /* glibc 2.0 */
             size *= 2;  /* twice the old size */
 
-        if ((np = realloc (p, size)) == NULL) {
+        if ((np = realloc(p, size)) == NULL) {
             free(p);
             return -1;
         } else {
@@ -174,7 +174,7 @@ static int asprintf(char **ret, const char *format, ...)
 	va_start(ap, format); 
 
 	i = vsnprintf(NULL, 0, format, ap) + 1;
-	str = (char *)malloc(i);
+	str = malloc(i);
 	i = vsnprintf(str, i, format, ap);
 
 	va_end(ap);
@@ -215,14 +215,14 @@ BYTE *utf8_decode(BYTE *str, DWORD len, char *encoding)
 	}
 	
 	if(utf8_chars == 0 || strcmp(encoding, "UTF-8")) {
-		ret = (BYTE *)malloc(len+1);
+		ret = malloc(len+1);
 		memcpy(ret, str, len);
 		ret[len] = 0;
 	} else {
         DWORD i;
         BYTE *out;
 		// UTF-8 encoding inline
-		ret = (BYTE *)malloc(len+utf8_chars+1);
+		ret = malloc(len+utf8_chars+1);
 		out = ret;
 		for(i=0; i<len; ++i) {
 			BYTE c = str[i];
@@ -282,7 +282,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
             }
         }
         size_t st; 
-        outbuf = (BYTE*)malloc(outlen + 1);
+        outbuf = malloc(outlen + 1);
 
 		if(outbuf)
         {
@@ -297,7 +297,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
                         size_t diff = out_ptr - outbuf;
                         outlen += inlenleft;
                         outlenleft += inlenleft;
-                        outbuf = (BYTE*)realloc(outbuf, outlen + 1);
+                        outbuf = realloc(outbuf, outlen + 1);
                         if(!outbuf)
                         {
                             break;
@@ -338,7 +338,7 @@ BYTE* unicode_decode(const BYTE *s, int len, size_t *newlen, const char* to_enc)
 
     x=(short *)s;
 
-    w = (wchar_t*)malloc((len/2+1)*sizeof(wchar_t));
+    w = malloc((len/2+1)*sizeof(wchar_t));
 
     for(i=0; i<len/2; i++)
     {

@@ -30,7 +30,6 @@
  *
  */
 
-#define _GNU_SOURCE /* asprintf */
 #include "config.h"
 
 #include <stdio.h>
@@ -225,7 +224,7 @@ int xls_appendSST(xlsWorkBook* pWB,BYTE* buf,DWORD size)
                     new_len = strlen((char *)ret);
                 }
 
-                ret = (BYTE *)realloc(ret,new_len+1);
+                ret = realloc(ret,new_len+1);
                 *(BYTE*)(ret+new_len)=0;
 
                 ln -= ln_toread;
@@ -563,12 +562,8 @@ BYTE *xls_addFont(xlsWorkBook* pWB, FONT* font)
     struct st_font_data* tmp;
 
     verbose("xls_addFont");
-    if (pWB->fonts.count==0)
-    {
-        pWB->fonts.font=(struct st_font_data *) malloc(sizeof(struct st_font_data));
-    } else {
-        pWB->fonts.font=(struct st_font_data *) realloc(pWB->fonts.font,(pWB->fonts.count+1)*sizeof(struct st_font_data));
-    }
+
+    pWB->fonts.font = realloc(pWB->fonts.font,(pWB->fonts.count+1)*sizeof(struct st_font_data));
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
 
