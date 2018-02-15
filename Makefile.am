@@ -32,7 +32,7 @@ libxlsreader_la_SOURCES = \
 	src/ole.c \
 	src/xls.c
 
-libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS)
+libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
 
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la

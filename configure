@@ -638,6 +638,7 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBXLS_LIBS
 WITH_ICONV
+EXTRA_LDFLAGS
 LIBOBJS
 PKG_CONFIG
 CXXCPP
@@ -17372,6 +17373,14 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
+
+
+case $host in #(
+  *mingw*|*cygwin*) :
+    EXTRA_LDFLAGS="-no-undefined" ;; #(
+  *) :
+    EXTRA_LDFLAGS="" ;;
+esac
 
 
 WITH_ICONV=0

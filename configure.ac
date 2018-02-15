@@ -46,6 +46,10 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_TYPE_SIZE_T
 
+AS_CASE([$host],
+        [*mingw*|*cygwin*], [EXTRA_LDFLAGS="-no-undefined"], [EXTRA_LDFLAGS=""])
+AC_SUBST([EXTRA_LDFLAGS])
+
 WITH_ICONV=0
 AC_ARG_WITH(iconv, [  --with-iconv[=DIR]        add ICONV support (on)])
 if test "$with_iconv" = "no" ; then
