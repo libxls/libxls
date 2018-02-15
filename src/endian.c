@@ -40,17 +40,9 @@ int xls_is_bigendian()
 #elif defined (__LITTLE_ENDIAN__)
     return 0;
 #else
-#warning NO ENDIAN
     static int n = 1;
 
-    if (*(char *)&n == 1)
-    {
-        return 0;
-    }
-    else
-    {
-        return 1;
-    }
+    return (*(char *)&n == 0);
 #endif
 }
 
