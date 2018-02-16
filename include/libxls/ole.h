@@ -111,8 +111,13 @@ typedef struct OLE2
     DWORD		csfat;
     DWORD		difstart;
     DWORD		cdif;
+
     DWORD*		SecID;	// regular sector data
+    DWORD       SecIDCount;
+
 	DWORD*		SSecID;	// short sector data
+    DWORD       SSecIDCount;
+
 	BYTE*		SSAT;	// directory of short sectors
     st_olefiles	files;
 }
@@ -166,7 +171,7 @@ PSS;
 
 extern ssize_t ole2_read(void* buf,size_t size,size_t count,OLE2Stream* olest);
 extern OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size);
-extern void ole2_seek(OLE2Stream* olest,DWORD ofs);
+extern int ole2_seek(OLE2Stream* olest,DWORD ofs);
 extern OLE2Stream*  ole2_fopen(OLE2* ole, const char *file);
 extern void ole2_fclose(OLE2Stream* ole2st);
 extern OLE2* ole2_open_file(const char *file);

@@ -561,13 +561,14 @@ void xls_showXF(XF8* xf)
 
 char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
 {
-    struct st_xf_data *xf;
-	WORD	len;
-    WORD    offset;
+    struct st_xf_data *xf = NULL;
+	WORD	len = 0;
+    WORD    offset = 0;
     char	*ret = NULL;
     size_t  retlen = 100;
 
-    xf=&pWB->xfs.xf[cell->xf];
+    if (cell->xf < pWB->xfs.count)
+        xf=&pWB->xfs.xf[cell->xf];
 
     switch (cell->id)
     {
@@ -605,37 +606,39 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
 		//		if( RK || MULRK || NUMBER || FORMULA)
 		//		if (cell->id==0x27e || cell->id==0x0BD || cell->id==0x203 || 6 (formula))
     default:
-        ret = malloc(retlen);
-        switch (xf->format)
-        {
-        case 0:
-            snprintf(ret, retlen, "%d", (int)cell->d);
-            break;
-        case 1:
-            snprintf(ret, retlen, "%d", (int)cell->d);
-            break;
-        case 2:
-            snprintf(ret, retlen, "%.1f", cell->d);
-            break;
-        case 9:
-            snprintf(ret, retlen, "%d", (int)cell->d);
-            break;
-        case 10:
-            snprintf(ret, retlen, "%.2f", cell->d);
-            break;
-        case 11:
-            snprintf(ret, retlen, "%.1e", cell->d);
-            break;
-        case 14:
-			//ret=ctime(cell->d);
-			snprintf(ret, retlen, "%.0f", cell->d);
-            break;
-        default:
-			// asprintf(&ret,"%.4.2f (%i)",cell->d,xf->format);break;
-            snprintf(ret, retlen, "%.2f", cell->d);
+        if (xf) {
+            ret = malloc(retlen);
+            switch (xf->format)
+            {
+                case 0:
+                    snprintf(ret, retlen, "%d", (int)cell->d);
+                    break;
+                case 1:
+                    snprintf(ret, retlen, "%d", (int)cell->d);
+                    break;
+                case 2:
+                    snprintf(ret, retlen, "%.1f", cell->d);
+                    break;
+                case 9:
+                    snprintf(ret, retlen, "%d", (int)cell->d);
+                    break;
+                case 10:
+                    snprintf(ret, retlen, "%.2f", cell->d);
+                    break;
+                case 11:
+                    snprintf(ret, retlen, "%.1e", cell->d);
+                    break;
+                case 14:
+                    //ret=ctime(cell->d);
+                    snprintf(ret, retlen, "%.0f", cell->d);
+                    break;
+                default:
+                    // asprintf(&ret,"%.4.2f (%i)",cell->d,xf->format);break;
+                    snprintf(ret, retlen, "%.2f", cell->d);
+                    break;
+            }
             break;
         }
-        break;
     }
 
     return ret;

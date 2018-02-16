@@ -74,7 +74,7 @@ int ole2_bufread(OLE2Stream* olest)
     if ((DWORD)olest->fatpos!=ENDOFCHAIN)
     {
         if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
-            if (xls_debug) fprintf(stderr, "Error: fatpos out-of-bounds\n");
+            if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds\n", (int)olest->fatpos);
             return -1;
         }
 		if(olest->sfat) {
@@ -83,6 +83,12 @@ int ole2_bufread(OLE2Stream* olest)
 
 			ptr = olest->ole->SSAT + olest->fatpos*olest->ole->lssector;
 			memcpy(olest->buf, ptr, olest->bufsize); 
+
+            if (olest->fatpos >= olest->ole->SSecIDCount) {
+                if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds for SSecID[%d]\n",
+                        (int)olest->fatpos, olest->ole->SSecIDCount);
+                return -1;
+            }
 
 			olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
 			olest->pos=0;
@@ -93,6 +99,13 @@ int ole2_bufread(OLE2Stream* olest)
                 if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", (int)olest->fatpos);
                 return -1;
             }
+
+            if (olest->fatpos >= olest->ole->SecIDCount) {
+                if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds for SecID[%d]\n",
+                        (int)olest->fatpos, olest->ole->SecIDCount);
+                return -1;
+            }
+
 			olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
@@ -162,15 +175,15 @@ ssize_t ole2_read(void* buf, size_t size, size_t count, OLE2Stream* olest)
 	// printf("=====\n");
 
 #ifdef OLE_DEBUG
-    printf("----------------------------------------------\n");
-    printf("ole2_read (end)\n");
-    printf("start:		%li \n",olest->start);
-    printf("pos:		%li \n",olest->pos);
-    printf("cfat:		%d \n",olest->cfat);
-    printf("size:		%d \n",olest->size);
-    printf("fatpos:		%li \n",olest->fatpos);
-    printf("bufsize:		%li \n",olest->bufsize);
-    printf("eof:		%d \n",olest->eof);
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_read (end)\n");
+    fprintf(stderr, "start:		%d \n",olest->start);
+    fprintf(stderr, "pos:		%d \n",(int)olest->pos);
+    fprintf(stderr, "cfat:		%d \n",(int)olest->cfat);
+    fprintf(stderr, "size:		%d \n",(int)olest->size);
+    fprintf(stderr, "fatpos:		%d \n",(int)olest->fatpos);
+    fprintf(stderr, "bufsize:		%d \n",(int)olest->bufsize);
+    fprintf(stderr, "eof:		%d \n",olest->eof);
 #endif
 
     return didReadCount;
@@ -182,8 +195,8 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
     OLE2Stream* olest=NULL;
 
 #ifdef OLE_DEBUG
-    printf("----------------------------------------------\n");
-    printf("ole2_sopen start=%lXh\n", start);
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_sopen start=%Xh\n", start);
 #endif
 
 	olest=(OLE2Stream*)calloc(1, sizeof(OLE2Stream));
@@ -208,10 +221,10 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 }
 
 // Move in stream
-void ole2_seek(OLE2Stream* olest,DWORD ofs)
+int ole2_seek(OLE2Stream* olest,DWORD ofs)
 {
 #ifdef OLE_DEBUG
-printf("SEEK %x\n", ofs);
+    fprintf(stderr, "SEEK %x\n", ofs);
 #endif
 	if(olest->sfat) {
 		ldiv_t div_rez=ldiv(ofs,olest->ole->lssector);
@@ -220,8 +233,11 @@ printf("SEEK %x\n", ofs);
 
 		if (div_rez.quot!=0)
 		{
-			for (i=0;i<div_rez.quot;i++)
+			for (i=0;i<div_rez.quot;i++) {
+                if (olest->fatpos >= olest->ole->SSecIDCount)
+                    return -1;
 				olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
+            }
 		}
 
 		ole2_bufread(olest);
@@ -233,14 +249,17 @@ printf("SEEK %x\n", ofs);
 		ldiv_t div_rez=ldiv(ofs,olest->ole->lsector);
 		int i;
 #ifdef OLE_DEBUG
-printf("seeking fatpos%lu start %u\n", olest->fatpos, olest->start);
+        fprintf(stderr, "seeking fatpos%lu start %u\n", olest->fatpos, olest->start);
 #endif
 		olest->fatpos=olest->start;
 
 		if (div_rez.quot!=0)
 		{
-			for (i=0;i<div_rez.quot;i++)
-				olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
+			for (i=0;i<div_rez.quot;i++) {
+                if (olest->fatpos >= olest->ole->SecIDCount)
+                    return -1;
+                olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
+            }
 		}
 
 		ole2_bufread(olest);
@@ -249,32 +268,31 @@ printf("seeking fatpos%lu start %u\n", olest->fatpos, olest->start);
 		olest->cfat=div_rez.quot;
 		//printf("%i=%i %i\n",ofs,div_rez.quot,div_rez.rem);
 	}
+    return 0;
 }
 
 // Open logical file contained in physical OLE file
 OLE2Stream*  ole2_fopen(OLE2* ole, const char *file)
 {
-    OLE2Stream* olest;
     int i;
 
 #ifdef OLE_DEBUG
-    printf("----------------------------------------------\n");
-    printf("ole2_fopen %s\n", file);
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_fopen %s\n", file);
 #endif
 
     for (i=0;i<ole->files.count;i++) {
 		char *str = ole->files.file[i].name;
 #ifdef OLE_DEBUG
-		printf("----------------------------------------------\n");
-		printf("ole2_fopen found %s\n", str);
+		fprintf(stderr, "----------------------------------------------\n");
+		fprintf(stderr, "ole2_fopen found %s\n", str);
 #endif
         if (str && strcmp(str,file)==0)	// newer versions of Excel don't write the "Root Entry" string for the first set of data
         {
-            olest=ole2_sopen(ole,ole->files.file[i].start,ole->files.file[i].size);
-            return(olest);
+            return ole2_sopen(ole,ole->files.file[i].start,ole->files.file[i].size);
         }
 	}
-    return(NULL);
+    return NULL;
 }
 
 int ole2_fseek(OLE2 *ole2, size_t pos) {
@@ -343,23 +361,23 @@ static ssize_t ole2_read_header(OLE2 *ole) {
     ole->files.count=0;
 
 #ifdef OLE_DEBUG
-		printf("==== OLE HEADER ====\n");
+		fprintf(stderr, "==== OLE HEADER ====\n");
 		//printf ("Header Size:   %i \n", sizeof(OLE2Header));
 		//printf ("id[0]-id[1]:   %X-%X \n", oleh->id[0], oleh->id[1]);
-		printf ("verminor:      %X \n",oleh->verminor);
-		printf ("verdll:        %X \n",oleh->verdll);
+		fprintf(stderr, "verminor:      %X \n",oleh->verminor);
+		fprintf(stderr, "verdll:        %X \n",oleh->verdll);
 		//printf ("Byte order:    %X \n",oleh->byteorder);
-		printf ("sect len:      %X (%i)\n",ole->lsector,ole->lsector);		// ole
-		printf ("mini len:      %X (%i)\n",ole->lssector,ole->lssector);	// ole
-		printf ("Fat sect.:     %i \n",oleh->cfat);
-		printf ("Dir Start:     %i \n",oleh->dirstart);
+		fprintf(stderr, "sect len:      %X (%i)\n",ole->lsector,ole->lsector);		// ole
+		fprintf(stderr, "mini len:      %X (%i)\n",ole->lssector,ole->lssector);	// ole
+		fprintf(stderr, "Fat sect.:     %i \n",oleh->cfat);
+		fprintf(stderr, "Dir Start:     %i \n",oleh->dirstart);
 		
-		printf ("Mini Cutoff:   %i \n",oleh->sectorcutoff);
-		printf ("MiniFat Start: %X \n",oleh->sfatstart);
-		printf ("Count MFat:    %i \n",oleh->csfat);
-		printf ("Dif start:     %X \n",oleh->difstart);
-		printf ("Count Dif:     %i \n",oleh->cdif);
-		printf ("Fat Size:      %u (0x%X) \n",oleh->cfat*ole->lsector,oleh->cfat*ole->lsector);
+		fprintf(stderr, "Mini Cutoff:   %i \n",oleh->sectorcutoff);
+		fprintf(stderr, "MiniFat Start: %X \n",oleh->sfatstart);
+		fprintf(stderr, "Count MFat:    %i \n",oleh->csfat);
+		fprintf(stderr, "Dif start:     %X \n",oleh->difstart);
+		fprintf(stderr, "Count Dif:     %i \n",oleh->cdif);
+		fprintf(stderr, "Fat Size:      %u (0x%X) \n",oleh->cfat*ole->lsector,oleh->cfat*ole->lsector);
 #endif
     // read directory entries
     if ((bytes_read = read_MSAT(ole, oleh)) == -1) {
@@ -394,13 +412,13 @@ static ssize_t ole2_read_body(OLE2 *ole) {
         }
         name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
 #ifdef OLE_DEBUG	
-		printf("OLE NAME: %s count=%d\n", name, ole->files.count);
+		fprintf(stderr, "OLE NAME: %s count=%d\n", name, (int)ole->files.count);
 #endif
         if (pss->type == PS_USER_ROOT || pss->type == PS_USER_STREAM) // (name!=NULL) // 
         {
 
 #ifdef OLE_DEBUG		
-			printf("OLE TYPE: %s file=%d \n", pss->type == PS_USER_ROOT ? "root" : "user", ole->files.count);
+			fprintf(stderr, "OLE TYPE: %s file=%d \n", pss->type == PS_USER_ROOT ? "root" : "user", (int)ole->files.count);
 #endif		
             ole->files.file = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
             ole->files.file[ole->files.count].name=name;
@@ -412,19 +430,20 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				if (xls_debug) verbose("END OF CHAIN\n");
 			} else if(pss->type == PS_USER_STREAM) {
 #ifdef OLE_DEBUG
-					printf("----------------------------------------------\n");
-					printf("name: %s (size=%d [c=%c])\n", name, pss->bsize, name ? name[0]:' ');
-					printf("bsize %i\n",pss->bsize);
-					printf("type %i\n",pss->type);
-					printf("flag %i\n",pss->flag);
-					printf("left %X\n",pss->left);
-					printf("right %X\n",pss->right);
-					printf("child %X\n",pss->child);
-					printf("guid %.4X-%.4X-%.4X-%.4X %.4X-%.4X-%.4X-%.4X\n",pss->guid[0],pss->guid[1],pss->guid[2],pss->guid[3],
+					fprintf(stderr, "----------------------------------------------\n");
+					fprintf(stderr, "name: %s (size=%d [c=%c])\n", name, pss->bsize, name ? name[0]:' ');
+					fprintf(stderr, "bsize %i\n",pss->bsize);
+					fprintf(stderr, "type %i\n",pss->type);
+					fprintf(stderr, "flag %i\n",pss->flag);
+					fprintf(stderr, "left %X\n",pss->left);
+					fprintf(stderr, "right %X\n",pss->right);
+					fprintf(stderr, "child %X\n",pss->child);
+					fprintf(stderr, "guid %.4X-%.4X-%.4X-%.4X %.4X-%.4X-%.4X-%.4X\n",
+                            pss->guid[0],pss->guid[1],pss->guid[2],pss->guid[3],
 						pss->guid[4],pss->guid[5],pss->guid[6],pss->guid[7]);
-					printf("user flag %.4X\n",pss->userflags);
-					printf("sstart %.4d\n",pss->sstart);
-					printf("size %.4d\n",pss->size);
+					fprintf(stderr, "user flag %.4X\n",pss->userflags);
+					fprintf(stderr, "sstart %.4d\n",pss->sstart);
+					fprintf(stderr, "size %.4d\n",pss->size);
 #endif
 			} else if(pss->type == PS_USER_ROOT) {
 				DWORD sector, k, blocks;
@@ -490,15 +509,15 @@ OLE2* ole2_open_file(const char *file)
     OLE2* ole = NULL;
 
 #ifdef OLE_DEBUG
-    printf("----------------------------------------------\n");
-    printf("ole2_open_file %s\n", file);
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_open_file %s\n", file);
 #endif
 
-	if(xls_debug) printf("ole2_open: %s\n", file);
+	if(xls_debug) fprintf(stderr, "ole2_open: %s\n", file);
     ole=(OLE2*)calloc(1, sizeof(OLE2));
 
     if (!(ole->file=fopen(file, "rb"))) {
-        if(xls_debug) printf("File not found\n");
+        if(xls_debug) fprintf(stderr, "File not found\n");
         free(ole);
         return NULL;
     }
@@ -655,6 +674,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
 		if ((ole2->SSecID = ole_malloc(ole2->csfat*(size_t)ole2->lsector)) == NULL) {
             return -1;
         }
+        ole2->SSecIDCount = ole2->csfat*(size_t)ole2->lsector/4;
 		sector = ole2->sfatstart;
 		wptr=(BYTE*)ole2->SSecID;
 		for(k=0; k<ole2->csfat; ++k) {
@@ -669,8 +689,8 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
 #ifdef OLE_DEBUG
 		if(xls_debug) {
 			int i;
-			for(i=0; i<512/4; ++i) {
-				if(ole2->SSecID[i] != FREESECT) printf("SSecID[%d]=%d\n", i, ole2->SSecID[i]);
+			for(i=0; i<ole2->csfat; ++i) {
+				if(ole2->SSecID[i] != FREESECT) fprintf(stderr, "SSecID[%d]=%d\n", i, ole2->SSecID[i]);
 			}
 		}
 #endif
@@ -685,18 +705,17 @@ cleanup:
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 {
     // reconstitution of the MSAT
-    int count;
-    count = (ole2->cfat < 109) ? ole2->cfat : 109;
+    int count = (ole2->cfat < 109) ? ole2->cfat : 109;
     if(count <= 0) {
         if (xls_debug) fprintf(stderr, "Error: MSAT count out-of-bounds\n");
         return -1;
     }
 
-    size_t msize;
     ssize_t total_bytes_read = 0;
     ssize_t bytes_read = 0;
-    msize = count*ole2->lsector;
-    ole2->SecID = ole_malloc(msize);
+
+    ole2->SecID = ole_malloc(count*ole2->lsector);
+    ole2->SecIDCount = count*ole2->lsector/4;
 
     if ((bytes_read = read_MSAT_header(ole2, oleh, count)) == -1) {
         total_bytes_read = -1;

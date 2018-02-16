@@ -554,8 +554,10 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         if (bof->size < sizeof(LABEL))
             return NULL;
 		cell->str=xls_getfcell(pWS->workbook,cell,(WORD_UA *)&((LABEL*)buf)->value);
-		sscanf((char *)cell->str, "%d", &cell->l);
-		sscanf((char *)cell->str, "%lf", &cell->d);
+        if (cell->str) {
+            sscanf((char *)cell->str, "%d", &cell->l);
+            sscanf((char *)cell->str, "%lf", &cell->d);
+        }
 		break;
     case XLS_RECORD_RK:
         if (bof->size < sizeof(RK))
@@ -1067,7 +1069,10 @@ xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
 
     verbose ("xls_preparseWorkSheet");
 
-    ole2_seek(pWS->workbook->olestr,pWS->filepos);
+    if (ole2_seek(pWS->workbook->olestr,pWS->filepos) == -1) {
+        retval = LIBXLS_ERROR_SEEK;
+        goto cleanup;
+    }
     do
     {
 		size_t read;
@@ -1226,7 +1231,10 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
         goto cleanup;
     }
 
-    ole2_seek(pWS->workbook->olestr,pWS->filepos);
+    if (ole2_seek(pWS->workbook->olestr,pWS->filepos) == -1) {
+        retval = LIBXLS_ERROR_SEEK;
+        goto cleanup;
+    }
     do
     {
 		long lastPos = offset;
