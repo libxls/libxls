@@ -513,7 +513,7 @@ OLE2* ole2_open_file(const char *file)
     fprintf(stderr, "ole2_open_file %s\n", file);
 #endif
 
-	if(xls_debug) fprintf(stderr, "ole2_open: %s\n", file);
+	if(xls_debug) printf("ole2_open: %s\n", file);
     ole=(OLE2*)calloc(1, sizeof(OLE2));
 
     if (!(ole->file=fopen(file, "rb"))) {

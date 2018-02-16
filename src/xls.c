@@ -1593,7 +1593,7 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     {
         pWB->summary = calloc(1,4096);
 		if (ole2_read(pWB->summary, 4096, 1, pWB->olestr) == -1) {
-            if (xls_debug) printf("SummaryInformation not found\n");
+            if (xls_debug) fprintf(stderr, "SummaryInformation not found\n");
             retval = LIBXLS_ERROR_READ;
             goto cleanup;
         }
@@ -1604,7 +1604,7 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     {
         pWB->docSummary = calloc(1, 4096);
 		if (ole2_read(pWB->docSummary, 4096, 1, pWB->olestr) == -1) {
-            if (xls_debug) printf("DocumentSummaryInformation not found\n");
+            if (xls_debug) fprintf(stderr, "DocumentSummaryInformation not found\n");
             retval = LIBXLS_ERROR_READ;
             goto cleanup;
         }
@@ -1631,7 +1631,7 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     // open Workbook
     if (!(pWB->olestr=ole2_fopen(ole,"Workbook")) && !(pWB->olestr=ole2_fopen(ole,"Book")))
     {
-        if(xls_debug) printf("Workbook not found\n");
+        if(xls_debug) fprintf(stderr, "Workbook not found\n");
         retval = LIBXLS_ERROR_PARSE;
         goto cleanup;
     }
@@ -1671,7 +1671,7 @@ xlsWorkBook* xls_open_file(const char *file, const char* charset, xls_error_t *o
 
     if (!(ole=ole2_open_file(file)))
     {
-        if (xls_debug) printf("File \"%s\" not found\n",file);
+        if (xls_debug) fprintf(stderr, "File \"%s\" not found\n",file);
         if (outError) *outError = LIBXLS_ERROR_OPEN;
         return NULL;
     }
