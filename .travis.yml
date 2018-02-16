@@ -6,7 +6,7 @@ os:
     - linux
     - osx
 script:
-    - touch aclocal.m4 configure
+    - touch aclocal.m4 configure Makefile.am Makefile.in
     - ./configure
     - make
     - make check
