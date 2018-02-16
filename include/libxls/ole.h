@@ -119,6 +119,8 @@ typedef struct OLE2
     DWORD       SSecIDCount;
 
 	BYTE*		SSAT;	// directory of short sectors
+    DWORD       SSATCount;
+
     st_olefiles	files;
 }
 OLE2;

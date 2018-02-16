@@ -73,13 +73,14 @@ int ole2_bufread(OLE2Stream* olest)
 
     if ((DWORD)olest->fatpos!=ENDOFCHAIN)
     {
-        if(olest->fatpos > ((olest->ole->cfat*olest->ole->lsector)/4)) {
-            if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds\n", (int)olest->fatpos);
-            return -1;
-        }
 		if(olest->sfat) {
             if (olest->ole->SSAT == NULL || olest->buf == NULL || olest->ole->SSecID == NULL)
                 return -1;
+
+            if (olest->fatpos*olest->ole->lssector + olest->bufsize > olest->ole->SSATCount) {
+                if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds for SSAT\n", (int)olest->fatpos);
+                return -1;
+            }
 
 			ptr = olest->ole->SSAT + olest->fatpos*olest->ole->lssector;
 			memcpy(olest->buf, ptr, olest->bufsize); 
@@ -454,6 +455,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                     total_bytes_read = -1;
                     goto cleanup;
                 }
+                ole->SSATCount = blocks*ole->lsector;
 				// printf("blocks %d\n", blocks);
 
 				sector = pss->sstart;
