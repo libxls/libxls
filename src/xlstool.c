@@ -559,7 +559,7 @@ void xls_showXF(XF8* xf)
     printf("GroundColor: 0x%x\n",xf->groundcolor);
 }
 
-char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
+char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
 {
     struct st_xf_data *xf = NULL;
 	WORD	len = 0;
@@ -585,7 +585,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, WORD *label)
         break;
     case XLS_RECORD_LABEL:
 		len = xlsShortVal(*label);
-        label++;
+        label += 2;
 		if(pWB->is5ver) {
             ret = malloc(len+1);
             memcpy(ret, label, len);
