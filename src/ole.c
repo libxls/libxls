@@ -200,13 +200,11 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
     fprintf(stderr, "ole2_sopen start=%Xh\n", start);
 #endif
 
-	olest=(OLE2Stream*)calloc(1, sizeof(OLE2Stream));
+	olest = calloc(1, sizeof(OLE2Stream));
 	olest->ole=ole;
 	olest->size=size;
 	olest->fatpos=start;
 	olest->start=start;
-	olest->pos=0;
-	olest->eof=0;
 	olest->cfat=-1;
 	if((long)size > 0 && size < (size_t)ole->sectorcutoff) {
 		olest->bufsize=ole->lssector;
@@ -214,8 +212,12 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 	} else {
 		olest->bufsize=ole->lsector;
 	}
-	olest->buf = ole_malloc(olest->bufsize);
-	ole2_bufread(olest);
+    olest->buf = ole_malloc(olest->bufsize);
+
+    if (ole2_bufread(olest) == -1) {
+        ole2_fclose(olest);
+        olest = NULL;
+    }
 
 	// if(xls_debug) printf("sopen: sector=%d next=%d\n", start, olest->fatpos);
     return olest;
@@ -232,19 +234,21 @@ int ole2_seek(OLE2Stream* olest,DWORD ofs)
 		int i;
 		olest->fatpos=olest->start;
 
-		if (div_rez.quot!=0)
-		{
-			for (i=0;i<div_rez.quot;i++) {
+        if (div_rez.quot!=0)
+        {
+            for (i=0;i<div_rez.quot;i++) {
                 if (olest->fatpos >= olest->ole->SSecIDCount)
                     return -1;
-				olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
+                olest->fatpos=xlsIntVal(olest->ole->SSecID[olest->fatpos]);
             }
-		}
+        }
 
-		ole2_bufread(olest);
-		olest->pos=div_rez.rem;
-		olest->eof=0;
-		olest->cfat=div_rez.quot;
+        if (ole2_bufread(olest) == -1)
+            return -1;
+
+        olest->pos=div_rez.rem;
+        olest->eof=0;
+        olest->cfat=div_rez.quot;
 		//printf("%i=%i %i\n",ofs,div_rez.quot,div_rez.rem);
 	} else {
 		ldiv_t div_rez=ldiv(ofs,olest->ole->lsector);
@@ -254,16 +258,18 @@ int ole2_seek(OLE2Stream* olest,DWORD ofs)
 #endif
 		olest->fatpos=olest->start;
 
-		if (div_rez.quot!=0)
-		{
-			for (i=0;i<div_rez.quot;i++) {
+        if (div_rez.quot!=0)
+        {
+            for (i=0;i<div_rez.quot;i++) {
                 if (olest->fatpos >= olest->ole->SecIDCount)
                     return -1;
                 olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
             }
-		}
+        }
 
-		ole2_bufread(olest);
+        if (ole2_bufread(olest) == -1)
+            return -1;
+
 		olest->pos=div_rez.rem;
 		olest->eof=0;
 		olest->cfat=div_rez.quot;
@@ -395,11 +401,16 @@ cleanup:
 
 static ssize_t ole2_read_body(OLE2 *ole) {
 	// reuse this buffer
-    PSS *pss = malloc(512);
-    OLE2Stream *olest=ole2_sopen(ole,ole->dirstart, -1);
+    PSS *pss = NULL;
+    OLE2Stream *olest = NULL;
     char* name = NULL;
     ssize_t bytes_read = 0, total_bytes_read = 0;
 
+    if ((olest = ole2_sopen(ole,ole->dirstart, -1)) == NULL) {
+        total_bytes_read = -1;
+        goto cleanup;
+    }
+    pss = malloc(sizeof(PSS));
     do {
         if ((bytes_read = ole2_read(pss,1,sizeof(PSS),olest)) == -1) {
             total_bytes_read = -1;
@@ -475,12 +486,13 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 		} else {
 			free(name);
 		}
-    }
-    while (!olest->eof);
+    } while (!olest->eof);
 
 cleanup:
-	ole2_fclose(olest);
-    free(pss);
+    if (olest)
+        ole2_fclose(olest);
+    if (pss)
+        free(pss);
 
     return total_bytes_read;
 }
