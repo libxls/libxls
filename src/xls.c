@@ -462,6 +462,46 @@ xls_error_t xls_makeTable(xlsWorkSheet* pWS)
     return LIBXLS_OK;
 }
 
+int xls_isCellTooSmall(xlsWorkBook* pWB, BOF* bof, BYTE* buf) {
+    if (bof->size < sizeof(COL))
+        return 1;
+
+    if (bof->id == XLS_RECORD_FORMULA || bof->id == XLS_RECORD_FORMULA_ALT)
+        return (bof->size < sizeof(FORMULA));
+
+    if (bof->id == XLS_RECORD_MULRK)
+        return (bof->size < sizeof(MULRK));
+
+    if (bof->id == XLS_RECORD_MULBLANK)
+        return (bof->size < sizeof(MULBLANK));
+
+    if (bof->id == XLS_RECORD_LABELSST) {
+        return (bof->size < sizeof(LABEL) + (pWB->is5ver ? 2 : 4));
+    }
+
+    if (bof->id == XLS_RECORD_LABEL) {
+        size_t label_len = xlsShortVal(*(WORD *)((LABEL*)buf)->value);
+        if (pWB->is5ver) {
+            return (bof->size < sizeof(LABEL) + 2 + label_len);
+        }
+        if ((((LABEL*)buf)->value[2] & 0x01)) {
+            return (bof->size < sizeof(LABEL) + 3 + label_len);
+        }
+        return (bof->size < sizeof(LABEL) + 3 + 2 * label_len);
+    }
+
+    if (bof->id == XLS_RECORD_RK)
+        return (bof->size < sizeof(RK));
+
+    if (bof->id == XLS_RECORD_NUMBER)
+        return (bof->size < sizeof(BR_NUMBER));
+
+    if (bof->id == XLS_RECORD_BOOLERR)
+        return (bof->size < sizeof(BOOLERR));
+
+    return 0;
+}
+
 struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     struct st_cell_data*	cell;
@@ -471,7 +511,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 
 	verbose ("xls_addCell");
 
-    if (bof->size < sizeof(COL))
+    if (xls_isCellTooSmall(pWS->workbook, bof, buf))
         return NULL;
 
 	// printf("ROW: %u COL: %u\n", xlsShortVal(((COL*)buf)->row), xlsShortVal(((COL*)buf)->col));
@@ -491,9 +531,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     {
     case XLS_RECORD_FORMULA:
     case XLS_RECORD_FORMULA_ALT:
-        if (bof->size < sizeof(FORMULA))
-            return NULL;
-
 		xlsConvertFormula((FORMULA *)buf);
         cell->id=XLS_RECORD_FORMULA;
         if (((FORMULA*)buf)->res!=0xffff) {
@@ -523,8 +560,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 		if(formula_handler) formula_handler(bof->id, bof->size, buf);
         break;
     case XLS_RECORD_MULRK:
-        if (bof->size < sizeof(MULRK))
-            return NULL;
         for (i = 0; i < (bof->size - 6)/6; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
             WORD index = col + i;
@@ -540,8 +575,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         }
         break;
     case XLS_RECORD_MULBLANK:
-        if (bof->size < sizeof(MULBLANK))
-            return NULL;
         for (i = 0; i < (bof->size - 6)/2; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
             WORD index = col + i;
@@ -557,8 +590,6 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         break;
     case XLS_RECORD_LABELSST:
     case XLS_RECORD_LABEL:
-        if (bof->size < sizeof(LABEL))
-            return NULL;
 		cell->str = xls_getfcell(pWS->workbook, cell, ((LABEL*)buf)->value);
         if (cell->str) {
             sscanf((char *)cell->str, "%d", &cell->l);
@@ -566,23 +597,17 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         }
 		break;
     case XLS_RECORD_RK:
-        if (bof->size < sizeof(RK))
-            return NULL;
         cell->d=NumFromRk(xlsIntVal(((RK*)buf)->value));
         cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
     case XLS_RECORD_BLANK:
         break;
     case XLS_RECORD_NUMBER:
-        if (bof->size < sizeof(BR_NUMBER))
-            return NULL;
         xlsConvertDouble((BYTE *)&((BR_NUMBER*)buf)->value);
 		memcpy(&cell->d, &((BR_NUMBER*)buf)->value, sizeof(double)); // Required for ARM
         cell->str=xls_getfcell(pWS->workbook,cell, NULL);
         break;
     case XLS_RECORD_BOOLERR:
-        if (bof->size < sizeof(BOOLERR))
-            return NULL;
         cell->d = ((BOOLERR *)buf)->value;
         if (((BOOLERR *)buf)->iserror) {
             sprintf((char *)(cell->str = malloc(sizeof("error"))), "error");
