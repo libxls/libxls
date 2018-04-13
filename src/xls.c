@@ -466,6 +466,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     struct st_cell_data*	cell;
     struct st_row_data*		row;
+    WORD_UA                 col;
     int						i;
 
 	verbose ("xls_addCell");
@@ -475,8 +476,14 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 
 	// printf("ROW: %u COL: %u\n", xlsShortVal(((COL*)buf)->row), xlsShortVal(((COL*)buf)->col));
     row=&pWS->rows.row[xlsShortVal(((COL*)buf)->row)];
-    //cell=&row->cells.cell[((COL*)buf)->col - row->fcell]; DFH - inconsistent
-    cell=&row->cells.cell[xlsShortVal(((COL*)buf)->col)];
+
+    col = xlsShortVal(((COL*)buf)->col);
+    if (col >= row->cells.count) {
+        if (xls_debug) fprintf(stderr, "Error: Column index out of bounds\n");
+        return NULL;
+    }
+    cell = &row->cells.cell[col];
+
     cell->id=bof->id;
     cell->xf=xlsShortVal(((COL*)buf)->xf);
 
@@ -520,8 +527,12 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             return NULL;
         for (i = 0; i < (bof->size - 6)/6; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
-            cell=&row->cells.cell[xlsShortVal(((MULRK*)buf)->col + i)];
-			// printf("i=%d col=%d\n", i, xlsShortVal(((MULRK*)buf)->col + i) );
+            WORD index = col + i;
+            if(index >= row->cells.count) {
+                if (xls_debug) fprintf(stderr, "Error: MULTI-RK index out of bounds\n");
+                return NULL;
+            }
+            cell=&row->cells.cell[index];
             cell->id=XLS_RECORD_RK;
             cell->xf=xlsShortVal(((MULRK*)buf)->rk[i].xf);
             cell->d=NumFromRk(xlsIntVal(((MULRK*)buf)->rk[i].value));
@@ -533,7 +544,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
             return NULL;
         for (i = 0; i < (bof->size - 6)/2; i++)	// 6 == 2 row + 2 col + 2 trailing index
         {
-            WORD index = xlsShortVal(((MULBLANK*)buf)->col) + i;
+            WORD index = col + i;
             if(index >= row->cells.count) {
                 if (xls_debug) fprintf(stderr, "Error: MULTI-BLANK index out of bounds\n");
                 return NULL;
