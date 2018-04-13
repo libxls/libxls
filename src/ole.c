@@ -107,7 +107,13 @@ int ole2_bufread(OLE2Stream* olest)
                 return -1;
             }
 
-			olest->fatpos=xlsIntVal(olest->ole->SecID[olest->fatpos]);
+            if (olest->fatpos == xlsIntVal(olest->ole->SecID[olest->fatpos])) {
+                if (xls_debug) fprintf(stderr, "Error: Sector loop detected, SecID[%d] = %d\n",
+                        (int)olest->fatpos, (int)olest->fatpos);
+                return -1;
+            }
+
+            olest->fatpos = xlsIntVal(olest->ole->SecID[olest->fatpos]);
 			olest->pos=0;
 			olest->cfat++;
 		}
@@ -121,7 +127,6 @@ ssize_t ole2_read(void* buf, size_t size, size_t count, OLE2Stream* olest)
 {
     size_t didReadCount=0;
     size_t totalReadCount;
-	size_t needToReadCount;
 
 	totalReadCount=size*count;
 
@@ -142,32 +147,25 @@ ssize_t ole2_read(void* buf, size_t size, size_t count, OLE2Stream* olest)
 	while ((!olest->eof) && (didReadCount < totalReadCount))
 	{
 		unsigned long remainingBytes;
+        size_t needToReadCount;
 
 		needToReadCount	= totalReadCount - didReadCount;
 		remainingBytes	= olest->bufsize - olest->pos;
-		//printf("  test: (totalReadCount-didReadCount)=%d (olest->bufsize-olest->pos)=%d\n", (totalReadCount-didReadCount), (olest->bufsize-olest->pos) );
 
-		if (needToReadCount < remainingBytes)	// does the current sector contain all the data I need?
-		{
-			// printf("  had %d bytes of memory, copy=%d\n", (olest->bufsize-olest->pos), needToReadCount);
+		if (needToReadCount < remainingBytes) { // does the current sector contain all the data I need?
 			memcpy((BYTE*)buf + didReadCount, olest->buf + olest->pos, needToReadCount);
 			olest->pos		+= needToReadCount;
 			didReadCount	+= needToReadCount;
 		} else {
-			// printf("  had %d bytes of memory, copy=%d\n", remainingBytes, remainingBytes);
 			memcpy((BYTE*)buf + didReadCount, olest->buf + olest->pos, remainingBytes);
 			olest->pos		+= remainingBytes;
 			didReadCount	+= remainingBytes;
 			if (ole2_bufread(olest) == -1)
                 return -1;
 		}
-		//printf("  if(fatpos=0x%X==EOC=0x%X) && (pos=%d >= bufsize=%d)\n", olest->fatpos, ENDOFCHAIN, olest->pos, olest->bufsize);
-		if (((DWORD)olest->fatpos == ENDOFCHAIN) && (olest->pos >= olest->bufsize))
-		{
+		if (((DWORD)olest->fatpos == ENDOFCHAIN) && (olest->pos >= olest->bufsize)) {
 			olest->eof=1;
 		}
-
-		//printf("  eof=%d (didReadCount=%ld != totalReadCount=%ld)\n", olest->eof, didReadCount, totalReadCount);
 	}
     if (didReadCount > totalReadCount)
         return -1;
@@ -584,15 +582,12 @@ static ssize_t sector_read(OLE2* ole2, void *buffer, size_t sid)
 	size_t num;
 	size_t seeked;
 
-	//printf("sector_read: sid=%zu (0x%zx) lsector=%u sector_pos=%zu\n", sid, sid, ole2->lsector, sector_pos(ole2, sid) );
-    seeked = ole2_fseek(ole2, sector_pos(ole2, sid));
-	if(seeked != 0) {
+	if ((seeked = ole2_fseek(ole2, sector_pos(ole2, sid))) != 0) {
 		if (xls_debug) fprintf(stderr, "Error: wanted to seek to sector %zu (0x%zx) loc=%zu\n", sid, sid, sector_pos(ole2, sid));
         return -1;
     }
 
-	num = ole2_fread(ole2, buffer, ole2->lsector, 1);
-    if(num != 1) {
+    if ((num = ole2_fread(ole2, buffer, ole2->lsector, 1)) != 1) {
         if (xls_debug) fprintf(stderr, "Error: fread wanted 1 got %zu loc=%zu\n", num, sector_pos(ole2, sid));
         return -1;
     }
