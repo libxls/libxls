@@ -503,12 +503,12 @@ OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
     ole->buffer_len = len;
 
     if (ole2_read_header(ole) == -1) {
-        free(ole);
+        ole2_close(ole);
         return NULL;
     }
 
     if (ole2_read_body(ole) == -1) {
-        free(ole);
+        ole2_close(ole);
         return NULL;
     }
 
@@ -535,14 +535,12 @@ OLE2* ole2_open_file(const char *file)
     }
 
     if (ole2_read_header(ole) == -1) {
-		fclose(ole->file);
-        free(ole);
+        ole2_close(ole);
         return NULL;
     }
 
     if (ole2_read_body(ole) == -1) {
-		fclose(ole->file);
-        free(ole);
+        ole2_close(ole);
         return NULL;
     }
 
