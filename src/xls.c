@@ -445,23 +445,15 @@ xls_error_t xls_makeTable(xlsWorkSheet* pWS)
         tmp->lcell=pWS->rows.lastcol;
 
 		tmp->cells.count = pWS->rows.lastcol+1;
-        if ((tmp->cells.cell = calloc(tmp->cells.count,sizeof(struct st_cell_data))) == NULL)
+        if ((tmp->cells.cell = calloc(tmp->cells.count, sizeof(struct st_cell_data))) == NULL)
             return LIBXLS_ERROR_MALLOC;
 
         for (i=0;i<=pWS->rows.lastcol;i++)
         {
-            tmp->cells.cell[i].col=i;
-            tmp->cells.cell[i].row=t;
-            tmp->cells.cell[i].width=pWS->defcolwidth;
-            tmp->cells.cell[i].xf=0;
-            tmp->cells.cell[i].str=NULL;
-            tmp->cells.cell[i].d=0;
-            tmp->cells.cell[i].l=0;
-            tmp->cells.cell[i].isHidden=0;
-            tmp->cells.cell[i].colspan=0;
-            tmp->cells.cell[i].rowspan=0;
-            tmp->cells.cell[i].id=XLS_RECORD_BLANK;
-            tmp->cells.cell[i].str=NULL;
+            tmp->cells.cell[i].col = i;
+            tmp->cells.cell[i].row = t;
+            tmp->cells.cell[i].width = pWS->defcolwidth;
+            tmp->cells.cell[i].id = XLS_RECORD_BLANK;
         }
     }
     return LIBXLS_OK;
@@ -1777,8 +1769,7 @@ void xls_close_WS(xlsWorkSheet* pWS)
 {
 	if(!pWS) return;
 
-    // ROWS
-    {
+    if (pWS->rows.row) {
         DWORD i, j;
         for(j=0; j<=pWS->rows.lastrow; ++j) {
             struct st_row_data *row = &pWS->rows.row[j];
@@ -1788,7 +1779,6 @@ void xls_close_WS(xlsWorkSheet* pWS)
             free(row->cells.cell);
         }
         free(pWS->rows.row);
-
     }
 
     // COLINFO

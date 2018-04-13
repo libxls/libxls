@@ -7,6 +7,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         for (int i=0; i<work_book->sheets.count; i++) {
             xlsWorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
             xls_parseWorkSheet(work_sheet);
+            xls_close_WS(work_sheet);
         }
         xls_close_WB(work_book);
     }
