@@ -1152,6 +1152,10 @@ xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
                 pWS->rows.lastrow=xlsShortVal(((COL*)buf)->row);
             break;
         }
+        if (pWS->rows.lastcol > 256) {
+            retval = LIBXLS_ERROR_PARSE;
+            goto cleanup;
+        }
     }
     while ((!pWS->workbook->olestr->eof)&&(tmp.id!=XLS_RECORD_EOF));
 

@@ -413,7 +413,7 @@ st_sst;
 
 typedef	struct st_cell
 {
-    DWORD_UA count;
+    DWORD count;
     struct st_cell_data
     {
         WORD	id;
