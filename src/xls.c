@@ -143,8 +143,11 @@ xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
     pWB->sst.lastrt=0;
     pWB->sst.lastsz=0;
 
-    pWB->sst.count = sst->num;
-    if ((pWB->sst.string = calloc(pWB->sst.count, sizeof(struct str_sst_string))) == NULL)
+    if (sst->num > (1<<20))
+        return LIBXLS_ERROR_MALLOC;
+
+    if ((pWB->sst.string = calloc(pWB->sst.count = sst->num,
+                    sizeof(struct str_sst_string))) == NULL)
         return LIBXLS_ERROR_MALLOC;
 
     return xls_appendSST(pWB, sst->strings, size - sizeof(SST));
