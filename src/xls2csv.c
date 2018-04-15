@@ -65,6 +65,7 @@ extern int getopt(int nargc, char * const *nargv, const char *ostr);
 int main(int argc, char *argv[]) {
 	xlsWorkBook* pWB;
 	xlsWorkSheet* pWS;
+    xls_error_t error = LIBXLS_OK;
 	unsigned int i, j;
     int justList = 0;
     char *sheetName = "";
@@ -103,10 +104,9 @@ int main(int argc, char *argv[]) {
 printf("FILE: %s\n", argv[1]);
 
 	// open workbook, choose standard conversion
-	pWB = xls_open(argv[1], encoding);
+	pWB = xls_open_file(argv[1], encoding, &error);
 	if (!pWB) {
-		fprintf(stderr, "File not found");
-		fprintf(stderr, "\n");
+        fprintf(stderr, "Error reading XLS file: %s\n", xls_getError(error));
 		return EXIT_FAILURE;
 	}
 
