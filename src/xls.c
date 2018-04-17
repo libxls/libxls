@@ -90,7 +90,7 @@ typedef struct {
 	uint32_t		os;
 	uint32_t		format[4];
 	uint32_t		count;
-	sectionList		secList[0];
+	sectionList		secList[];
 } header;
 
 typedef struct {
@@ -101,12 +101,12 @@ typedef struct {
 typedef struct {
 	uint32_t		length;
 	uint32_t		numProperties;
-	propertyList	properties[0];
+	propertyList	properties[];
 } sectionHeader;
 
 typedef struct {
 	uint32_t		propertyID;
-	uint32_t		data[0];
+	uint32_t		data[];
 } property;
 
 #pragma pack(pop)

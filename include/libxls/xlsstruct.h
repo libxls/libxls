@@ -240,7 +240,7 @@ typedef struct SST
 {
     DWORD	num;
     DWORD	numofstr;
-    BYTE	strings[0];
+    BYTE	strings[];
 }
 SST;
 

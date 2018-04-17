@@ -33,6 +33,7 @@ libxlsreader_la_SOURCES = \
 	src/xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
+libxlsreader_la_CFLAGS = -Wall -Werror -pedantic-errors -std=c99
 
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la

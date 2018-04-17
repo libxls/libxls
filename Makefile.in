@@ -142,8 +142,9 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libxlsreader_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libxlsreader_la_OBJECTS = src/xlstool.lo src/endian.lo src/ole.lo \
-	src/xls.lo
+am_libxlsreader_la_OBJECTS = src/libxlsreader_la-xlstool.lo \
+	src/libxlsreader_la-endian.lo src/libxlsreader_la-ole.lo \
+	src/libxlsreader_la-xls.lo
 libxlsreader_la_OBJECTS = $(am_libxlsreader_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -151,8 +152,8 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 libxlsreader_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(libxlsreader_la_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(libxlsreader_la_CFLAGS) $(CFLAGS) $(libxlsreader_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 @HAVE_FUZZER_TRUE@am__EXEEXT_1 = fuzz_xls$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am__fuzz_xls_SOURCES_DIST = fuzz/fuzz_xls.c
@@ -586,6 +587,7 @@ libxlsreader_la_SOURCES = \
 	src/xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
+libxlsreader_la_CFLAGS = -Wall -Werror -pedantic-errors -std=c99
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
@@ -689,10 +691,14 @@ src/$(am__dirstamp):
 src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
-src/xlstool.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/endian.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/ole.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/xls.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/libxlsreader_la-xlstool.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/libxlsreader_la-endian.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/libxlsreader_la-ole.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/libxlsreader_la-xls.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 
 libxlsreader.la: $(libxlsreader_la_OBJECTS) $(libxlsreader_la_DEPENDENCIES) $(EXTRA_libxlsreader_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libxlsreader_la_LINK) -rpath $(libdir) $(libxlsreader_la_OBJECTS) $(libxlsreader_la_LIBADD) $(LIBS)
@@ -813,12 +819,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@fuzz/$(DEPDIR)/fuzz_xls.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/getopt.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/ole.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/xls.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-endian.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-ole.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-xls.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-xlstool.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/xls2csv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/xlstool.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/test2.Po@am__quote@
 
@@ -845,6 +851,34 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+src/libxlsreader_la-xlstool.lo: src/xlstool.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -MT src/libxlsreader_la-xlstool.lo -MD -MP -MF src/$(DEPDIR)/libxlsreader_la-xlstool.Tpo -c -o src/libxlsreader_la-xlstool.lo `test -f 'src/xlstool.c' || echo '$(srcdir)/'`src/xlstool.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libxlsreader_la-xlstool.Tpo src/$(DEPDIR)/libxlsreader_la-xlstool.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/xlstool.c' object='src/libxlsreader_la-xlstool.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -c -o src/libxlsreader_la-xlstool.lo `test -f 'src/xlstool.c' || echo '$(srcdir)/'`src/xlstool.c
+
+src/libxlsreader_la-endian.lo: src/endian.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -MT src/libxlsreader_la-endian.lo -MD -MP -MF src/$(DEPDIR)/libxlsreader_la-endian.Tpo -c -o src/libxlsreader_la-endian.lo `test -f 'src/endian.c' || echo '$(srcdir)/'`src/endian.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libxlsreader_la-endian.Tpo src/$(DEPDIR)/libxlsreader_la-endian.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/endian.c' object='src/libxlsreader_la-endian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -c -o src/libxlsreader_la-endian.lo `test -f 'src/endian.c' || echo '$(srcdir)/'`src/endian.c
+
+src/libxlsreader_la-ole.lo: src/ole.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -MT src/libxlsreader_la-ole.lo -MD -MP -MF src/$(DEPDIR)/libxlsreader_la-ole.Tpo -c -o src/libxlsreader_la-ole.lo `test -f 'src/ole.c' || echo '$(srcdir)/'`src/ole.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libxlsreader_la-ole.Tpo src/$(DEPDIR)/libxlsreader_la-ole.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ole.c' object='src/libxlsreader_la-ole.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -c -o src/libxlsreader_la-ole.lo `test -f 'src/ole.c' || echo '$(srcdir)/'`src/ole.c
+
+src/libxlsreader_la-xls.lo: src/xls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -MT src/libxlsreader_la-xls.lo -MD -MP -MF src/$(DEPDIR)/libxlsreader_la-xls.Tpo -c -o src/libxlsreader_la-xls.lo `test -f 'src/xls.c' || echo '$(srcdir)/'`src/xls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libxlsreader_la-xls.Tpo src/$(DEPDIR)/libxlsreader_la-xls.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/xls.c' object='src/libxlsreader_la-xls.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -c -o src/libxlsreader_la-xls.lo `test -f 'src/xls.c' || echo '$(srcdir)/'`src/xls.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
