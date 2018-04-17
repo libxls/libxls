@@ -553,14 +553,14 @@ void ole2_close(OLE2* ole2)
     if (ole2->file)
         fclose(ole2->file);
 
-	for(i=0; i<ole2->files.count; ++i) {
-		free(ole2->files.file[i].name);
-	}
-	free(ole2->files.file);
-	free(ole2->SecID);
-	free(ole2->SSecID);
-	free(ole2->SSAT);
-	free(ole2);
+    for(i=0; i<ole2->files.count; ++i) {
+        free(ole2->files.file[i].name);
+    }
+    free(ole2->files.file);
+    free(ole2->SecID);
+    free(ole2->SSecID);
+    free(ole2->SSAT);
+    free(ole2);
 }
 
 void ole2_fclose(OLE2Stream* ole2st)
