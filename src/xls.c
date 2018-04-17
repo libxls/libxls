@@ -232,7 +232,7 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
                 ofs+=ln_toread*2;
 
                 if (xls_debug) {
-	                printf("String16SST: %s(%zd)\n",ret,new_len);
+	                printf("String16SST: %s(%lu)\n", ret, (unsigned long)new_len);
                 }
             } else {
                 ln_toread = min((size-ofs), ln);
@@ -784,8 +784,9 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
     do {
 		if(xls_debug > 10) {
 			printf("READ WORKBOOK filePos=%ld\n",  (long)pWB->filepos);
-			printf("  OLE: start=%d pos=%zd size=%zd fatPos=%zu\n",
-                    pWB->olestr->start, pWB->olestr->pos, pWB->olestr->size, pWB->olestr->fatpos); 
+			printf("  OLE: start=%d pos=%u size=%u fatPos=%u\n",
+                    pWB->olestr->start, (unsigned int)pWB->olestr->pos,
+                    (unsigned int)pWB->olestr->size, (unsigned int)pWB->olestr->fatpos); 
 		}
 
         if (ole2_read(&bof1, 1, 4, pWB->olestr) != 4) {
@@ -1229,7 +1230,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
 		long lastPos = offset;
 
 		if(xls_debug > 10) {
-			printf("LASTPOS=%ld pos=%zd filePos=%d filePos=%d\n", lastPos, pWB->olestr->pos, pWS->filepos, pWB->filepos);
+			printf("LASTPOS=%ld pos=%d filePos=%d filePos=%d\n", lastPos, (int)pWB->olestr->pos, pWS->filepos, pWB->filepos);
 		}
 		if((read = ole2_read(&tmp, 1, 4, pWS->workbook->olestr)) != 4) {
             if (xls_debug) fprintf(stderr, "Error: failed to read OLE size\n");
