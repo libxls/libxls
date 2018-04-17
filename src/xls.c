@@ -167,7 +167,7 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
             if (ofs + 2 > size) {
                 return LIBXLS_ERROR_PARSE;
             }
-            ln=xlsShortVal(*(WORD_UA *)(buf+ofs));
+            ln = buf[ofs+0] + (buf[ofs+1] << 8);
             rt = 0;
             sz = 0;
 
@@ -188,10 +188,10 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
 
             // Count of rich text formatting runs
             if (flag & 0x8) {
-                if (ofs + sizeof(WORD_UA) > size) {
+                if (ofs + sizeof(WORD) > size) {
                     return LIBXLS_ERROR_PARSE;
                 }
-                rt=xlsShortVal(*(WORD_UA *)(buf+ofs));
+                rt = buf[ofs+0] + (buf[ofs+1] << 8);
                 ofs+=2;
             }
 
@@ -200,7 +200,7 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
                 if (ofs + sizeof(DWORD_UA) > size) {
                     return LIBXLS_ERROR_PARSE;
                 }
-                sz=xlsIntVal(*(DWORD_UA *)(buf+ofs));
+                sz = buf[ofs+0] + (buf[ofs+1] << 8) + (buf[ofs+2] << 16) + (buf[ofs+3] << 24);
                 ofs+=4;
 
 				if (xls_debug) {
@@ -464,7 +464,7 @@ int xls_isCellTooSmall(xlsWorkBook* pWB, BOF* bof, BYTE* buf) {
     }
 
     if (bof->id == XLS_RECORD_LABEL) {
-        size_t label_len = xlsShortVal(*(WORD *)((LABEL*)buf)->value);
+        size_t label_len = ((LABEL*)buf)->value[0] + (((LABEL*)buf)->value[1] << 8);
         if (pWB->is5ver) {
             return (bof->size < sizeof(LABEL) + 2 + label_len);
         }
@@ -739,8 +739,8 @@ xls_error_t xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     if (bof->size < sizeof(WORD_UA))
         return LIBXLS_ERROR_PARSE;
 
-    int count=xlsShortVal(*((WORD_UA *)buf));
-    DWORD limit = sizeof(WORD_UA)+count*sizeof(struct MERGEDCELLS);
+    int count = buf[0] + (buf[1] << 8);
+    DWORD limit = sizeof(WORD)+count*sizeof(struct MERGEDCELLS);
     if(limit > (DWORD)bof->size) {
         verbose("Merged Cells Count out of range");
         return LIBXLS_ERROR_PARSE;
@@ -817,8 +817,8 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
                 retval = LIBXLS_ERROR_PARSE;
                 goto cleanup;
             }
-            pWB->is5ver = (xlsShortVal(*(WORD *)&buf[0]) != 0x600);
-            pWB->type = xlsShortVal(*(WORD *)&buf[2]);
+            pWB->is5ver = (buf[0] + (buf[1] << 8) != 0x600);
+            pWB->type = buf[2] + (buf[3] << 8);
 
             if(xls_debug) {
                 printf("version: %s\n", pWB->is5ver ? "BIFF5" : "BIFF8" );
@@ -827,11 +827,11 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
             break;
 
         case XLS_RECORD_CODEPAGE:
-            if (bof1.size < sizeof(WORD_UA)) {
+            if (bof1.size < sizeof(WORD)) {
                 retval = LIBXLS_ERROR_PARSE;
                 goto cleanup;
             }
-            pWB->codepage=xlsShortVal(*(WORD_UA *)buf);
+            pWB->codepage = buf[0] + (buf[1] << 8);
 			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
             break;
 
@@ -1090,7 +1090,7 @@ xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
                 retval = LIBXLS_ERROR_PARSE;
                 goto cleanup;
             }
-            pWS->defcolwidth=xlsShortVal(*(WORD_UA *)buf)*256;
+            pWS->defcolwidth = (buf[0] << 8) + (buf[1] << 16);
             break;
         case XLS_RECORD_COLINFO:
             if (tmp.size < sizeof(COLINFO)) {
