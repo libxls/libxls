@@ -39,24 +39,10 @@ typedef unsigned char		BYTE;
 typedef uint16_t			WORD;
 typedef uint32_t			DWORD;
 
-// Windows
-#if defined(_MSC_VER) && defined(WIN32)
-
+#ifdef _WIN32
 typedef unsigned __int64	unsigned64_t;
-
-// not windows
 #else
-
-#if defined(_UINT64_T)
-
 typedef uint64_t			unsigned64_t;
-
-#else
-
-typedef unsigned long long	unsigned64_t;
-
-// _UINT64_T
-#endif
 #endif
 
 #endif
