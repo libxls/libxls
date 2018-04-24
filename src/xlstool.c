@@ -313,7 +313,7 @@ char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset
         if (ofs + 2 > len) {
             return NULL;
         }
-        ln=xlsShortVal(*(WORD_UA *)str);
+        ln= ((BYTE*)str)[0] + (((BYTE*)str)[1] << 8);
         ofs+=2;
     } else {
 		// single byte length

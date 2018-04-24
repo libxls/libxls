@@ -631,7 +631,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset, int sectorCount) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     DWORD sectorNum = sectorOffset;
 
-    BYTE *sector = ole_malloc(ole2->lsector);
+    DWORD *sector = ole_malloc(ole2->lsector);
     //printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
     while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
     {
@@ -647,7 +647,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset, int sectorCount) {
         // read content
         for (posInSector = 0; posInSector < (ole2->lsector-4)/4; posInSector++)
         {
-            DWORD s = *(DWORD_UA *)(sector + posInSector*4);
+            DWORD s = sector[posInSector];
             //printf("   s[%d]=%d (0x%x)\n", posInSector, s, s);
 
             if (s != ENDOFCHAIN && s != FREESECT) // see patch in Bug 31. For very large files
@@ -666,7 +666,7 @@ static ssize_t read_MSAT_body(OLE2 *ole2, int sectorOffset, int sectorCount) {
                 sectorNum++;
             }
         }
-        sid = *(DWORD_UA *)(sector + posInSector*4);
+        sid = sector[posInSector];
         //printf("   s[%d]=%d (0x%x)\n", posInSector, sid, sid);
     }
 #ifdef OLE_DEBUG
