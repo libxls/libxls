@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 	unsigned int i, j;
     int justList = 0;
     char *sheetName = "";
+    xls(1);
 
     if(argc < 2) {
         Usage(argv[0]);
