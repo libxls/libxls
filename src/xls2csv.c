@@ -48,7 +48,7 @@ static void Usage(char *progName);
 
 static void Usage(char *progName)
 {
-    fprintf(stderr, "usage: %s <Excel xls file> [-l] [-e encoding] [-t sheet] [-q quote char] [-f field separator]\n", progName);
+    fprintf(stderr, "usage: %s <Excel xls file> [-l] [-v] [-e encoding] [-t sheet] [-q quote char] [-f field separator]\n", progName);
     fprintf(stderr, "  Output Excel file cells as delimited values (default is comma separated)\n");
     fprintf(stderr, "  Options:\n");
     fprintf(stderr, "    -l            : list the sheets contained in the file but do not output their contents.\n");
@@ -56,6 +56,7 @@ static void Usage(char *progName)
     fprintf(stderr, "    -e encoding   : the iconv encoding (default \"%s\")\n", encoding);
     fprintf(stderr, "    -q character  : used to quote strings (default '%c')\n", stringSeparator);
     fprintf(stderr, "    -f string     : used to separate fields (default \"%s\")\n", fieldSeparator);
+    fprintf(stderr, "    -v            : verbose mode\n");
     fprintf(stderr, "\n");
     exit(EXIT_FAILURE);
 }
@@ -69,7 +70,6 @@ int main(int argc, char *argv[]) {
 	unsigned int i, j;
     int justList = 0;
     char *sheetName = "";
-    xls(1);
 
     if(argc < 2) {
         Usage(argv[0]);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     optind = 2; // skip file arg
 
     int ch;
-    while ((ch = getopt(argc, argv, "lt:e:q:f:")) != -1) {
+    while ((ch = getopt(argc, argv, "vlt:e:q:f:")) != -1) {
         switch (ch) {
         case 'l':
             justList = 1;
@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'f':
             fieldSeparator = strdup(optarg);
+            break;
+        case 'v':
+            xls(1);
             break;
         default:
             Usage(argv[0]);
