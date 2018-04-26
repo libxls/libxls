@@ -33,7 +33,7 @@
 #ifndef libXlsTester_xlsformula_h
 #define libXlsTester_xlsformula_h
 
-#ifdef AIX
+#if defined(_AIX) || defined(__sun)
 #pragma pack(1)
 #else
 #pragma pack(push, 1)
