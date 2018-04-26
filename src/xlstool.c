@@ -175,12 +175,18 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
 {
 #ifdef HAVE_ICONV
 	// Do iconv conversion
-#ifdef AIX
+#if defined(_AIX) || defined(__sun)
     const char *from_enc = "UTF-16le";
+    #define ICONV_CONST const
 #else
     const char *from_enc = "UTF-16LE";
+    #if defined(_WIN32)
+        #define ICONV_CONST const
+    #else
+        #define ICONV_CONST
+    #endif
 #endif
-    char* outbuf = 0;
+	char* outbuf = 0;
 
     if(s && len && from_enc && to_enc)
     {
@@ -220,7 +226,7 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
             out_ptr = outbuf;
             while(inlenleft)
             {
-                st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
+                st = iconv(ic, (ICONV_CONST char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
                 if(st == (size_t)(-1))
                 {
                     if(errno == E2BIG)
