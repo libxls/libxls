@@ -186,7 +186,7 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
         #define ICONV_CONST
     #endif
 #endif
-	char* outbuf = 0;
+    char* outbuf = 0;
 
     if(s && len && from_enc && to_enc)
     {
