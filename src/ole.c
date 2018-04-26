@@ -613,7 +613,7 @@ static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, int sectorCount) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     int sectorNum;
 
-    for (sectorNum = 0; sectorNum < sectorCount; sectorNum++)
+    for (sectorNum = 0; sectorNum < sectorCount && sectorNum < 109; sectorNum++)
     {
         if ((bytes_read = sector_read(ole2, sector, oleh->MSAT[sectorNum])) == -1) {
             if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", oleh->MSAT[sectorNum]);
@@ -730,7 +730,7 @@ cleanup:
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 {
     // reconstitution of the MSAT
-    int count = (ole2->cfat < 109) ? ole2->cfat : 109;
+    int count = ole2->cfat;
     if(count <= 0) {
         if (xls_debug) fprintf(stderr, "Error: MSAT count out-of-bounds\n");
         return -1;
