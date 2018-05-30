@@ -128,7 +128,7 @@ xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
     pWB->sst.lastrt=0;
     pWB->sst.lastsz=0;
 
-    if (sst->num > (1<<20))
+    if (sst->num > (1<<24))
         return LIBXLS_ERROR_MALLOC;
 
     if ((pWB->sst.string = calloc(pWB->sst.count = sst->num,
