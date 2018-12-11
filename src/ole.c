@@ -326,15 +326,17 @@ size_t ole2_fread(OLE2 *ole2, void *buffer, size_t size, size_t nitems) {
     if (ole2->file)
         return fread(buffer, size, nitems, ole2->file);
 
-    size_t i = 0;
-    for (i=0; i<nitems; i++) {
-        if (ole2->buffer_pos + size > ole2->buffer_len)
-            break;
+    {
+        size_t i = 0;
+        for (i=0; i<nitems; i++) {
+            if (ole2->buffer_pos + size > ole2->buffer_len)
+                break;
 
-        memcpy(buffer, (const char *)ole2->buffer + ole2->buffer_pos, size);
-        ole2->buffer_pos += size;
+            memcpy(buffer, (const char *)ole2->buffer + ole2->buffer_pos, size);
+            ole2->buffer_pos += size;
+        }
+        return i;
     }
-    return i;
 }
 
 
@@ -732,15 +734,15 @@ cleanup:
 // Read MSAT
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
 {
+    ssize_t total_bytes_read = 0;
+    ssize_t bytes_read = 0;
+
     // reconstitution of the MSAT
     DWORD count = ole2->cfat;
     if(count == 0 || count > (1 << 24)) {
         if (xls_debug) fprintf(stderr, "Error: MSAT count %u out-of-bounds\n", count);
         return -1;
     }
-
-    ssize_t total_bytes_read = 0;
-    ssize_t bytes_read = 0;
 
     ole2->SecIDCount = count*ole2->lsector/4;
     if ((ole2->SecID = ole_malloc(ole2->SecIDCount * sizeof(DWORD))) == NULL) {

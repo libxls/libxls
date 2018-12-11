@@ -44,6 +44,9 @@
 #include <math.h>
 #include <sys/types.h>
 #include <string.h>
+#if defined(_MSC_VER)
+#define strdup _strdup
+#endif
 #include <wchar.h>
 
 #include "libxls/endian.h"
@@ -53,7 +56,7 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-//#define DEBUG_DRAWINGS
+/* #define DEBUG_DRAWINGS */
 int xls_debug = 0;
 
 static double NumFromRk(DWORD drk);
@@ -470,14 +473,16 @@ int xls_isCellTooSmall(xlsWorkBook* pWB, BOF* bof, BYTE* buf) {
         if (bof->size < offsetof(LABEL, value) + 2)
             return 1;
 
-        size_t label_len = ((LABEL*)buf)->value[0] + (((LABEL*)buf)->value[1] << 8);
-        if (pWB->is5ver) {
-            return (bof->size < offsetof(LABEL, value) + 2 + label_len);
+        {
+            size_t label_len = ((LABEL*)buf)->value[0] + (((LABEL*)buf)->value[1] << 8);
+            if (pWB->is5ver) {
+                return (bof->size < offsetof(LABEL, value) + 2 + label_len);
+            }
+            if ((((LABEL*)buf)->value[2] & 0x01)) {
+                return (bof->size < offsetof(LABEL, value) + 3 + label_len);
+            }
+            return (bof->size < offsetof(LABEL, value) + 3 + 2 * label_len);
         }
-        if ((((LABEL*)buf)->value[2] & 0x01)) {
-            return (bof->size < offsetof(LABEL, value) + 3 + label_len);
-        }
-        return (bof->size < offsetof(LABEL, value) + 3 + 2 * label_len);
     }
 
     if (bof->id == XLS_RECORD_RK)
@@ -745,35 +750,39 @@ xls_error_t xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
     if (bof->size < sizeof(WORD))
         return LIBXLS_ERROR_PARSE;
 
-    int count = buf[0] + (buf[1] << 8);
-    DWORD limit = sizeof(WORD)+count*sizeof(struct MERGEDCELLS);
-    if(limit > (DWORD)bof->size) {
-        verbose("Merged Cells Count out of range");
-        return LIBXLS_ERROR_PARSE;
-    }
-    int i,c,r;
-    struct MERGEDCELLS *span;
-    verbose("Merged Cells");
-    for (i=0;i<count;i++)
     {
-        span=(struct MERGEDCELLS*)(buf+(2+i*sizeof(struct MERGEDCELLS)));
-        xlsConvertMergedcells(span);
-        //		printf("Merged Cells: [%i,%i] [%i,%i] \n",span->colf,span->rowf,span->coll,span->rowl);
-        // Sanity check:
-        if(!(   span->rowf <= span->rowl &&
-                span->rowl <= pWS->rows.lastrow &&
-                span->colf <= span->coll &&
-                span->coll <= pWS->rows.lastcol
-        )) {
+        int count = buf[0] + (buf[1] << 8);
+        DWORD limit = sizeof(WORD)+count*sizeof(struct MERGEDCELLS);
+        if(limit > (DWORD)bof->size) {
+            verbose("Merged Cells Count out of range");
             return LIBXLS_ERROR_PARSE;
         }
+        {
+            int i,c,r;
+            struct MERGEDCELLS *span;
+            verbose("Merged Cells");
+            for (i=0;i<count;i++)
+            {
+                span=(struct MERGEDCELLS*)(buf+(2+i*sizeof(struct MERGEDCELLS)));
+                xlsConvertMergedcells(span);
+                //      printf("Merged Cells: [%i,%i] [%i,%i] \n",span->colf,span->rowf,span->coll,span->rowl);
+                // Sanity check:
+                if(!(   span->rowf <= span->rowl &&
+                        span->rowl <= pWS->rows.lastrow &&
+                        span->colf <= span->coll &&
+                        span->coll <= pWS->rows.lastcol
+                )) {
+                    return LIBXLS_ERROR_PARSE;
+                }
 
-        for (r=span->rowf;r<=span->rowl;r++)
-            for (c=span->colf;c<=span->coll;c++)
-                pWS->rows.row[r].cells.cell[c].isHidden=1;
-        pWS->rows.row[span->rowf].cells.cell[span->colf].colspan=(span->coll-span->colf+1);
-        pWS->rows.row[span->rowf].cells.cell[span->colf].rowspan=(span->rowl-span->rowf+1);
-        pWS->rows.row[span->rowf].cells.cell[span->colf].isHidden=0;
+                for (r=span->rowf;r<=span->rowl;r++)
+                    for (c=span->colf;c<=span->coll;c++)
+                        pWS->rows.row[r].cells.cell[c].isHidden=1;
+                pWS->rows.row[span->rowf].cells.cell[span->colf].colspan=(span->coll-span->colf+1);
+                pWS->rows.row[span->rowf].cells.cell[span->colf].rowspan=(span->rowl-span->rowf+1);
+                pWS->rows.row[span->rowf].cells.cell[span->colf].isHidden=0;
+            }
+        }
     }
     return LIBXLS_OK;
 }
@@ -784,14 +793,14 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1) {
             return (bof1->size < 2 * sizeof(WORD));
         case XLS_RECORD_CODEPAGE:
             return (bof1->size < sizeof(WORD));
-		case XLS_RECORD_WINDOW1:
+        case XLS_RECORD_WINDOW1:
             return (bof1->size < sizeof(WIND1));
         case XLS_RECORD_SST:
             return (bof1->size < offsetof(SST, strings));
         case XLS_RECORD_BOUNDSHEET:
             return (bof1->size < offsetof(BOUNDSHEET, name));
         case XLS_RECORD_XF:
-			if(pWB->is5ver) {
+            if(pWB->is5ver) {
                 return (bof1->size < sizeof(XF5));
             }
             return (bof1->size < sizeof(XF8));
@@ -800,7 +809,7 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1) {
             return (bof1->size < offsetof(FONT, name));
         case XLS_RECORD_FORMAT:
             return (bof1->size < offsetof(FORMAT, value));
-		case XLS_RECORD_1904:
+        case XLS_RECORD_1904:
             return (bof1->size < sizeof(BYTE));
         default:
             break;
@@ -813,7 +822,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
     BOF bof1 = { 0 };
     BOF bof2 = { 0 };
     BYTE* buf = NULL;
-	BYTE once = 0;
+    BYTE once = 0;
     xls_error_t retval = LIBXLS_OK;
 
     verbose ("xls_parseWorkBook");

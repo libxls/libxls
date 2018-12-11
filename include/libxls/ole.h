@@ -46,6 +46,11 @@
 #pragma pack(push, 1)
 #endif
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 typedef struct TIME_T
 {
     DWORD	LowDate;

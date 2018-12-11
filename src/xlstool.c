@@ -50,8 +50,13 @@
 #include <errno.h>
 #include <memory.h>
 #include <string.h>
+#if defined(_MSC_VER)
+#define strdup _strdup
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+#endif
 
-//#include "xls.h"
 #include "libxls/xlstypes.h"
 #include "libxls/xlsstruct.h"
 #include "libxls/xlstool.h"
