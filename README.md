@@ -62,7 +62,6 @@ Installation
 If you want a stable version, head back to [Sourceforge](https://sourceforge.net/projects/libxls/files/) and download 1.4.0. Otherwise see [INSTALL](INSTALL), or here's the tl;dr:
 
 ```
-./autogen.sh
 ./configure
 make
 make install
