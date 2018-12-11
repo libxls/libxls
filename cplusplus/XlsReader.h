@@ -130,9 +130,9 @@ namespace xls
 	private:
 		void				OpenSheet(uint32_t sheetNum);
 		void				FormatCell(xlsCell *cell, cellContent& content) const;
-		xlsString			char2string(const uint8_t *ptr) const;
+		xlsString			char2string(const char *ptr) const;
 #if XLS_WIDE_STRINGS == 1
-		bool				isAscii(const uint8_t *ptr) const;
+		bool				isAscii(const char *ptr) const;
 #endif
 
 	private:

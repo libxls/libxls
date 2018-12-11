@@ -22,7 +22,9 @@ The [C API](include/xls.h) is pretty simple, this will get you started:
 ```{C}
 xls_error_t error = LIBXLS_OK;
 xlsWorkBook *wb = xls_open_file("/path/to/finances.xls", "UTF-8", &error);
-if (wb) {
+if (wb == NULL) {
+    printf("Error reading file: %s\n", xls_getError(error));
+} else {
     for (int i=0; i<wb->sheets.count; i++) { // sheets
         xl_WorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
         error = xls_parseWorkSheet(work_sheet);

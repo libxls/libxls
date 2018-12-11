@@ -54,7 +54,7 @@ using namespace std;
 namespace xls
 {
 
-static const uint8_t* error = (const uint8_t *)"Error";
+static const char* error = "Error";
 
 #if XLS_WIDE_STRINGS == 1
 static const char *outConv = 
@@ -81,18 +81,19 @@ WorkBook::WorkBook(const string& fileName, int debug) :
 	activeWorkSheet(NULL),
 	summary(NULL)
 {
+    xls_error_t error = LIBXLS_OK;
 	xls(debug);
 
 #if XLS_WIDE_STRINGS == 1
 	assert(iconvCD != (iconv_t)(-1));
 #endif
-	workBook = xls_open(fileName.c_str(), charSet);
+	workBook = xls_open_file(fileName.c_str(), charSet, &error);
 	if(workBook) {
 		numSheets = workBook->sheets.count;
 		xls_parseWorkBook(workBook);
 		summary = xls_summaryInfo(workBook);
 	} else {
-		throw XlsException("failed to open the requested file!");
+		throw XlsException(xls_getError(error));
 	}
 }
 WorkBook::~WorkBook()
@@ -169,7 +170,7 @@ cellContent WorkBook::GetNextCell(void)
 		{
 			xlsCell	*cell = &rowP->cells.cell[tt];
 			
-			if(cell->id == 0x201) continue;
+			if(cell->id == XLS_RECORD_BLANK) continue;
 			lastColIndex = tt + 1;
 			FormatCell(cell, content);
 			return content;
@@ -205,7 +206,7 @@ cellContent WorkBook::GetCell(uint32_t workSheetIndex, uint16_t row, uint16_t co
 			if(cell->row < row) break;
 			if(cell->row > row) return content;
 			
-			if(cell->id == 0x201) continue;
+			if(cell->id == XLS_RECORD_BLANK) continue;
 			
 			if(cell->col == col) {
 				FormatCell(cell, content);
@@ -255,7 +256,7 @@ void WorkBook::FormatCell(xlsCell *cell, cellContent& content) const
 	content.colStr[2] = '\0';
 
 	switch(cell->id) {
-    case 0x0006:	//FORMULA
+    case XLS_RECORD_FORMULA:
 		// test for formula, if
         if(cell->l == 0) {
 			content.type = cellFloat;
@@ -273,13 +274,13 @@ void WorkBook::FormatCell(xlsCell *cell, cellContent& content) const
 			}
 		}
         break;
-    case 0x00FD:	//LABELSST
-    case 0x0204:	//LABEL
+    case XLS_RECORD_LABELSST:
+    case XLS_RECORD_LABEL:
 		content.type = cellString;
 		content.val.l = cell->l;	// possible numeric conversion done for you
 		break;
-    case 0x0203:	//NUMBER
-    case 0x027E:	//RK
+    case XLS_RECORD_NUMBER:
+    case XLS_RECORD_RK:
 		content.type = cellFloat;
 		content.val.d = cell->d;
         break;
@@ -318,65 +319,65 @@ void WorkBook::ShowCell(const cellContent& content) const
 
 xlsString WorkBook::GetSummaryAppName(void) const
 {
-	return char2string(summary->appName);
+	return char2string((char *)summary->appName);
 }
 
 xlsString WorkBook::GetSummaryAuthor(void) const
 {
-	return char2string(summary->author);
+	return char2string((char *)summary->author);
 }
 
 xlsString WorkBook::GetSummaryCategory(void) const
 {
-	return char2string(summary->category);
+	return char2string((char *)summary->category);
 }
 
 xlsString WorkBook::GetSummaryComment(void) const
 {
-	return char2string(summary->comment);
+	return char2string((char *)summary->comment);
 }
 
 xlsString WorkBook::GetSummaryCompany(void) const
 {
-	return char2string(summary->company);
+	return char2string((char *)summary->company);
 }
 
 xlsString WorkBook::GetSummaryKeywords(void) const
 {
-	return char2string(summary->keywords);
+	return char2string((char *)summary->keywords);
 }
 
 xlsString WorkBook::GetSummaryLastAuthor(void) const
 {
-	return char2string(summary->lastAuthor);
+	return char2string((char *)summary->lastAuthor);
 }
 
 xlsString WorkBook::GetSummaryManager(void) const
 {
-	return char2string(summary->manager);
+	return char2string((char *)summary->manager);
 }
 
 xlsString WorkBook::GetSummarySubject(void) const
 {
-	return char2string(summary->subject);
+	return char2string((char *)summary->subject);
 }
 
 xlsString WorkBook::GetSummaryTitle(void) const
 {
-	return char2string(summary->title);
+	return char2string((char *)summary->title);
 }
 
 
 #if XLS_WIDE_STRINGS == 0
 
-xlsString WorkBook::char2string(const uint8_t *ptr) const
+xlsString WorkBook::char2string(const char *ptr) const
 {
-	return string((const char *)ptr);
+	return string(ptr);
 }
 
 #else
 
-bool WorkBook::isAscii(const uint8_t *ptr) const
+bool WorkBook::isAscii(const char *ptr) const
 {
 	bool isAscii = false;	
 	uint8_t c;
@@ -389,10 +390,10 @@ bool WorkBook::isAscii(const uint8_t *ptr) const
 	return isAscii;
 }
 
-xlsString WorkBook::char2string(const uint8_t *ptr) const
+xlsString WorkBook::char2string(const char *ptr) const
 {
 	xlsString s;
-	size_t len = strlen((const char *)ptr);
+	size_t len = strlen(ptr);
 	size_t wlen = len * sizeof(wchar_t);
 
 	s.reserve(wlen);
