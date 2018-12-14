@@ -810,8 +810,8 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1) {
 
 xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 {
-    BOF bof1 = { 0 };
-    BOF bof2 = { 0 };
+    BOF bof1 = { .id = 0, .size = 0 };
+    BOF bof2 = { .id = 0, .size = 0 };
     BYTE* buf = NULL;
 	BYTE once = 0;
     xls_error_t retval = LIBXLS_OK;
