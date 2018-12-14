@@ -93,9 +93,11 @@ host_triplet = @host@
 bin_PROGRAMS = xls2csv$(EXEEXT)
 noinst_PROGRAMS = test_libxls$(EXEEXT) test2_libxls$(EXEEXT) \
 	$(am__EXEEXT_1)
+@FUZZER_ENABLED_TRUE@am__append_1 = -fsanitize=fuzzer-no-link
+@FUZZER_ENABLED_TRUE@am__append_2 = -fsanitize=fuzzer
 check_PROGRAMS = test_libxls$(EXEEXT) test2_libxls$(EXEEXT)
 TESTS = test_libxls$(EXEEXT)
-@HAVE_FUZZER_TRUE@am__append_1 = fuzz_xls
+@FUZZER_ENABLED_TRUE@am__append_3 = fuzz_xls
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -154,12 +156,16 @@ libxlsreader_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libxlsreader_la_CFLAGS) $(CFLAGS) $(libxlsreader_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
-@HAVE_FUZZER_TRUE@am__EXEEXT_1 = fuzz_xls$(EXEEXT)
+@FUZZER_ENABLED_TRUE@am__EXEEXT_1 = fuzz_xls$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am__fuzz_xls_SOURCES_DIST = fuzz/fuzz_xls.c
-@HAVE_FUZZER_TRUE@am_fuzz_xls_OBJECTS = fuzz/fuzz_xls.$(OBJEXT)
+@FUZZER_ENABLED_TRUE@am_fuzz_xls_OBJECTS =  \
+@FUZZER_ENABLED_TRUE@	fuzz/fuzz_xls-fuzz_xls.$(OBJEXT)
 fuzz_xls_OBJECTS = $(am_fuzz_xls_OBJECTS)
-@HAVE_FUZZER_TRUE@fuzz_xls_DEPENDENCIES = libxlsreader.la
+@FUZZER_ENABLED_TRUE@fuzz_xls_DEPENDENCIES = libxlsreader.la
+fuzz_xls_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(fuzz_xls_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_test2_libxls_OBJECTS = test/test2.$(OBJEXT)
 test2_libxls_OBJECTS = $(am_test2_libxls_OBJECTS)
 test2_libxls_DEPENDENCIES = libxlsreader.la
@@ -586,14 +592,17 @@ libxlsreader_la_SOURCES = \
 	src/ole.c \
 	src/xls.c
 
-libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
-libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Werror -pedantic-errors
+libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) \
+	@EXTRA_LDFLAGS@ $(am__append_2)
+libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes \
+	-Wno-unused-parameter -Werror -pedantic-errors $(am__append_1)
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
 test2_libxls_LDADD = libxlsreader.la
-@HAVE_FUZZER_TRUE@fuzz_xls_SOURCES = fuzz/fuzz_xls.c
-@HAVE_FUZZER_TRUE@fuzz_xls_LDADD = libxlsreader.la -lstdc++ -lFuzzer
+@FUZZER_ENABLED_TRUE@fuzz_xls_SOURCES = fuzz/fuzz_xls.c
+@FUZZER_ENABLED_TRUE@fuzz_xls_CFLAGS = -fsanitize=fuzzer
+@FUZZER_ENABLED_TRUE@fuzz_xls_LDADD = libxlsreader.la -lstdc++
 
 # Extra files to distribute
 EXTRA_DIST = doc test/files/test2.xls
@@ -775,12 +784,12 @@ fuzz/$(am__dirstamp):
 fuzz/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) fuzz/$(DEPDIR)
 	@: > fuzz/$(DEPDIR)/$(am__dirstamp)
-fuzz/fuzz_xls.$(OBJEXT): fuzz/$(am__dirstamp) \
+fuzz/fuzz_xls-fuzz_xls.$(OBJEXT): fuzz/$(am__dirstamp) \
 	fuzz/$(DEPDIR)/$(am__dirstamp)
 
 fuzz_xls$(EXEEXT): $(fuzz_xls_OBJECTS) $(fuzz_xls_DEPENDENCIES) $(EXTRA_fuzz_xls_DEPENDENCIES) 
 	@rm -f fuzz_xls$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(fuzz_xls_OBJECTS) $(fuzz_xls_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(fuzz_xls_LINK) $(fuzz_xls_OBJECTS) $(fuzz_xls_LDADD) $(LIBS)
 test/$(am__dirstamp):
 	@$(MKDIR_P) test
 	@: > test/$(am__dirstamp)
@@ -818,7 +827,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@fuzz/$(DEPDIR)/fuzz_xls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/libxlsreader_la-ole.Plo@am__quote@
@@ -879,6 +888,20 @@ src/libxlsreader_la-xls.lo: src/xls.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/xls.c' object='src/libxlsreader_la-xls.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxlsreader_la_CFLAGS) $(CFLAGS) -c -o src/libxlsreader_la-xls.lo `test -f 'src/xls.c' || echo '$(srcdir)/'`src/xls.c
+
+fuzz/fuzz_xls-fuzz_xls.o: fuzz/fuzz_xls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fuzz_xls_CFLAGS) $(CFLAGS) -MT fuzz/fuzz_xls-fuzz_xls.o -MD -MP -MF fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Tpo -c -o fuzz/fuzz_xls-fuzz_xls.o `test -f 'fuzz/fuzz_xls.c' || echo '$(srcdir)/'`fuzz/fuzz_xls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Tpo fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='fuzz/fuzz_xls.c' object='fuzz/fuzz_xls-fuzz_xls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fuzz_xls_CFLAGS) $(CFLAGS) -c -o fuzz/fuzz_xls-fuzz_xls.o `test -f 'fuzz/fuzz_xls.c' || echo '$(srcdir)/'`fuzz/fuzz_xls.c
+
+fuzz/fuzz_xls-fuzz_xls.obj: fuzz/fuzz_xls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fuzz_xls_CFLAGS) $(CFLAGS) -MT fuzz/fuzz_xls-fuzz_xls.obj -MD -MP -MF fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Tpo -c -o fuzz/fuzz_xls-fuzz_xls.obj `if test -f 'fuzz/fuzz_xls.c'; then $(CYGPATH_W) 'fuzz/fuzz_xls.c'; else $(CYGPATH_W) '$(srcdir)/fuzz/fuzz_xls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Tpo fuzz/$(DEPDIR)/fuzz_xls-fuzz_xls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='fuzz/fuzz_xls.c' object='fuzz/fuzz_xls-fuzz_xls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fuzz_xls_CFLAGS) $(CFLAGS) -c -o fuzz/fuzz_xls-fuzz_xls.obj `if test -f 'fuzz/fuzz_xls.c'; then $(CYGPATH_W) 'fuzz/fuzz_xls.c'; else $(CYGPATH_W) '$(srcdir)/fuzz/fuzz_xls.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

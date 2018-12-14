@@ -35,6 +35,11 @@ libxlsreader_la_SOURCES = \
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
 libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Werror -pedantic-errors
 
+if FUZZER_ENABLED
+libxlsreader_la_CFLAGS += -fsanitize=fuzzer-no-link
+libxlsreader_la_LDFLAGS += -fsanitize=fuzzer
+endif
+
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 
@@ -44,11 +49,12 @@ test2_libxls_LDADD = libxlsreader.la
 check_PROGRAMS = test_libxls test2_libxls
 TESTS = test_libxls
 
-if HAVE_FUZZER
+if FUZZER_ENABLED
 noinst_PROGRAMS += fuzz_xls
 
 fuzz_xls_SOURCES = fuzz/fuzz_xls.c
-fuzz_xls_LDADD = libxlsreader.la -lstdc++ -lFuzzer
+fuzz_xls_CFLAGS = -fsanitize=fuzzer
+fuzz_xls_LDADD = libxlsreader.la -lstdc++
 endif
 
 # Extra files to distribute
