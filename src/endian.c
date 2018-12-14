@@ -176,7 +176,6 @@ void xlsConvertColinfo(COLINFO *c)
     W_ENDIAN(c->width);
     W_ENDIAN(c->xf);
     W_ENDIAN(c->flags);
-    W_ENDIAN(c->notused);
 }
 
 void xlsConvertRow(ROW *r)
