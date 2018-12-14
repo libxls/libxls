@@ -587,7 +587,7 @@ libxlsreader_la_SOURCES = \
 	src/xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
-libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Werror -pedantic-errors
+libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Werror -pedantic-errors
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
