@@ -173,11 +173,8 @@ char *utf8_decode(const char *str, DWORD len, char *encoding)
 	return ret;
 }
 
-// Convert unicode string to to_enc encoding
-char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
-{
 #ifdef HAVE_ICONV
-	// Do iconv conversion
+static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, const char* to_enc) {
 #if defined(_AIX) || defined(__sun)
     const char *from_enc = "UTF-16le";
 #else
@@ -259,16 +256,21 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
         }
     }
     return outbuf;
+}
+
 #else
+
+static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) {
 	// Do wcstombs conversion
-	char *converted = NULL;
-	int count, count2, i;
-	wchar_t *w;
+    char *converted = NULL;
+    int count, count2;
+    size_t i;
+    wchar_t *w;
     short *x;
-	if (setlocale(LC_CTYPE, "") == NULL) {
-		printf("setlocale failed: %d\n", errno);
-		return "*null*";
-	}
+    if (setlocale(LC_CTYPE, "") == NULL) {
+        printf("setlocale failed: %d\n", errno);
+        return "*null*";
+    }
 
     x=(short *)s;
 
@@ -282,23 +284,32 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
 
     count = wcstombs(NULL, w, 0);
 
-	if (count <= 0) {
-		if (newlen) *newlen = 0;
-		free(w);
-		return NULL;
-	}
+    if (count <= 0) {
+        if (newlen) *newlen = 0;
+        free(w);
+        return NULL;
+    }
 
-	converted = calloc(count+1, sizeof(char));
-	count2 = wcstombs(converted, w, count);
+    converted = calloc(count+1, sizeof(char));
+    count2 = wcstombs(converted, w, count);
     free(w);
-	if (count2 <= 0) {
-		printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
-		if (newlen) *newlen = 0;
-		return converted;
-	} else {
-		if (newlen) *newlen = count2;
-		return converted;
-	}
+    if (count2 <= 0) {
+        printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
+        if (newlen) *newlen = 0;
+        return converted;
+    }
+    if (newlen) *newlen = count2;
+    return converted;
+}
+#endif
+
+// Convert unicode string to to_enc encoding
+char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
+{
+#ifdef HAVE_ICONV
+    return unicode_decode_iconv(s, len, newlen, to_enc);
+#else
+    return unicode_decode_wcstombs(s, len, newlen);
 #endif
 }
 
