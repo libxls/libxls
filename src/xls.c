@@ -1370,7 +1370,7 @@ xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
 {
     xlsWorkSheet * pWS = NULL;
     verbose ("xls_getWorkSheet");
-    if (num >= 0 && num < pWB->sheets.count) {
+    if (num >= 0 && num < (int)pWB->sheets.count) {
         pWS = calloc(1, sizeof(xlsWorkSheet));
         pWS->filepos=pWB->sheets.sheet[num].filepos;
         pWS->workbook=pWB;

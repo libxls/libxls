@@ -414,8 +414,8 @@ TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
-	INSTALL TODO compile config.guess config.sub depcomp \
-	install-sh ltmain.sh missing mkinstalldirs test-driver
+	INSTALL compile config.guess config.sub depcomp install-sh \
+	ltmain.sh missing mkinstalldirs test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -587,7 +587,7 @@ libxlsreader_la_SOURCES = \
 	src/xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
-libxlsreader_la_CFLAGS = -Wall -Werror -pedantic-errors
+libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Werror -pedantic-errors
 test_libxls_SOURCES = test/test.c
 test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
