@@ -602,7 +602,7 @@ test2_libxls_SOURCES = test/test2.c
 test2_libxls_LDADD = libxlsreader.la
 @FUZZER_ENABLED_TRUE@fuzz_xls_SOURCES = fuzz/fuzz_xls.c
 @FUZZER_ENABLED_TRUE@fuzz_xls_CFLAGS = -fsanitize=fuzzer
-@FUZZER_ENABLED_TRUE@fuzz_xls_LDADD = libxlsreader.la -lstdc++
+@FUZZER_ENABLED_TRUE@fuzz_xls_LDADD = libxlsreader.la
 
 # Extra files to distribute
 EXTRA_DIST = doc test/files/test2.xls

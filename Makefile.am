@@ -54,7 +54,7 @@ noinst_PROGRAMS += fuzz_xls
 
 fuzz_xls_SOURCES = fuzz/fuzz_xls.c
 fuzz_xls_CFLAGS = -fsanitize=fuzzer
-fuzz_xls_LDADD = libxlsreader.la -lstdc++
+fuzz_xls_LDADD = libxlsreader.la
 endif
 
 # Extra files to distribute
