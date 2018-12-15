@@ -586,10 +586,10 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     switch (cell->id)
     {
     case XLS_RECORD_LABELSST:
-        if(pWB->is5ver) {
-            offset = xlsShortVal(*(WORD *)label);
-        } else {
-            offset = xlsIntVal(*(DWORD *)label);
+        offset = label[0] + (label[1] << 8);
+        if(!pWB->is5ver) {
+            offset += (label[2] << 16);
+            offset += (label[3] << 24);
         }
         if(offset < pWB->sst.count && pWB->sst.string[offset].str) {
             ret = strdup(pWB->sst.string[offset].str);
@@ -600,7 +600,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
         ret = strdup("");
         break;
     case XLS_RECORD_LABEL:
-        len = xlsShortVal(*(WORD *)label);
+        len = label[0] + (label[1] << 8);
         label += 2;
 		if(pWB->is5ver) {
             ret = malloc(len+1);
