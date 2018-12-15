@@ -1427,7 +1427,7 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --enable-fuzz-testing   "Enable fuzz testing (Requires clang 7 or later)"
+  --enable-fuzz-testing   "Enable fuzz testing (requires Clang 6 or later)"
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -17362,7 +17362,7 @@ if test "${enable_fuzz_testing+set}" = set; then :
   enableval=$enable_fuzz_testing;
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -fsanitize=fuzzer" >&5
 $as_echo_n "checking whether $CC accepts -fsanitize=fuzzer... " >&6; }
-   saved=$CFLAGS
+   tmp_saved_flags=$CFLAGS
    CFLAGS="$CFLAGS -fsanitize=fuzzer"
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -17390,7 +17390,7 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-   CFLAGS=$saved
+   CFLAGS=$tmp_saved_flags
 
 else
   fuzzer=no
