@@ -44,7 +44,18 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_TYPE_SIZE_T
 
-AC_ARG_ENABLE([fuzz-testing], AS_HELP_STRING([--enable-fuzz-testing], ["Enable fuzz testing (Requires clang 7 or later)"]), [fuzzer=yes], [fuzzer=no])
+AC_ARG_ENABLE([fuzz-testing], AS_HELP_STRING([--enable-fuzz-testing], ["Enable fuzz testing (requires Clang 6 or later)"]), [
+   AC_MSG_CHECKING([whether $CC accepts -fsanitize=fuzzer])
+   tmp_saved_flags=$[]_AC_LANG_PREFIX[]FLAGS
+   _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS -fsanitize=fuzzer"
+   AC_LINK_IFELSE([AC_LANG_PROGRAM()],
+       [
+	    AC_MSG_RESULT(yes)
+        fuzzer=yes],
+	    AC_MSG_RESULT(no)
+       AC_MSG_FAILURE([-fsanitize=fuzzer not supported (Required with --enable-fuzz-testing)]))
+   _AC_LANG_PREFIX[]FLAGS=$tmp_saved_flags
+], [fuzzer=no])
 AM_CONDITIONAL([FUZZER_ENABLED], test "x$fuzzer" = "xyes")
 
 AS_CASE([$host],
