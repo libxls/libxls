@@ -266,19 +266,16 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
     int count, count2;
     size_t i;
     wchar_t *w;
-    short *x;
     if (setlocale(LC_CTYPE, "") == NULL) {
         printf("setlocale failed: %d\n", errno);
-        return "*null*";
+        return NULL;
     }
-
-    x=(short *)s;
 
     w = malloc((len/2+1)*sizeof(wchar_t));
 
     for(i=0; i<len/2; i++)
     {
-        w[i]=xlsShortVal(x[i]);
+        w[i] = (BYTE)s[2*i] + ((BYTE)s[2*i+1] << 8);
     }
     w[len/2] = '\0';
 
