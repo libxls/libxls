@@ -16,9 +16,6 @@ BUILD AND INSTALL
 
     ./bootstrap 
     
-  Alternatively:
-
-    autoreconf -i -f
 
 MAINTENANCE
 ===========
@@ -31,10 +28,6 @@ MAINTENANCE
   versions, do this:
 
     ./bootstrap
-
-  Or:
-
-    autoreconf -v --install --force
 
   Then:
 
