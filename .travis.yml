@@ -1,11 +1,28 @@
 language: c
 compiler:
-    - gcc
     - clang
+    - gcc
+    - gcc-7
+    - gcc-8
 
 os:
     - linux
     - osx
+
+addons:
+  apt:
+    sources:
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    packages:
+    - gcc-7
+    - gcc-8
+
+matrix:
+  exclude:
+  - compiler: gcc-7
+    os: osx
+  - compiler: gcc-8
+    os: osx
 
 before_script:
     - ./bootstrap
