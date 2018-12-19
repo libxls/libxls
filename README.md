@@ -61,12 +61,28 @@ If you want to hack on the source, you should first familiarize yourself with th
 Installation
 ---
 
-If you want a stable version, head back to [Sourceforge](https://sourceforge.net/projects/libxls/files/) and download 1.4.0. Otherwise see [INSTALL](INSTALL), or here's the tl;dr:
+If you want a stable version, check out the
+[Releases](/evanmiller/libxls/releases) section, which has copies of everything
+you'll find in [Sourceforge](https://sourceforge.net/projects/libxls/files/),
+and download version 1.4.0.
+
+For full instructions see [INSTALL](INSTALL), or here's the tl;dr:
+
+To install a stable release:
 
 ```
 ./configure
 make
 make install
 ```
+
+If you've cloned the git repository, you'll need to run this first:
+
+```
+./bootstrap
+```
+
+That will generate all the supporting files (assuming autotools is already
+present on the system).
 
 Once the dust settles on this repo, I'll mark a 1.5 release. But don't tell anyone.

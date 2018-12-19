@@ -2,12 +2,23 @@ BUILD AND INSTALL
 =================
 
 * To build and install, for most environments:
-./configure
-make
-make install
+
+    ./configure
+    make
+    make install
 
 * To build a native Win32 library under cygwin, use this configure:
-CC='gcc -mno-cygwin' ./configure --host=mingw32 --build=mingw32 --with-iconv=no
+
+    CC='gcc -mno-cygwin' ./configure --host=mingw32 --build=mingw32 --with-iconv=no
+
+* If you've cloned the git repository, instead of downloading a release,
+  do this first:
+
+    ./bootstrap 
+    
+  Alternatively:
+
+    autoreconf -i -f
 
 MAINTENANCE
 ===========
@@ -16,12 +27,18 @@ MAINTENANCE
 - create a directory for each arch: arch-<arch-name>
 - call configure and make from within each directory
 
-* Do this when you update configure.ac, or when there is an upgrade of autoconf/libtool versions:
-./bootstrap
-or:
-autoreconf -v --install --force
-then:
-./configure
+* When you update configure.ac, or when there is an upgrade of autoconf/libtool
+  versions, do this:
+
+    ./bootstrap
+
+  Or:
+
+    autoreconf -v --install --force
+
+  Then:
+
+    ./configure
 
 * To build a binary distribution, use the following commands after 
   substituting the current version number (e.g., 0.30) for <version> and
