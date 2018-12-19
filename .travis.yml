@@ -2,11 +2,15 @@ language: c
 compiler:
     - gcc
     - clang
+
 os:
     - linux
     - osx
+
+before_script:
+    - ./bootstrap
+
 script:
-    - touch aclocal.m4 configure Makefile.am Makefile.in
     - ./configure
     - make
     - make check
