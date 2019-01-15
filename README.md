@@ -4,10 +4,17 @@
 libxls - Read XLS files from C
 ==
 
-*Shhhhh don't tell. This repo will soon house the official libxls.*
+This is libxls, a C library for reading Excel files in the nasty old binary OLE
+format. **We are in the process of preparing a 1.5 release and moving the project
+over from [SourceForge](https://sourceforge.net/projects/libxls/).** If you need
+a stable release, head back to SourceForge, or see the
+[releases](https://github.com/libxls/libxls/releases) section, which currently
+has copies of everything from SourceForge.
 
-This is a copy/fork/successor of libxls, a C library for reading Excel files in
-the nasty old binary OLE format. Changes from this fork compared to the [original](https://sourceforge.net/projects/libxls/):
+Please note that the current stable releases have several public security
+vulnerabilities. We'll have them fixed in 1.5. Hang tight.
+
+Changes since 1.4:
 
 * Hosted on GitHub (hooray!)
 * New in-memory parsing API
@@ -54,7 +61,7 @@ The library also includes a CLI tool for converting Excel files to CSV:
     ./xls2csv /path/to/file.xls
 
 Libxls should run fine on both little-endian and big-endian systems, but if not
-please open an issue.
+please open an [issue](https://github.com/libxls/libxls/issues/new).
 
 If you want to hack on the source, you should first familiarize yourself with the [Microsoft Excel File Format](http://sc.openoffice.org/excelfileformat.pdf) as well as [Coumpound Document file format](http://sc.openoffice.org/compdocfileformat.pdf) (documentation provided by the nice folks at OpenOffice.org).
 
@@ -62,7 +69,7 @@ Installation
 ---
 
 If you want a stable version, check out the
-[Releases](/evanmiller/libxls/releases) section, which has copies of everything
+[Releases](https://github.com/libxls/libxls/releases) section, which has copies of everything
 you'll find in [Sourceforge](https://sourceforge.net/projects/libxls/files/),
 and download version 1.4.0.
 
@@ -84,5 +91,3 @@ If you've cloned the git repository, you'll need to run this first:
 
 That will generate all the supporting files (assuming autotools is already
 present on the system).
-
-Once the dust settles on this repo, I'll mark a 1.5 release. But don't tell anyone.
