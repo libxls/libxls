@@ -58,6 +58,9 @@ AC_ARG_ENABLE([fuzz-testing], AS_HELP_STRING([--enable-fuzz-testing], ["Enable f
 ], [fuzzer=no])
 AM_CONDITIONAL([FUZZER_ENABLED], test "x$fuzzer" = "xyes")
 
+AC_ARG_VAR([LIB_FUZZING_ENGINE], [Location of prebuilt fuzzing engine library])
+AC_SUBST([LIB_FUZZING_ENGINE])
+
 AS_CASE([$host],
         [*mingw*|*cygwin*], [EXTRA_LDFLAGS="-no-undefined"], [EXTRA_LDFLAGS=""])
 AC_SUBST([EXTRA_LDFLAGS])

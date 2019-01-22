@@ -49,13 +49,15 @@ test2_libxls_LDADD = libxlsreader.la
 check_PROGRAMS = test_libxls test2_libxls
 TESTS = test_libxls
 
-if FUZZER_ENABLED
-noinst_PROGRAMS += fuzz_xls
+EXTRA_PROGRAMS = fuzz_xls
+
+# Force C++ linking for fuzz target
+nodist_EXTRA_fuzz_xls_SOURCES = dummy.cxx
 
 fuzz_xls_SOURCES = fuzz/fuzz_xls.c
-fuzz_xls_CFLAGS = -fsanitize=fuzzer -fsanitize=address
-fuzz_xls_LDADD = libxlsreader.la
-endif
+fuzz_xls_CFLAGS = -Wall -Werror -pedantic-errors -std=c99
+fuzz_xls_LDADD = libxlsreader.la @LIB_FUZZING_ENGINE@
+fuzz_xls_LDFLAGS = -static
 
 # Extra files to distribute
 EXTRA_DIST = doc test/files/test2.xls
