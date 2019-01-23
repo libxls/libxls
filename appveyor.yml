@@ -14,6 +14,8 @@ branches:
     - dev
     - master
 
+clone_folder: c:\projects\libxls
+
 skip_tags: true
 
 before_build:
@@ -21,11 +23,11 @@ before_build:
       if ($env:TOOLCHAIN -eq "msys2")
       {
         $env:MSYSTEM="MINGW64"
-        C:\msys64\usr\bin\bash -l -c "./bootstrap"
+        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./bootstrap"
       }
       else
       {
-        C:\cygwin64\bin\sh -lc "./bootstrap"
+        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./bootstrap"
       }
 
 build_script:
