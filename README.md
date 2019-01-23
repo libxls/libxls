@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/libxls/libxls.svg?branch=master)](https://travis-ci.org/libxls/libxls)
-[![Build status](https://ci.appveyor.com/api/projects/status/4ais4ilmbhuu605c?svg=true)](https://ci.appveyor.com/project/evanmiller/libxls)
+[![Build Status](https://ci.appveyor.com/api/projects/status/3nx26kfmy2y0efsi?svg=true)](https://ci.appveyor.com/project/evanmiller/libxls-252ki)
 
 libxls - Read XLS files from C
 ==
