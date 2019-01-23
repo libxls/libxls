@@ -585,8 +585,8 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     case XLS_RECORD_LABELSST:
         offset = label[0] + (label[1] << 8);
         if(!pWB->is5ver) {
-            offset += (label[2] << 16);
-            offset += (label[3] << 24);
+            offset += ((DWORD)label[2] << 16);
+            offset += ((DWORD)label[3] << 24);
         }
         if(offset < pWB->sst.count && pWB->sst.string[offset].str) {
             ret = strdup(pWB->sst.string[offset].str);
