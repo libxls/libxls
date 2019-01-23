@@ -204,7 +204,7 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
                 if (ofs + sizeof(DWORD) > size) {
                     return LIBXLS_ERROR_PARSE;
                 }
-                sz = buf[ofs+0] + (buf[ofs+1] << 8) + (buf[ofs+2] << 16) + (buf[ofs+3] << 24);
+                sz = buf[ofs+0] + (buf[ofs+1] << 8) + (buf[ofs+2] << 16) + ((DWORD)buf[ofs+3] << 24);
                 ofs+=4;
 
 				if (xls_debug) {
