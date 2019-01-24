@@ -1013,6 +1013,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 				} else {
 					char *s = get_string((char *)&buf[2], bof1.size - 2, 1, pWB->is5ver, pWB->charset);
 					printf("  name=%s\n", s);
+                    free(s);
 				}
 			}
 			break;
