@@ -752,7 +752,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
         wptr += ole2->lsector;
         bytes_left -= ole2->lsector;
         total_bytes_read += ole2->lsector;
-        sector = ole2->SecID[sector];
+        sector = xlsIntVal(ole2->SecID[sector]);
     }
 #ifdef OLE_DEBUG
     if(xls_debug) {
