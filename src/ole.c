@@ -58,12 +58,21 @@ static size_t sector_pos(OLE2* ole2, DWORD sid);
 static ssize_t sector_read(OLE2* ole2, void *buffer, size_t buffer_len, DWORD sid);
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
 static void *ole_malloc(size_t len);
+static void *ole_realloc(void *ptr, size_t len);
 
 static void *ole_malloc(size_t len) {
     if (len > (1<<24) || len == 0) {
         return NULL;
     }
     return malloc(len);
+}
+
+static void *ole_realloc(void *ptr, size_t len) {
+    if (len > (1<<24) || len == 0) {
+        free(ptr);
+        return NULL;
+    }
+    return realloc(ptr, len);
 }
 
 int ole2_validate_sector(DWORD sector, OLE2 *ole) {
@@ -472,7 +481,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                 size_t bytes_left;
 				
 				blocks = (pss->size + (ole->lsector - 1)) / ole->lsector;	// count partial
-				if ((ole->SSAT = ole_malloc(blocks*ole->lsector)) == NULL) {
+				if ((ole->SSAT = ole_realloc(ole->SSAT, blocks*ole->lsector)) == NULL) {
                     total_bytes_read = -1;
                     goto cleanup;
                 }
