@@ -75,6 +75,21 @@ static void *ole_realloc(void *ptr, size_t len) {
     return realloc(ptr, len);
 }
 
+int ole2_validate_chain(OLE2 *ole) {
+    DWORD count = 0;
+    DWORD sector = ole->dirstart;
+    while (sector != ENDOFCHAIN) {
+        if (sector >= ole->SecIDCount)
+            return 0;
+        
+        if (++count >= ole->SecIDCount)
+            return 0;
+
+        sector = xlsIntVal(ole->SecID[sector]);
+    }
+    return 1;
+}
+
 int ole2_validate_sector(DWORD sector, OLE2 *ole) {
     if (sector >= ole->SecIDCount) {
         if (xls_debug) fprintf(stderr, "Error: fatpos %d out-of-bounds for SecID[%d]\n",
@@ -530,6 +545,11 @@ OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
     ole->buffer_len = len;
 
     if (ole2_read_header(ole) == -1) {
+        ole2_close(ole);
+        return NULL;
+    }
+
+    if (!ole2_validate_chain(ole)) {
         ole2_close(ole);
         return NULL;
     }
