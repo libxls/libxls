@@ -285,7 +285,9 @@ xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
 			if (xls_debug) {
 	            printf("String %4u: %s<end>\n", pWB->sst.lastid-1, pWB->sst.string[pWB->sst.lastid-1].str);
 			}
-        }
+        } else {
+            free(ret);
+	}
 
 		// Jump list of rich text formatting runs
         if (ofs < size && rt > 0) {
