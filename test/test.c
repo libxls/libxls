@@ -38,7 +38,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "xls.h"
+#include "../include/xls.h"
 
 int main(int argc, char *argv[])
 {
@@ -51,10 +51,13 @@ int main(int argc, char *argv[])
     xls_error_t code = LIBXLS_OK;
     struct st_row_data* row;
     WORD t,tt;
-    pWB=xls_open_file("test/files/test2.xls", "UTF-8", &code);
+    char *srcdir = getenv("srcdir");
+    char path[2048];
+    snprintf(path, sizeof(path), "%s/test/files/test2.xls", srcdir ? srcdir : ".");
+    pWB=xls_open_file(path, "UTF-8", &code);
 
     if (pWB == NULL) {
-        fprintf(stderr, "Unable to open file: %s\n", xls_getError(code));
+        fprintf(stderr, "Unable to open %s: %s\n", path, xls_getError(code));
         return 1;
     }
 

@@ -18,6 +18,8 @@ nobase_include_HEADERS = \
 bin_PROGRAMS = xls2csv
 noinst_PROGRAMS = test_libxls test2_libxls
 
+dist_man1_MANS = man/xls2csv.man
+
 lib_LTLIBRARIES = libxlsreader.la
 
 xls2csv_SOURCES = \
@@ -49,6 +51,11 @@ test2_libxls_LDADD = libxlsreader.la
 check_PROGRAMS = test_libxls test2_libxls
 TESTS = test_libxls
 
+EXTRA_DIST = test/files/test2.xls
+
+distclean-local:
+	-rm -f $(builddir)/test.htm
+
 EXTRA_PROGRAMS = fuzz_xls
 
 # Force C++ linking for fuzz target
@@ -58,10 +65,3 @@ fuzz_xls_SOURCES = fuzz/fuzz_xls.c
 fuzz_xls_CFLAGS = -Wall -Werror -pedantic-errors -std=c99
 fuzz_xls_LDADD = libxlsreader.la @LIB_FUZZING_ENGINE@
 fuzz_xls_LDFLAGS = -static
-
-# Extra files to distribute
-EXTRA_DIST = doc test/files/test2.xls
-
-dist-hook:
-	rm -rf `find $(distdir)/doc -name CVS`
-

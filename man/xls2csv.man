@@ -1,0 +1,41 @@
+.TH XLS2CSV 1 "31 January 2019"
+.SH NAME
+xls2csv \- convert binary Excel (.xls) files to CSV
+.SH SYNOPSIS
+.B xls2csv
+.IR input-file
+[\fB-l\fR]
+[\fB-v\fR]
+[\fB-e\fR \fIencoding\fR]
+[\fB-t\fR \fIsheet\fR]
+[\fB-q\fR \fIquote char\fR]
+[\fB-f\fR \fIfield separator\fR]
+.P
+.SH DESCRIPTION
+.B xls2csv
+converts binary Excel files (.xls) to comma-separated values (CSV), sending the plain-text output to standard out.
+.PP
+Unless otherwise specified, all sheets in the workbook are processed, and the output values are double-quoted, separated by semicolons, and encoded as UTF-8. This behavior may be customized with the options below.
+.SH OPTIONS
+.TP
+.BR \-l
+List sheets contained in the file but do not output their contents.
+.TP
+\fB\-t\fR \fIsheet\fR
+Only process the named sheet.
+.TP
+\fB-e\fR \fIencoding\fR
+The iconv output encoding (default "UTF-8")
+.TP
+\fB-q\fR \fIquote char\fR
+The character used to quote strings (default '"')
+.TP
+\fB-f\fR \fIfield separator\fR
+The character used to separate strings (default ';')
+.TP
+\fB-v\fR
+Verbose mode
+.SH BUGS
+The conversion tool has not been tested on big-endian machines.
+.SH AUTHOR
+Copyright (C) 2004-2019 the libxls authors

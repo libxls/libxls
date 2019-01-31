@@ -5,21 +5,24 @@ libxls - Read XLS files from C
 ==
 
 This is libxls, a C library for reading Excel files in the nasty old binary OLE
-format. **We are in the process of preparing a 1.5 release and moving the project
-over from [SourceForge](https://sourceforge.net/projects/libxls/).** If you need
-a stable release, head back to SourceForge, or see the
-[releases](https://github.com/libxls/libxls/releases) section, which currently
-has copies of everything from SourceForge.
+format, plus a command-line tool for converting XLS to CSV (named, appropriately
+enough, `xls2csv`).
 
-Please note that the current stable releases have several public security
-vulnerabilities. We'll have them fixed in 1.5. Hang tight.
+After several years of neglect, libxls is under new management as of the 1.5.x
+series. Head over to [releases](https://github.com/libxls/libxls/releases) to
+get the latest stable version of libxls 1.5, which fixes *many* security
+vulnerabilities found in libxls 1.4 and earlier.
 
-Changes since 1.4:
+Libxls 1.5 also includes new APIs for parsing files stored in memory buffers,
+and returns errors instead of exiting upon encountering malformed input. If you
+find a bug, please file it on the [GitHub issue tracker](https://github.com/libxls/libxls/issues).
+
+Changes to libxls since 1.4:
 
 * Hosted on GitHub (hooray!)
-* New in-memory parsing API
+* New in-memory parsing API (see `xls_open_buffer`)
 * Internals rewritten to return errors instead of exiting
-* Heavily fuzz-tested with clang's libFuzzer, fixing many memory leaks and *cough* CVEs
+* Heavily fuzz-tested with clang's libFuzzer, fixing many memory leaks and CVEs
 * Improved compatibility with C++
 * Continuous integration tests on Mac, Linux, and Windows
 * Lots of other small fixes, see the commit history
@@ -31,34 +34,43 @@ xls_error_t error = LIBXLS_OK;
 xlsWorkBook *wb = xls_open_file("/path/to/finances.xls", "UTF-8", &error);
 if (wb == NULL) {
     printf("Error reading file: %s\n", xls_getError(error));
-} else {
-    for (int i=0; i<wb->sheets.count; i++) { // sheets
-        xl_WorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
-        error = xls_parseWorkSheet(work_sheet);
-        for (int j=0; j<=work_sheet->rows.lastrow; j++) { // rows
-            xlsRow *row = xls_row(work_sheet, j);
-            for (int k=0; k<=work_sheet->rows.lastcol; k++) { // columns
-                xlsCell *cell = &row->cells.cell[k];
-                // do something with cell
-                if (cell->id == XLS_RECORD_FORMULA) { // formula
-                } else if (cell->l == 0) { // its a number
-                    ... use cell->d
+    exit(1);
+}
+for (int i=0; i<wb->sheets.count; i++) { // sheets
+    xl_WorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
+    error = xls_parseWorkSheet(work_sheet);
+    for (int j=0; j<=work_sheet->rows.lastrow; j++) { // rows
+        xlsRow *row = xls_row(work_sheet, j);
+        for (int k=0; k<=work_sheet->rows.lastcol; k++) { // columns
+            xlsCell *cell = &row->cells.cell[k];
+            // do something with cell
+            if (cell->id == XLS_RECORD_BLANK) {
+                // do something with a blank cell
+            } else if (cell->id == XLS_RECORD_NUMBER) {
+               // use cell->d, a double-precision number
+            } else if (cell->id == XLS_RECORD_FORMULA) {
+                if (strcmp(cell->str, "bool") == 0) {
+                    // its boolean, and test cell->d > 0.0 for true
+                } else if (strcmp(cell->str, "error") == 0) {
+                    // formula is in error
                 } else {
-                    if(cell->str == "bool") // its boolean, and test cell->d > 0.0 for true
-                    if(cell->str == "error") // formula is in error
-                    else ... cell->str is valid as the result of a string formula.
+                    // cell->str is valid as the result of a string formula.
                 }
+            } else if (cell->str != NULL) {
+                // cell->str contains a string value
             }
         }
-        xls_close_WS(work_sheet);
     }
-    xls_close_WB(wb);
+    xls_close_WS(work_sheet);
 }
+xls_close_WB(wb);
 ```
 
 The library also includes a CLI tool for converting Excel files to CSV:
 
     ./xls2csv /path/to/file.xls
+
+The man page for `xls2csv` has more details.
 
 Libxls should run fine on both little-endian and big-endian systems, but if not
 please open an [issue](https://github.com/libxls/libxls/issues/new).
@@ -71,7 +83,7 @@ Installation
 If you want a stable version, check out the
 [Releases](https://github.com/libxls/libxls/releases) section, which has copies of everything
 you'll find in [Sourceforge](https://sourceforge.net/projects/libxls/files/),
-and download version 1.4.0.
+and download version 1.5.0 or later.
 
 For full instructions see [INSTALL](INSTALL), or here's the tl;dr:
 
