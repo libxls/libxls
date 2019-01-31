@@ -33,7 +33,7 @@
  *
  */
 
-#include "libxls/xlsstruct.h"
+#include "../libxls/xlsstruct.h"
 
 extern void dumpbuf(BYTE* fname,long size,BYTE* buf);
 extern void verbose(char* str);
