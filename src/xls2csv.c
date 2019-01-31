@@ -39,7 +39,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include "xls.h"
+#include "../include/xls.h"
 
 static char  stringSeparator = '\"';
 static char *lineSeparator = "\n";
