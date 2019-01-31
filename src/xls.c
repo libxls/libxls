@@ -1190,9 +1190,13 @@ xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
 {
     DWORD i,t,ii;
     DWORD fcol,lcol;
+    WORD width;
+    BYTE isHidden;
 
     for (i=0;i<pWS->colinfo.count;i++)
     {
+        width = pWS->colinfo.col[i].width;
+        isHidden = (pWS->colinfo.col[i].flags&1);
         if (pWS->colinfo.col[i].first<=pWS->rows.lastcol)
             fcol=pWS->colinfo.col[i].first;
         else
@@ -1203,12 +1207,10 @@ xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
         else
             lcol=pWS->rows.lastcol;
 
-        for (t=fcol;t<=lcol;t++) {
-            for (ii=0;ii<=pWS->rows.lastrow;ii++)
-            {
-                if (pWS->colinfo.col[i].flags&1)
-                    pWS->rows.row[ii].cells.cell[t].isHidden=1;
-                pWS->rows.row[ii].cells.cell[t].width=pWS->colinfo.col[i].width;
+        for (ii=0;ii<=pWS->rows.lastrow;ii++) {
+            for (t=fcol;t<=lcol;t++) {
+                pWS->rows.row[ii].cells.cell[t].isHidden=isHidden;
+                pWS->rows.row[ii].cells.cell[t].width=width;
             }
         }
     }
