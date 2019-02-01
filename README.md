@@ -75,7 +75,11 @@ The man page for `xls2csv` has more details.
 Libxls should run fine on both little-endian and big-endian systems, but if not
 please open an [issue](https://github.com/libxls/libxls/issues/new).
 
-If you want to hack on the source, you should first familiarize yourself with the [Microsoft Excel File Format](http://sc.openoffice.org/excelfileformat.pdf) as well as [Coumpound Document file format](http://sc.openoffice.org/compdocfileformat.pdf) (documentation provided by the nice folks at OpenOffice.org).
+If you want to hack on the source, you should first familiarize yourself with
+the [Microsoft Excel File Format](http://sc.openoffice.org/excelfileformat.pdf)
+as well as [Coumpound Document file
+format](http://sc.openoffice.org/compdocfileformat.pdf) (documentation provided
+by the nice folks at OpenOffice.org).
 
 Installation
 ---
