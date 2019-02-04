@@ -1209,8 +1209,8 @@ xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
 
         for (ii=0;ii<=pWS->rows.lastrow;ii++) {
             for (t=fcol;t<=lcol;t++) {
-                pWS->rows.row[ii].cells.cell[t].isHidden=isHidden;
-                pWS->rows.row[ii].cells.cell[t].width=width;
+                pWS->rows.row[ii].cells.cell[t].isHidden |= isHidden;
+                pWS->rows.row[ii].cells.cell[t].width = width;
             }
         }
     }
