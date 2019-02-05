@@ -1,4 +1,4 @@
-AC_INIT([libxls],[1.5.0-rc1],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
+AC_INIT([libxls],[1.5.0-rc2],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
 PACKAGE=libxls
 
@@ -124,3 +124,13 @@ AC_MSG_NOTICE([---])
 AC_MSG_NOTICE([catdoc users: avoid xls2csv conflicts, use ./configure --program-prefix=lib to get libxls2csv])
 AC_MSG_NOTICE([---])
 
+AC_MSG_RESULT([
+Configuration:
+
+C compiler: $CC
+C++ compiler: $CXX
+CFLAGS: $CFLAGS
+CXXFLAGS: $CXXFLAGS
+
+Host: $host
+Extra ld flags: $EXTRA_LDFLAGS])
