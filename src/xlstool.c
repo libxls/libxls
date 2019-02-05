@@ -124,7 +124,7 @@ static const DWORD colors[] =
 void dumpbuf(BYTE* fname,long size,BYTE* buf)
 {
     FILE *f = fopen((char *)fname, "wb");
-    fwrite (buf, 1, size, f);
+    (void)fwrite (buf, 1, size, f);
     fclose(f);
 
 }
