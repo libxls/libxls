@@ -35,7 +35,7 @@ libxlsreader_la_SOURCES = \
 	src/xls.c
 
 libxlsreader_la_LDFLAGS = -version-info $(VERSION_INFO) $(LIBXLS_LIBS) @EXTRA_LDFLAGS@
-libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Werror -pedantic-errors
+libxlsreader_la_CFLAGS = -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic-errors
 
 if FUZZER_ENABLED
 libxlsreader_la_CFLAGS += -fsanitize=fuzzer-no-link -fsanitize=address
@@ -62,6 +62,6 @@ EXTRA_PROGRAMS = fuzz_xls
 nodist_EXTRA_fuzz_xls_SOURCES = dummy.cxx
 
 fuzz_xls_SOURCES = fuzz/fuzz_xls.c
-fuzz_xls_CFLAGS = -Wall -Werror -pedantic-errors -std=c99
+fuzz_xls_CFLAGS = -Wall -pedantic-errors -std=c99
 fuzz_xls_LDADD = libxlsreader.la @LIB_FUZZING_ENGINE@
 fuzz_xls_LDFLAGS = -static
