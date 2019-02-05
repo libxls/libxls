@@ -220,7 +220,11 @@ static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, con
             out_ptr = outbuf;
             while(inlenleft)
             {
+#if defined(__NetBSD__) || defined(__sun)
+                st = iconv(ic, &src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
+#else
                 st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
+#endif
                 if(st == (size_t)(-1))
                 {
                     if(errno == E2BIG)
