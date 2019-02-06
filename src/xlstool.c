@@ -49,12 +49,6 @@ static const char *from_enc = "UTF-16le";
 static const char *from_enc = "UTF-16LE";
 #endif
 
-#if defined(_AIX) || defined(__sun) || defined(__NetBSD__) || defined(_WIN32)
-#define ICONV_CONST const
-#else
-#define ICONV_CONST
-#endif
-
 #else
 #include <locale.h>
 #endif

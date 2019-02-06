@@ -65,53 +65,7 @@ AS_CASE([$host],
         [*mingw*|*cygwin*], [EXTRA_LDFLAGS="-no-undefined"], [EXTRA_LDFLAGS=""])
 AC_SUBST([EXTRA_LDFLAGS])
 
-WITH_ICONV=0
-AC_ARG_WITH(iconv, [  --with-iconv[=DIR]        add ICONV support (on)])
-if test "$with_iconv" = "no" ; then
-    echo Disabling ICONV support
-else
-    if test "$with_iconv" != "yes" -a "$with_iconv" != "" ; then
-	CPPFLAGS="${CPPFLAGS} -I$with_iconv/include"
-	# Export this since our headers include iconv.h
-	XML_INCLUDEDIR="${XML_INCLUDEDIR} -I$with_iconv/include"
-	ICONV_LIBS="-L$with_iconv/lib"
-    fi
-
-    AC_CHECK_HEADER(iconv.h,
-	AC_MSG_CHECKING(for iconv)
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
-#include <iconv.h>]], [[
-iconv_t cd = iconv_open ("","");
-iconv (cd, NULL, NULL, NULL, NULL);]])],[
-	    AC_MSG_RESULT(yes)
-	    WITH_ICONV=1],[
-	    AC_MSG_RESULT(no)
-	    AC_MSG_CHECKING(for iconv in -liconv)
-
-	    _ldflags="${LDFLAGS}"
-	    _libs="${LIBS}"
-	    LDFLAGS="${LDFLAGS} ${ICONV_LIBS}"
-	    LIBS="${LIBS} -liconv"
-
-	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
-#include <iconv.h>]], [[
-iconv_t cd = iconv_open ("","");
-iconv (cd, NULL, NULL, NULL, NULL);]])],[
-		AC_MSG_RESULT(yes)
-		WITH_ICONV=1
-		ICONV_LIBS="${ICONV_LIBS} -liconv"
-		LIBS="${_libs}"
-		LDFLAGS="${_ldflags}"],[
-		AC_MSG_RESULT(no)
-		LIBS="${_libs}"
-		LDFLAGS="${_ldflags}"])]))
-fi
-
-if test "$WITH_ICONV" = "1"; then
-    AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
-fi
-
-AC_SUBST(WITH_ICONV)
+AM_ICONV
 
 LIBXLS_LIBS="$ICONV_LIBS $LIBS"
 
