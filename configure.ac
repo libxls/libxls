@@ -1,5 +1,6 @@
 AC_INIT([libxls],[1.5.0-rc2],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
+AC_CONFIG_MACRO_DIRS([m4])
 PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=1
