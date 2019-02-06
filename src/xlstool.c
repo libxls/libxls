@@ -134,14 +134,6 @@ static const DWORD colors[] =
     };
 
 
-void dumpbuf(BYTE* fname,long size,BYTE* buf)
-{
-    FILE *f = fopen((char *)fname, "wb");
-    fwrite (buf, 1, size, f);
-    fclose(f);
-
-}
-
 // Display string if in debug mode
 void verbose(char* str)
 {
