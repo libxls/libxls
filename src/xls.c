@@ -919,7 +919,6 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 
         case XLS_RECORD_SST:
 			//printf("ADD SST\n");
-			//if(xls_debug) dumpbuf((BYTE *)"/tmp/SST",bof1.size,buf);
             xlsConvertSst((SST *)buf);
             if ((retval = xls_addSST(pWB,(SST*)buf,bof1.size)) != LIBXLS_OK) {
                 goto cleanup;
@@ -927,7 +926,6 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
             break;
 
         case XLS_RECORD_EXTSST:
-            //if(xls_debug > 1000) dumpbuf((BYTE *)"/tmp/EXTSST",bof1.size,buf);
             break;
 
         case XLS_RECORD_BOUNDSHEET:
