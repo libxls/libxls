@@ -42,6 +42,19 @@
 
 #ifdef HAVE_ICONV
 #include <iconv.h>
+
+#if defined(_AIX) || defined(__sun)
+static const char *from_enc = "UTF-16le";
+#else
+static const char *from_enc = "UTF-16LE";
+#endif
+
+#if defined(_AIX) || defined(__sun) || defined(__NetBSD__) || defined(_WIN32)
+#define ICONV_CONST const
+#else
+#define ICONV_CONST
+#endif
+
 #else
 #include <locale.h>
 #endif
@@ -175,11 +188,6 @@ char *utf8_decode(const char *str, DWORD len, char *encoding)
 
 #ifdef HAVE_ICONV
 static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, const char* to_enc) {
-#if defined(_AIX) || defined(__sun)
-    const char *from_enc = "UTF-16le";
-#else
-    const char *from_enc = "UTF-16LE";
-#endif
     char* outbuf = 0;
 
     if(s && len && from_enc && to_enc)
@@ -220,7 +228,7 @@ static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, con
             out_ptr = outbuf;
             while(inlenleft)
             {
-                st = iconv(ic, (char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
+                st = iconv(ic, (ICONV_CONST char **)&src_ptr, &inlenleft, (char **)&out_ptr,(size_t *) &outlenleft);
                 if(st == (size_t)(-1))
                 {
                     if(errno == E2BIG)
