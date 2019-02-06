@@ -35,7 +35,6 @@
 
 #include "../libxls/xlsstruct.h"
 
-extern void dumpbuf(BYTE* fname,long size,BYTE* buf);
 extern void verbose(char* str);
 
 extern char *utf8_decode(const char *str, DWORD len, char *encoding);
