@@ -1,6 +1,5 @@
 AC_INIT([libxls],[1.5.0-rc2],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
-AC_CONFIG_MACRO_DIRS([m4])
 PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=1
@@ -68,7 +67,7 @@ AC_SUBST([EXTRA_LDFLAGS])
 
 AM_ICONV
 
-LIBXLS_LIBS="$ICONV_LIBS $LIBS"
+LIBXLS_LIBS="$LTLIBICONV $LIBS"
 
 AC_SUBST(LIBXLS_LIBS)
 

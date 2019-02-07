@@ -16,6 +16,9 @@ addons:
     packages:
     - gcc-7
     - gcc-8
+  homebrew:
+    packages:
+    - gettext
 
 matrix:
   exclude:
