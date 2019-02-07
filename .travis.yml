@@ -28,13 +28,10 @@ matrix:
     os: osx
 
 before_script:
-    - ./bootstrap
+    - ./.travis/bootstrap.sh
 
 script:
     - ./configure
     - make
     - make check
     - ./test2_libxls test/files/test2.xls
-    - ./configure --without-iconv
-    - make
-    - make check
