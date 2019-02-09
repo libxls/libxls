@@ -1,4 +1,4 @@
-AC_INIT([libxls],[1.5.0-rc3],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
+AC_INIT([libxls],[1.5.0-rc4],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
 PACKAGE=libxls
 
