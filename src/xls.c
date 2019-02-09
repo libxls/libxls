@@ -59,23 +59,21 @@ int xls_debug = 0;
 static double NumFromRk(DWORD drk);
 static xls_formula_handler formula_handler;
 
-extern xls_error_t xls_addSST(xlsWorkBook* pWB, SST* sst, DWORD size);
-extern xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size);
-extern xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size);
-extern char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET* bs, DWORD size);
-extern xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row);
-extern xls_error_t xls_makeTable(xlsWorkSheet* pWS);
-extern struct st_cell_data *xls_addCell(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
-extern char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size);
-extern xls_error_t xls_addXF8(xlsWorkBook* pWB, XF8* xf);
-extern xls_error_t xls_addXF5(xlsWorkBook* pWB, XF5* xf);
-extern xls_error_t xls_addColinfo(xlsWorkSheet* pWS, COLINFO* colinfo);
-extern xls_error_t xls_mergedCells(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
-extern xls_error_t xls_parseWorkBook(xlsWorkBook* pWB);
-extern xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS);
-extern xls_error_t xls_formatColumn(xlsWorkSheet* pWS);
-extern xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS);
-extern void xls_dumpSummary(char *buf, int isSummary, xlsSummaryInfo *pSI);
+static xls_error_t xls_addSST(xlsWorkBook* pWB, SST* sst, DWORD size);
+static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size);
+static xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size);
+static char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET* bs, DWORD size);
+static xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row);
+static xls_error_t xls_makeTable(xlsWorkSheet* pWS);
+static struct st_cell_data *xls_addCell(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
+static char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size);
+static xls_error_t xls_addXF8(xlsWorkBook* pWB, XF8* xf);
+static xls_error_t xls_addXF5(xlsWorkBook* pWB, XF5* xf);
+static xls_error_t xls_addColinfo(xlsWorkSheet* pWS, COLINFO* colinfo);
+static xls_error_t xls_mergedCells(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
+static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS);
+static xls_error_t xls_formatColumn(xlsWorkSheet* pWS);
+static void xls_dumpSummary(char *buf, int isSummary, xlsSummaryInfo *pSI);
 
 #if defined(_AIX) || defined(__sun)
 #pragma pack(1)
@@ -121,7 +119,7 @@ int xls(int debug)
     return 1;
 }
 
-xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
+static xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
 {
     verbose("xls_addSST");
 
@@ -144,7 +142,7 @@ xls_error_t xls_addSST(xlsWorkBook* pWB,SST* sst,DWORD size)
     return xls_appendSST(pWB, sst->strings, size - offsetof(SST, strings));
 }
 
-xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
+static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
 {
     DWORD ln;	// String character count
     DWORD ofs;	// Current offset in SST buffer
@@ -343,7 +341,7 @@ static double NumFromRk(DWORD drk)
     return ret;
 }
 
-char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
+static char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 {
 	char * name;
 	DWORD filepos;
@@ -402,7 +400,7 @@ char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 }
 
 
-xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row)
+static xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row)
 {
     struct st_row_data* tmp;
 
@@ -423,7 +421,7 @@ xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row)
     return LIBXLS_OK;
 }
 
-xls_error_t xls_makeTable(xlsWorkSheet* pWS)
+static xls_error_t xls_makeTable(xlsWorkSheet* pWS)
 {
     DWORD i,t;
     struct st_row_data* tmp;
@@ -508,7 +506,7 @@ void xls_cell_set_str(struct st_cell_data *cell, char *str) {
     cell->str = str;
 }
 
-struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
+static struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     struct st_cell_data*	cell;
     struct st_row_data*		row;
@@ -632,7 +630,7 @@ struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 	return cell;
 }
 
-char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size)
+static char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size)
 {
     struct st_font_data* tmp;
 
@@ -661,7 +659,7 @@ char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size)
 	return tmp->name;
 }
 
-xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size)
+static xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size)
 {
     struct st_format_data* tmp;
 
@@ -679,7 +677,7 @@ xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size)
     return LIBXLS_OK;
 }
 
-xls_error_t xls_addXF8(xlsWorkBook* pWB,XF8* xf)
+static xls_error_t xls_addXF8(xlsWorkBook* pWB,XF8* xf)
 {
     struct st_xf_data* tmp;
 
@@ -707,7 +705,7 @@ xls_error_t xls_addXF8(xlsWorkBook* pWB,XF8* xf)
     return LIBXLS_OK;
 }
 
-xls_error_t xls_addXF5(xlsWorkBook* pWB,XF5* xf)
+static xls_error_t xls_addXF5(xlsWorkBook* pWB,XF5* xf)
 {
     struct st_xf_data* tmp;
 
@@ -736,7 +734,7 @@ xls_error_t xls_addXF5(xlsWorkBook* pWB,XF5* xf)
     return LIBXLS_OK;
 }
 
-xls_error_t xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
+static xls_error_t xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
 {
     struct st_colinfo_data* tmp;
 
@@ -758,7 +756,7 @@ xls_error_t xls_addColinfo(xlsWorkSheet* pWS,COLINFO* colinfo)
     return LIBXLS_OK;
 }
 
-xls_error_t xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
+static xls_error_t xls_mergedCells(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
 {
     if (bof->size < sizeof(WORD))
         return LIBXLS_ERROR_PARSE;
@@ -1068,7 +1066,7 @@ cleanup:
 }
 
 
-xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
+static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
 {
     BOF tmp;
     BYTE* buf = NULL;
@@ -1184,7 +1182,7 @@ cleanup:
     return retval;
 }
 
-xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
+static xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
 {
     DWORD i,t,ii;
     DWORD fcol,lcol;
@@ -1681,7 +1679,7 @@ void xls_close_summaryInfo(xlsSummaryInfo *pSI)
 	free(pSI);
 }
 
-void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
+static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 	header			*head;
 	sectionList		*secList;
 	propertyList	*plist;
