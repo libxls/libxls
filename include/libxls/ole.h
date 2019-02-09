@@ -182,7 +182,5 @@ void ole2_fclose(OLE2Stream* ole2st);
 OLE2* ole2_open_file(const char *file);
 OLE2* ole2_open_buffer(const void *buffer, size_t len);
 void ole2_close(OLE2* ole2);
-int ole2_bufread(OLE2Stream* olest);
-
 
 #endif
