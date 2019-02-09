@@ -66,8 +66,6 @@ static void Usage(char *progName)
     exit(EXIT_FAILURE);
 }
 
-extern int getopt(int nargc, char * const *nargv, const char *ostr);
-
 int main(int argc, char *argv[]) {
 	xlsWorkBook* pWB;
 	xlsWorkSheet* pWS;

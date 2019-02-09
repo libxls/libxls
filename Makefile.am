@@ -23,8 +23,7 @@ dist_man1_MANS = man/xls2csv.man
 lib_LTLIBRARIES = libxlsreader.la
 
 xls2csv_SOURCES = \
-	src/xls2csv.c \
-	src/getopt.c
+	src/xls2csv.c
 
 xls2csv_LDADD = libxlsreader.la
 
