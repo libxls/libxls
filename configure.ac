@@ -1,6 +1,5 @@
 AC_INIT([libxls],[1.5.0-rc4],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
-PACKAGE=libxls
 
 LIBXLS_MAJOR_VERSION=1
 LIBXLS_MINOR_VERSION=5
@@ -20,7 +19,7 @@ AC_DEFINE_UNQUOTED([LIBXLS_MINOR_VERSION],$LIBXLS_MINOR_VERSION,[Minor version])
 AC_DEFINE_UNQUOTED([LIBXLS_MICRO_VERSION],$LIBXLS_MICRO_VERSION,[Micro version])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-# AM_SILENT_RULES([yes])
+AM_SILENT_RULES([yes])
 
 LT_INIT([win32-dll disable-static])
 
@@ -85,6 +84,7 @@ C compiler: $CC
 C++ compiler: $CXX
 CFLAGS: $CFLAGS
 CXXFLAGS: $CXXFLAGS
+LIBS: $LIBXLS_LIBS
 
 Host: $host
 Extra ld flags: $EXTRA_LDFLAGS])
