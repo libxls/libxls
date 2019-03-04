@@ -50,7 +50,7 @@ test2_libxls_LDADD = libxlsreader.la
 check_PROGRAMS = test_libxls test2_libxls
 TESTS = test_libxls
 
-EXTRA_DIST = test/files/test2.xls
+EXTRA_DIST = README.md LICENSE test/files/test2.xls
 
 distclean-local:
 	-rm -f $(builddir)/test.htm
