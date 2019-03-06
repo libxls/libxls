@@ -36,7 +36,7 @@
 #include <cstring>
 #include <exception>
 #include <string>
-#include <assert.h>
+#include <cassert>
 
 #include "XlsReader.h"
 #include <xls.h>	// short term
