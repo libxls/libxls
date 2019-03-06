@@ -1,6 +1,8 @@
 **/.DS_Store
 **/.deps
+**/.dirstamp
 **/.libs
+**/*.la
 **/*.lo
 **/*.o
 aclocal.m4
@@ -16,7 +18,14 @@ install-sh
 libtool
 ltmain.sh
 missing
+stamp-h1
 test-driver
 autom4te.cache/*
 **/Makefile
 Makefile.in
+
+xls2csv
+test_libxls
+test2_libxls
+test_cpp
+test.htm
