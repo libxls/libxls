@@ -36,8 +36,11 @@
 #ifndef XLS_TYPES_INC
 #define XLS_TYPES_INC
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
 #include <stdint.h>
-#include <sys/types.h>
+#endif
 
 typedef unsigned char		BYTE;
 typedef uint16_t			WORD;

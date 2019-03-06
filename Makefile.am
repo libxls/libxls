@@ -16,7 +16,7 @@ nobase_include_HEADERS = \
 	include/libxls/xlstool.h
 
 bin_PROGRAMS = xls2csv
-noinst_PROGRAMS = test_libxls test2_libxls
+noinst_PROGRAMS = test_libxls test2_libxls test_cpp
 
 dist_man1_MANS = man/xls2csv.man
 
@@ -47,7 +47,10 @@ test_libxls_LDADD = libxlsreader.la
 test2_libxls_SOURCES = test/test2.c
 test2_libxls_LDADD = libxlsreader.la
 
-check_PROGRAMS = test_libxls test2_libxls
+test_cpp_SOURCES = cplusplus/main.cpp cplusplus/XlsReader.cpp
+test_cpp_LDADD = libxlsreader.la
+
+check_PROGRAMS = test_libxls test2_libxls test_cpp
 TESTS = test_libxls
 
 EXTRA_DIST = README.md LICENSE test/files/test2.xls
