@@ -17,6 +17,8 @@ addons:
     - autoconf-archive
     - gcc-7
     - gcc-8
+    - libc++-dev
+    - libc++abi-dev
   homebrew:
     packages:
     - gettext
@@ -32,6 +34,8 @@ before_script:
     - ./.travis/bootstrap.sh
 
 script:
+    # Workaround Travis' clang not finding its headers.
+    - if [[ $TRAVIS_OS_NAME == 'linux' && $CXX == 'clang++' ]]; then export CXX='clang++ -stdlib=libc++'; fi
     - ./configure
     - make
     - make check
