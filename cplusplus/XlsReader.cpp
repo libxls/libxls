@@ -33,6 +33,7 @@
  *
  */
 
+#include <cstring>
 #include <exception>
 #include <string>
 #include <assert.h>

@@ -47,8 +47,12 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-#warning Provide a hard coded file path
-	string s = string("/tmp/xls.xls");
+	if(argc < 2) {
+		printf("Usage: test_cpp <file.xls>\n");
+		exit(1);
+	}
+
+	string s = string(argv[1]);
 	WorkBook foo(s);
 	
 	cellContent cell = foo.GetCell(0, 1, 2);
