@@ -64,7 +64,15 @@ AC_SUBST([EXTRA_LDFLAGS])
 
 AM_ICONV
 
-PKG_INSTALLDIR
+m4_ifdef([PKG_INSTALLDIR], [
+    PKG_INSTALLDIR
+], [
+    AC_ARG_WITH([pkgconfigdir],
+        [AS_HELP_STRING([--with-pkgconfigdir],
+                        [pkg-config installation directory @<:@'${libdir}/pkgconfig'@:>@])],,
+        [with_pkgconfigdir='${libdir}/pkgconfig'])
+    AC_SUBST([pkgconfigdir], [$with_pkgconfigdir])
+])
 
 LIBXLS_LIBS="$LTLIBICONV $LIBS"
 
