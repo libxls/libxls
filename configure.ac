@@ -64,11 +64,21 @@ AC_SUBST([EXTRA_LDFLAGS])
 
 AM_ICONV
 
+m4_ifdef([PKG_INSTALLDIR], [
+    PKG_INSTALLDIR
+], [
+    AC_ARG_WITH([pkgconfigdir],
+        [AS_HELP_STRING([--with-pkgconfigdir],
+                        [pkg-config installation directory @<:@'${libdir}/pkgconfig'@:>@])],,
+        [with_pkgconfigdir='${libdir}/pkgconfig'])
+    AC_SUBST([pkgconfigdir], [$with_pkgconfigdir])
+])
+
 LIBXLS_LIBS="$LTLIBICONV $LIBS"
 
 AC_SUBST(LIBXLS_LIBS)
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile libxls.pc])
 AC_OUTPUT
 
 AC_MSG_NOTICE([---])

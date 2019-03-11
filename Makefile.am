@@ -20,6 +20,8 @@ noinst_PROGRAMS = test_libxls test2_libxls test_cpp
 
 dist_man1_MANS = man/xls2csv.man
 
+pkgconfig_DATA = libxls.pc
+
 lib_LTLIBRARIES = libxlsreader.la
 
 xls2csv_SOURCES = \
