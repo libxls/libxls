@@ -67,6 +67,23 @@ static const char *from_enc = "UTF-16LE";
 
 extern int xls_debug;
 
+/* Not a complete list */
+enum xls_format_e {
+    XLS_FORMAT_GENERAL, // ""
+    XLS_FORMAT_NUMBER1, // "0"
+    XLS_FORMAT_NUMBER2,  //     "0.00",
+    XLS_FORMAT_NUMBER3,  //     "#,##0",
+    XLS_FORMAT_NUMBER4,  //     "#,##0.00",
+    XLS_FORMAT_CURRENCY1,  //   "\"$\"#,##0_);(\"$\"#,##0)",
+    XLS_FORMAT_CURRENCY2,  //   "\"$\"#,##0_);[Red](\"$\"#,##0)",
+    XLS_FORMAT_CURRENCY3,  //   "\"$\"#,##0.00_);(\"$\"#,##0.00)",
+    XLS_FORMAT_CURRENCY4,  //   "\"$\"#,##0.00_);[Red](\"$\"#,##0.00)",
+    XLS_FORMAT_PERCENT1,  //    "0%",
+    XLS_FORMAT_PERCENT2,  //    "0.00%",
+    XLS_FORMAT_SCIENTIFIC1,  // "0.00E+00",
+    XLS_FORMAT_SCIENTIFIC2 = 34 // "##0.0E+0"
+};
+
 static const DWORD colors[] =
     {
         0x000000,
@@ -618,30 +635,28 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
             ret = malloc(retlen);
             switch (xf->format)
             {
-                case 0:
-                    snprintf(ret, retlen, "%d", (int)cell->d);
+                case XLS_FORMAT_GENERAL:
+                case XLS_FORMAT_NUMBER1:
+                case XLS_FORMAT_NUMBER3:
+                    snprintf(ret, retlen, "%.0lf", cell->d);
                     break;
-                case 1:
-                    snprintf(ret, retlen, "%d", (int)cell->d);
-                    break;
-                case 2:
-                    snprintf(ret, retlen, "%.1f", cell->d);
-                    break;
-                case 9:
-                    snprintf(ret, retlen, "%d", (int)cell->d);
-                    break;
-                case 10:
+                case XLS_FORMAT_NUMBER2:
+                case XLS_FORMAT_NUMBER4:
                     snprintf(ret, retlen, "%.2f", cell->d);
                     break;
-                case 11:
+                case XLS_FORMAT_PERCENT1:
+                    snprintf(ret, retlen, "%.0lf%%", 100 * cell->d);
+                    break;
+                case XLS_FORMAT_PERCENT2:
+                    snprintf(ret, retlen, "%.2lf%%", 100 * cell->d);
+                    break;
+                case XLS_FORMAT_SCIENTIFIC1:
+                    snprintf(ret, retlen, "%.2e", cell->d);
+                    break;
+                case XLS_FORMAT_SCIENTIFIC2:
                     snprintf(ret, retlen, "%.1e", cell->d);
                     break;
-                case 14:
-                    //ret=ctime(cell->d);
-                    snprintf(ret, retlen, "%.0f", cell->d);
-                    break;
                 default:
-                    // asprintf(&ret,"%.4.2f (%i)",cell->d,xf->format);break;
                     snprintf(ret, retlen, "%.2f", cell->d);
                     break;
             }
