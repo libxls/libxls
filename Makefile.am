@@ -17,6 +17,7 @@ nobase_include_HEADERS = \
 
 bin_PROGRAMS = xls2csv
 noinst_PROGRAMS = test_libxls test2_libxls test_cpp
+noinst_HEADERS = cplusplus/XlsReader.h
 
 dist_man1_MANS = man/xls2csv.man
 

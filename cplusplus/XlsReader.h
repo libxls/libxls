@@ -39,7 +39,7 @@
 
 // Inside namespace xls:
 
-#include <xls.h>
+#include "../include/xls.h"
 
 
 #ifndef UINT32_MAX

@@ -39,7 +39,6 @@
 #include <cassert>
 
 #include "XlsReader.h"
-#include <xls.h>	// short term
 
 
 using namespace std;
