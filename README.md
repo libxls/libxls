@@ -105,5 +105,5 @@ If you've cloned the git repository, you'll need to run this first:
 ./bootstrap
 ```
 
-That will generate all the supporting files (assuming autotools is already
-present on the system).
+That will generate all the supporting files. It assumes autotools is already
+installed on the system (and also expects Autoconf Archive to be present).
