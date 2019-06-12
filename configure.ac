@@ -33,7 +33,14 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11
+AX_CXX_COMPILE_STDCXX_11([], [optional])
+
+AS_IF([test "x$HAVE_CXX11" != x1], [
+    AC_MSG_NOTICE([---])
+    AC_MSG_NOTICE([No C++11 support, will skip C++ tests.])
+    AC_MSG_NOTICE([---])
+])
+AM_CONDITIONAL([HAVE_CXX11], [test x$HAVE_CXX11 = x1])
 
 AC_CHECK_FUNCS([strdup])
 AC_CHECK_HEADERS([wchar.h])

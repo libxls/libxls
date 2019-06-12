@@ -23,12 +23,14 @@ build_script:
       if ($env:TOOLCHAIN -eq "msys2")
       {
         $env:MSYSTEM="MINGW64"
+        C:\msys64\usr\bin\bash -l -c "pacman -S --noconfirm autoconf-archive"
         C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./bootstrap"
         C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./configure"
         C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && make"
       }
       else
       {
+        C:\cygwin64\setup-x86_64.exe -qP autoconf-archive
         C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./bootstrap"
         C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./configure"
         C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make"
