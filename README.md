@@ -77,7 +77,7 @@ please open an [issue](https://github.com/libxls/libxls/issues/new).
 
 If you want to hack on the source, you should first familiarize yourself with
 the [Microsoft Excel File Format](http://sc.openoffice.org/excelfileformat.pdf)
-as well as [Coumpound Document file
+as well as [Compound Document file
 format](http://sc.openoffice.org/compdocfileformat.pdf) (documentation provided
 by the nice folks at OpenOffice.org).
 
@@ -107,3 +107,12 @@ If you've cloned the git repository, you'll need to run this first:
 
 That will generate all the supporting files. It assumes autotools is already
 installed on the system (and also expects Autoconf Archive to be present).
+
+Language bindings
+---
+
+If C is not your cup of tea, you can make use of libxls in several other languages, including:
+
+* [Haskell](https://hackage.haskell.org/package/xls)
+* [R](https://readxl.tidyverse.org)
+* [Rust](https://github.com/evanmiller/rust-xls)
