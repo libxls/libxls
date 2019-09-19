@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/libxls/libxls.svg?branch=master)](https://travis-ci.org/libxls/libxls)
 [![Build Status](https://ci.appveyor.com/api/projects/status/3nx26kfmy2y0efsi?svg=true)](https://ci.appveyor.com/project/evanmiller/libxls-252ki)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libxls.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:libxls)
 
 libxls - Read XLS files from C
 ==
