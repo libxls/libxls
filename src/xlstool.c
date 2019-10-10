@@ -290,7 +290,7 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
     }
     w[len/2] = '\0';
 
-    count = wcstombs(NULL, w, 0);
+    count = wcstombs(NULL, w, INT_MAX);
 
     if (count <= 0) {
         if (newlen) *newlen = 0;
