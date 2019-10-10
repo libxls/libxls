@@ -51,6 +51,7 @@ static const char *from_enc = "UTF-16LE";
 
 #else
 #include <locale.h>
+#include <limits.h>
 #endif
 
 #include <stdlib.h>
