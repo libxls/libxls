@@ -1,13 +1,21 @@
 language: cpp
-compiler:
-    - clang
-    - gcc
-    - gcc-7
-    - gcc-8
 
-os:
-    - linux
-    - osx
+jobs:
+  include:
+  - compiler: clang
+    os: linux
+  - compiler: gcc
+    os: linux
+  - compiler: gcc-7
+    os: linux
+  - compiler: gcc-8
+    os: linux
+  - compiler: clang
+    os: osx
+    osx_image: xcode11.2
+  - compiler: gcc
+    os: osx
+    osx_image: xcode11.2
 
 addons:
   apt:
@@ -23,13 +31,6 @@ addons:
     packages:
     - gettext
     - autoconf-archive
-
-matrix:
-  exclude:
-  - compiler: gcc-7
-    os: osx
-  - compiler: gcc-8
-    os: osx
 
 before_script:
     - ./.travis/bootstrap.sh
