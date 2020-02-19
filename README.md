@@ -30,7 +30,7 @@ Changes to libxls since 1.4:
 
 The [C API](include/xls.h) is pretty simple, this will get you started:
 
-```{C}
+```c
 xls_error_t error = LIBXLS_OK;
 xlsWorkBook *wb = xls_open_file("/path/to/finances.xls", "UTF-8", &error);
 if (wb == NULL) {
