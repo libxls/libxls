@@ -609,6 +609,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
         ret = strdup("");
         break;
     case XLS_RECORD_LABEL:
+    case XLS_RECORD_RSTRING:
         len = label[0] + (label[1] << 8);
         label += 2;
 		if(pWB->is5ver) {
