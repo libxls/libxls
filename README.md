@@ -38,7 +38,7 @@ if (wb == NULL) {
     exit(1);
 }
 for (int i=0; i<wb->sheets.count; i++) { // sheets
-    xl_WorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
+    xlsWorkSheet *work_sheet = xls_getWorkSheet(work_book, i);
     error = xls_parseWorkSheet(work_sheet);
     for (int j=0; j<=work_sheet->rows.lastrow; j++) { // rows
         xlsRow *row = xls_row(work_sheet, j);
