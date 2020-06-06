@@ -305,6 +305,7 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
 }
 #endif
 
+#ifdef HAVE_ICONV
 static const char *encoding_for_codepage(WORD codepage) {
     switch (codepage) {
         case 874:  return "WINDOWS-874";
@@ -321,6 +322,7 @@ static const char *encoding_for_codepage(WORD codepage) {
     }
     return "WINDOWS-1252";
 }
+#endif
 
 // Convert BIFF5 string to to_enc encoding
 // Returns a NUL-terminated string
