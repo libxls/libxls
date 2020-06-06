@@ -38,8 +38,9 @@
 void verbose(char* str);
 
 char *utf8_decode(const char *str, DWORD len, char *encoding);
+char *codepage_decode(const char *s, size_t len, WORD codepage, size_t *newlen, const char* encoding);
 char *unicode_decode(const char *s, size_t len, size_t *newlen, const char* encoding);
-char *get_string(const char *s, size_t len, BYTE is2, BYTE isUnicode, char *charset);
+char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook *pWB);
 DWORD xls_getColor(const WORD color,WORD def);
 
 void xls_showBookInfo(xlsWorkBook* pWB);

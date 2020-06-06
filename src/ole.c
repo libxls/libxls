@@ -484,7 +484,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
             total_bytes_read = -1;
             goto cleanup;
         }
-        name=unicode_decode(pss->name, pss->bsize, 0, "UTF-8");
+        name=unicode_decode(pss->name, pss->bsize, NULL, "UTF-8");
 #ifdef OLE_DEBUG	
 		fprintf(stderr, "OLE NAME: %s count=%d\n", name, (int)ole->files.count);
 #endif

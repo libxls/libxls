@@ -42,13 +42,6 @@
 
 #ifdef HAVE_ICONV
 #include <iconv.h>
-
-#if defined(_AIX) || defined(__sun)
-static const char *from_enc = "UTF-16le";
-#else
-static const char *from_enc = "UTF-16LE";
-#endif
-
 #else
 #include <locale.h>
 #include <limits.h>
@@ -191,7 +184,7 @@ char *utf8_decode(const char *str, DWORD len, char *encoding)
 }
 
 #ifdef HAVE_ICONV
-static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, const char* to_enc) {
+static char* unicode_decode_iconv(const char *s, size_t len, const char *from_enc, size_t *newlen, const char* to_enc) {
     char* outbuf = 0;
 
     if(s && len && from_enc && to_enc)
@@ -312,18 +305,57 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
 }
 #endif
 
+static const char *encoding_for_codepage(WORD codepage) {
+    switch (codepage) {
+        case 874:  return "WINDOWS-874";
+        case 936:  return "WINDOWS-936";
+        case 1250: return "WINDOWS-1250";
+        case 1251: return "WINDOWS-1251";
+        case 1252: return "WINDOWS-1252";
+        case 1253: return "WINDOWS-1253";
+        case 1254: return "WINDOWS-1254";
+        case 1255: return "WINDOWS-1255";
+        case 1256: return "WINDOWS-1256";
+        case 1257: return "WINDOWS-1257";
+        case 1258: return "WINDOWS-1258";
+    }
+    return "WINDOWS-1252";
+}
+
+// Convert BIFF5 string to to_enc encoding
+// Returns a NUL-terminated string
+char* codepage_decode(const char *s, size_t len, WORD codepage, size_t *newlen, const char* to_enc)
+{
+#ifdef HAVE_ICONV
+    const char *from_encoding = encoding_for_codepage(codepage);
+    return unicode_decode_iconv(s, len, from_encoding, newlen, to_enc);
+#else
+    char *ret = malloc(len+1);
+    memcpy(ret, s, len);
+    ret[len] = 0;
+    if (newlen)
+        *newlen = len;
+    return ret;
+#endif
+}
+
 // Convert unicode string to to_enc encoding
 char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
 {
 #ifdef HAVE_ICONV
-    return unicode_decode_iconv(s, len, newlen, to_enc);
+#if defined(_AIX) || defined(__sun)
+    const char *from_enc = "UTF-16le";
+#else
+    const char *from_enc = "UTF-16LE";
+#endif
+    return unicode_decode_iconv(s, len, from_enc, newlen, to_enc);
 #else
     return unicode_decode_wcstombs(s, len, newlen);
 #endif
 }
 
 // Read and decode string
-char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset)
+char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook* pWB)
 {
     WORD ln;
     DWORD ofs = 0;
@@ -347,7 +379,7 @@ char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset
         ofs++;
     }
 
-	if(!is5ver) {
+	if(!pWB->is5ver) {
 		// unicode strings have a format byte before the string
         if (ofs + 1 > len) {
             return NULL;
@@ -369,12 +401,16 @@ char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset
         if (ofs + 2*ln > len) {
             return NULL;
         }
-        ret = unicode_decode(str+ofs, ln*2, NULL, charset);
+        ret = unicode_decode(str+ofs, ln*2, NULL, pWB->charset);
     } else {
         if (ofs + ln > len) {
             return NULL;
         }
-		ret = utf8_decode(str+ofs, ln, charset);
+        if (pWB->is5ver) {
+            ret = codepage_decode(str+ofs, ln, pWB->codepage, NULL, pWB->charset);
+        } else {
+            ret = utf8_decode(str+ofs, ln, pWB->charset);
+        }
     }
 
 #if 0	// debugging
@@ -612,9 +648,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
         len = label[0] + (label[1] << 8);
         label += 2;
 		if(pWB->is5ver) {
-            ret = malloc(len+1);
-            memcpy(ret, label, len);
-            ret[len] = 0;
+            ret = codepage_decode((char *)label, len, pWB->codepage, NULL, pWB->charset);
 			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
 		} else {
             if ((*(label++) & 0x01) == 0) {
