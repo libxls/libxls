@@ -368,15 +368,22 @@ static int ole2_fseek(OLE2 *ole2, size_t pos) {
     return 0;
 }
 
+// Will read up to `size' bytes from the input, and pad the rest of `size' with
+// zeros if the input file or buffer is short.
 static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t size) {
     if (size > buffer_len)
         return 0;
 
+    memset(buffer, 0, size);
+
     if (ole2->file)
-        return fread(buffer, size, 1, ole2->file);
+        return fread(buffer, 1, size, ole2->file) > 0;
+
+    if (ole2->buffer_pos >= ole2->buffer_len)
+        return 0;
 
     if (ole2->buffer_pos + size > ole2->buffer_len)
-        return 0;
+        size = ole2->buffer_len - ole2->buffer_pos;
 
     memcpy(buffer, (const char *)ole2->buffer + ole2->buffer_pos, size);
     ole2->buffer_pos += size;
