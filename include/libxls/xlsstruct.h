@@ -133,8 +133,8 @@ BOUNDSHEET;
 typedef struct ROW
 {
     WORD	index;
-    WORD	fcell;
-    WORD	lcell;
+    WORD	fcell; // first cell, 0-indexed
+    WORD	lcell; // last cell, 1-indexed
     WORD	height;
     WORD	notused;
     WORD	notused2; //used only for BIFF3-4

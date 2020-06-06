@@ -1124,8 +1124,9 @@ static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
                 goto cleanup;
             }
             xlsConvertRow((ROW*)buf);
-            if (pWS->rows.lastcol<((ROW*)buf)->lcell)
-                pWS->rows.lastcol=((ROW*)buf)->lcell;
+            /* The lcell field is 1-indexed whereas lastcol is 0-indexed */
+            if (pWS->rows.lastcol+1<((ROW*)buf)->lcell)
+                pWS->rows.lastcol=((ROW*)buf)->lcell-1;
             if (pWS->rows.lastrow<((ROW*)buf)->index)
                 pWS->rows.lastrow=((ROW*)buf)->index;
             break;
@@ -1169,7 +1170,7 @@ static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
                 pWS->rows.lastrow=xlsShortVal(((COL*)buf)->row);
             break;
         }
-        if (pWS->rows.lastcol > 256) {
+        if (pWS->rows.lastcol > 255) {
             retval = LIBXLS_ERROR_PARSE;
             goto cleanup;
         }
