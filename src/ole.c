@@ -111,6 +111,11 @@ static int ole2_bufread(OLE2Stream* olest)
 {
 	BYTE *ptr;
 
+#ifdef OLE_DEBUG
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_bufread (start)\n");
+#endif
+
     if (olest == NULL || olest->ole == NULL)
         return -1;
 
@@ -153,6 +158,10 @@ static int ole2_bufread(OLE2Stream* olest)
 			olest->cfat++;
 		}
     }
+#ifdef OLE_DEBUG
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_bufread (end)\n");
+#endif
 	// else printf("ENDOFCHAIN!!!\n");
     return 0;
 }
@@ -492,7 +501,9 @@ static ssize_t ole2_read_body(OLE2 *ole) {
         {
 
 #ifdef OLE_DEBUG		
-			fprintf(stderr, "OLE TYPE: %s file=%d \n", pss->type == PS_USER_ROOT ? "root" : "user", (int)ole->files.count);
+			fprintf(stderr, "OLE TYPE: %s file=%d size=%d\n",
+                    pss->type == PS_USER_ROOT ? "root" : "user",
+                    (int)ole->files.count, (int)pss->size);
 #endif		
             ole->files.file = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
             ole->files.file[ole->files.count].name=name;
@@ -500,31 +511,35 @@ static ssize_t ole2_read_body(OLE2 *ole) {
             ole->files.file[ole->files.count].size=pss->size;
             ole->files.count++;
 			
+#ifdef OLE_DEBUG
+            fprintf(stderr, "----------------------------------------------\n");
+            fprintf(stderr, "name: %s (size=%d [c=%c])\n", name, pss->bsize, name ? name[0]:' ');
+            fprintf(stderr, "bsize %i\n",pss->bsize);
+            fprintf(stderr, "type %i\n",pss->type);
+            fprintf(stderr, "flag %i\n",pss->flag);
+            fprintf(stderr, "left %X\n",pss->left);
+            fprintf(stderr, "right %X\n",pss->right);
+            fprintf(stderr, "child %X\n",pss->child);
+            fprintf(stderr, "guid %.4X-%.4X-%.4X-%.4X %.4X-%.4X-%.4X-%.4X\n",
+                    pss->guid[0],pss->guid[1],pss->guid[2],pss->guid[3],
+                    pss->guid[4],pss->guid[5],pss->guid[6],pss->guid[7]);
+            fprintf(stderr, "user flag %.4X\n",pss->userflags);
+            fprintf(stderr, "sstart %.4d\n",pss->sstart);
+            fprintf(stderr, "size %.4d\n",pss->size);
+#endif
 			if(pss->sstart == ENDOFCHAIN) {
 				if (xls_debug) verbose("END OF CHAIN\n");
 			} else if(pss->type == PS_USER_STREAM) {
-#ifdef OLE_DEBUG
-					fprintf(stderr, "----------------------------------------------\n");
-					fprintf(stderr, "name: %s (size=%d [c=%c])\n", name, pss->bsize, name ? name[0]:' ');
-					fprintf(stderr, "bsize %i\n",pss->bsize);
-					fprintf(stderr, "type %i\n",pss->type);
-					fprintf(stderr, "flag %i\n",pss->flag);
-					fprintf(stderr, "left %X\n",pss->left);
-					fprintf(stderr, "right %X\n",pss->right);
-					fprintf(stderr, "child %X\n",pss->child);
-					fprintf(stderr, "guid %.4X-%.4X-%.4X-%.4X %.4X-%.4X-%.4X-%.4X\n",
-                            pss->guid[0],pss->guid[1],pss->guid[2],pss->guid[3],
-						pss->guid[4],pss->guid[5],pss->guid[6],pss->guid[7]);
-					fprintf(stderr, "user flag %.4X\n",pss->userflags);
-					fprintf(stderr, "sstart %.4d\n",pss->sstart);
-					fprintf(stderr, "size %.4d\n",pss->size);
-#endif
 			} else if(pss->type == PS_USER_ROOT) {
 				DWORD sector, k, blocks;
 				BYTE *wptr;
                 size_t bytes_left;
 				
 				blocks = (pss->size + (ole->lsector - 1)) / ole->lsector;	// count partial
+#ifdef OLE_DEBUG
+                fprintf(stderr, "OLE BLOCKS: %d = (%d + (%d - 1))/%d\n",
+                        (int)blocks, (int)pss->size, (int)ole->lsector, (int)ole->lsector);
+#endif
 				if ((ole->SSAT = ole_realloc(ole->SSAT, blocks*ole->lsector)) == NULL) {
                     total_bytes_read = -1;
                     goto cleanup;
@@ -562,6 +577,11 @@ cleanup:
         ole2_fclose(olest);
     if (pss)
         free(pss);
+
+#ifdef OLE_DEBUG
+    fprintf(stderr, "----------------------------------------------\n");
+    fprintf(stderr, "ole2_read_body: %d bytes\n", (int)total_bytes_read);
+#endif
 
     return total_bytes_read;
 }
