@@ -53,6 +53,7 @@
 #define XLS_RECORD_PALETTE      0x0092
 #define XLS_RECORD_MULRK        0x00BD
 #define XLS_RECORD_MULBLANK     0x00BE
+#define XLS_RECORD_RSTRING      0x00D6
 #define XLS_RECORD_DBCELL       0x00D7
 #define XLS_RECORD_XF           0x00E0
 #define XLS_RECORD_MSODRAWINGGROUP   0x00EB
@@ -227,7 +228,6 @@ typedef struct LABEL
     BYTE	value[1]; // var
 }
 LABEL;
-typedef LABEL LABELSST;
 
 typedef struct BOOLERR
 {

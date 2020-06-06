@@ -473,7 +473,7 @@ int xls_isCellTooSmall(xlsWorkBook* pWB, BOF* bof, BYTE* buf) {
     if (bof->id == XLS_RECORD_LABELSST)
         return (bof->size < offsetof(LABEL, value) + (pWB->is5ver ? 2 : 4));
 
-    if (bof->id == XLS_RECORD_LABEL) {
+    if (bof->id == XLS_RECORD_LABEL || bof->id == XLS_RECORD_RSTRING) {
         if (bof->size < offsetof(LABEL, value) + 2)
             return 1;
 
@@ -600,6 +600,7 @@ static struct st_cell_data *xls_addCell(xlsWorkSheet* pWS,BOF* bof,BYTE* buf)
         break;
     case XLS_RECORD_LABELSST:
     case XLS_RECORD_LABEL:
+    case XLS_RECORD_RSTRING:
         xls_cell_set_str(cell, xls_getfcell(pWS->workbook, cell, ((LABEL*)buf)->value));
         if (cell->str) {
             sscanf((char *)cell->str, "%d", &cell->l);
@@ -1161,6 +1162,7 @@ static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
         case XLS_RECORD_LABELSST:
         case XLS_RECORD_BLANK:
         case XLS_RECORD_LABEL:
+        case XLS_RECORD_RSTRING:
         case XLS_RECORD_FORMULA:
         case XLS_RECORD_FORMULA_ALT:
         case XLS_RECORD_BOOLERR:
@@ -1347,6 +1349,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
         case XLS_RECORD_LABELSST:
         case XLS_RECORD_BLANK:
         case XLS_RECORD_LABEL:
+        case XLS_RECORD_RSTRING:
         case XLS_RECORD_FORMULA:
         case XLS_RECORD_FORMULA_ALT:
             if ((cell = xls_addCell(pWS, &tmp, buf)) == NULL) {
