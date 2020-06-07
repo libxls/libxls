@@ -51,6 +51,7 @@
 #include <errno.h>
 #include <memory.h>
 #include <string.h>
+#include <xlocale.h>
 
 //#include "xls.h"
 #include "../include/libxls/xlstypes.h"
@@ -254,16 +255,12 @@ static char* unicode_decode_iconv(const char *s, size_t len, iconv_t ic) {
 #endif
 
 // Convert UTF-16 to UTF-8 without iconv
-static char *unicode_decode_wcstombs(const char *s, size_t len) {
+static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale) {
 	// Do wcstombs conversion
     char *converted = NULL;
     int count, count2;
     size_t i;
     wchar_t *w;
-    if (setlocale(LC_CTYPE, "") == NULL) {
-        printf("setlocale failed: %d\n", errno);
-        return NULL;
-    }
 
     w = malloc((len/2+1)*sizeof(wchar_t));
 
@@ -273,7 +270,7 @@ static char *unicode_decode_wcstombs(const char *s, size_t len) {
     }
     w[len/2] = '\0';
 
-    count = wcstombs(NULL, w, INT_MAX);
+    count = wcstombs_l(NULL, w, INT_MAX, locale);
 
     if (count <= 0) {
         free(w);
@@ -281,10 +278,10 @@ static char *unicode_decode_wcstombs(const char *s, size_t len) {
     }
 
     converted = calloc(count+1, sizeof(char));
-    count2 = wcstombs(converted, w, count);
+    count2 = wcstombs_l(converted, w, count, locale);
     free(w);
     if (count2 <= 0) {
-        printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
+        printf("wcstombs_l failed (%lu)\n", (unsigned long)len/2);
         return converted;
     }
     return converted;
@@ -344,9 +341,18 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
 #endif
 }
 
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(WINDOWS)
+static const char *utf8_locale_name = ".65001";
+#else
+static const char *utf8_locale_name = "UTF-8";
+#endif
+
 // Convert unicode string to UTF-8
 char* transcode_utf16_to_utf8(const char *s, size_t len) {
-    return unicode_decode_wcstombs(s, len);
+    locale_t locale = newlocale(LC_CTYPE_MASK, utf8_locale_name, NULL);
+    char *result = unicode_decode_wcstombs(s, len, locale);
+    freelocale(locale);
+    return result;
 }
 
 // Convert unicode string to the encoding desired by the workbook
@@ -361,14 +367,22 @@ char* unicode_decode(const char *s, size_t len, xlsWorkBook *pWB)
     if (!pWB->utf16_converter) {
         iconv_t converter = iconv_open(pWB->charset, from_enc);
         if (converter == (iconv_t)-1) {
-            printf("conversion from '%s' to '%s' not available", from_enc, pWB->charset);
+            printf("conversion from '%s' to '%s' not available\n", from_enc, pWB->charset);
             return NULL;
         }
         pWB->utf16_converter = (void *)converter;
     }
     return unicode_decode_iconv(s, len, pWB->utf16_converter);
 #else
-    return unicode_decode_wcstombs(s, len);
+    if (!pWB->utf8_locale) {
+        locale_t locale = newlocale(LC_CTYPE_MASK, utf8_locale_name, NULL);
+        if (locale == NULL) {
+            printf("creation of '%s' locale failed\n", utf8_locale_name);
+            return NULL;
+        }
+        pWB->utf8_locale = (void *)locale;
+    }
+    return unicode_decode_wcstombs(s, len, pWB->utf8_locale);
 #endif
 }
 

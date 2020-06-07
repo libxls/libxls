@@ -44,6 +44,8 @@
 #include <iconv.h>
 #endif
 
+#include <xlocale.h>
+
 #include <memory.h>
 #include <math.h>
 #include <sys/types.h>
@@ -1603,6 +1605,9 @@ void xls_close_WB(xlsWorkBook* pWB)
     if (pWB->utf16_converter)
         iconv_close((iconv_t)pWB->utf16_converter);
 #endif
+
+    if (pWB->utf8_locale)
+        freelocale((locale_t)pWB->utf8_locale);
 
 	// TODO - free other dynamically allocated objects like string table??
 	free(pWB);

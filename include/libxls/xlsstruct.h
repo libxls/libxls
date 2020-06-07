@@ -503,6 +503,7 @@ typedef struct xlsWorkBook
 
     void        *converter;
     void        *utf16_converter;
+    void        *utf8_locale;
 }
 xlsWorkBook;
 
