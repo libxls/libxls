@@ -44,7 +44,9 @@
 #include <iconv.h>
 #endif
 
+#ifdef HAVE_XLOCALE_H
 #include <xlocale.h>
+#endif
 
 #include <memory.h>
 #include <math.h>

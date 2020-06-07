@@ -263,7 +263,9 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale)
     char *converted = NULL;
     int count, count2;
     size_t i;
-    wchar_t *w;
+    wchar_t *w = NULL;
+
+    locale_t oldlocale = uselocale(locale);
 
     w = malloc((len/2+1)*sizeof(wchar_t));
 
@@ -273,20 +275,22 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale)
     }
     w[len/2] = '\0';
 
-    count = wcstombs_l(NULL, w, INT_MAX, locale);
+    count = wcstombs(NULL, w, INT_MAX);
 
     if (count <= 0) {
-        free(w);
-        return NULL;
+        goto cleanup;
     }
 
     converted = calloc(count+1, sizeof(char));
-    count2 = wcstombs_l(converted, w, count, locale);
-    free(w);
+    count2 = wcstombs(converted, w, count);
     if (count2 <= 0) {
-        printf("wcstombs_l failed (%lu)\n", (unsigned long)len/2);
-        return converted;
+        printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
+        goto cleanup;
     }
+
+cleanup:
+    free(w);
+    uselocale(oldlocale);
     return converted;
 }
 
