@@ -44,6 +44,10 @@
 #include <iconv.h>
 #endif
 
+#ifdef HAVE_XLOCALE_H
+#include <xlocale.h>
+#endif
+
 #include <locale.h>
 #include <limits.h>
 
@@ -51,7 +55,6 @@
 #include <errno.h>
 #include <memory.h>
 #include <string.h>
-#include <xlocale.h>
 
 //#include "xls.h"
 #include "../include/libxls/xlstypes.h"
