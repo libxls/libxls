@@ -219,8 +219,8 @@ static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
 		// Read characters (compressed or not)
         ln_toread = 0;
         if (ln > 0) {
-            size_t new_len = 0;
             if (flag & 0x1) {
+                size_t new_len = 0;
                 ln_toread = min((size-ofs)/2, ln);
                 ret=unicode_decode((char *)buf+ofs, ln_toread*2, &new_len, pWB->charset);
 
@@ -238,14 +238,9 @@ static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
             } else {
                 ln_toread = min((size-ofs), ln);
 
-                if (pWB->is5ver) {
-                    ret = codepage_decode((char *)buf+ofs, ln_toread, pWB->codepage, &new_len, pWB->charset);
-                    if (ret == NULL) {
-                        ret = strdup("*failed to decode BIFF5 string*");
-                        new_len = strlen(ret);
-                    }
-                } else {
-                    ret = utf8_decode((char *)buf+ofs, ln_toread, pWB->charset);
+                ret = codepage_decode((char *)buf+ofs, ln_toread, pWB);
+                if (ret == NULL) {
+                    ret = strdup("*failed to decode BIFF5 string*");
                 }
 
                 ln  -= ln_toread;

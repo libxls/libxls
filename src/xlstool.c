@@ -146,44 +146,59 @@ void verbose(char* str)
         printf("libxls : %s\n",str);
 }
 
-char *utf8_decode(const char *str, DWORD len, char *encoding)
-{
-	int utf8_chars = 0;
-	char *ret = NULL;
-    DWORD i;
-	
-	for(i=0; i<len; ++i) {
-		if(str[i] & (BYTE)0x80) {
-			++utf8_chars;
-		}
-	}
-	
-	if(utf8_chars == 0 || strcmp(encoding, "UTF-8")) {
-		ret = malloc(len+1);
-		memcpy(ret, str, len);
-		ret[len] = 0;
-	} else {
-        DWORD i;
-        char *out;
-		// UTF-8 encoding inline
-		ret = malloc(len+utf8_chars+1);
-		out = ret;
-		for(i=0; i<len; ++i) {
-			BYTE c = str[i];
-			if(c & (BYTE)0x80) {
-				*out++ = (BYTE)0xC0 | (c >> 6);
-				*out++ = (BYTE)0x80 | (c & 0x3F);
-			} else {
-				*out++ = c;
-			}
-		}
-		*out = 0;
-	}
+#ifdef HAVE_ICONV
 
-	return ret;
+struct codepage_entry_t {
+    int code;
+    const char *name;
+};
+
+static struct codepage_entry_t _codepage_entries[] = {
+    { .code = 874, .name = "WINDOWS-874" },
+    { .code = 932, .name = "SHIFT-JIS" },
+    { .code = 936, .name = "WINDOWS-936" },
+    { .code = 950, .name = "BIG-5" },
+    { .code = 951, .name = "BIG5-HKSCS" },
+    { .code = 1250, .name = "WINDOWS-1250" },
+    { .code = 1251, .name = "WINDOWS-1251" },
+    { .code = 1252, .name = "WINDOWS-1252" },
+    { .code = 1253, .name = "WINDOWS-1253" },
+    { .code = 1254, .name = "WINDOWS-1254" },
+    { .code = 1255, .name = "WINDOWS-1255" },
+    { .code = 1256, .name = "WINDOWS-1256" },
+    { .code = 1257, .name = "WINDOWS-1257" },
+    { .code = 1258, .name = "WINDOWS-1258" },
+    { .code = 10000, .name = "MACROMAN" },
+    { .code = 10004, .name = "MACARABIC" },
+    { .code = 10005, .name = "MACHEBREW" },
+    { .code = 10006, .name = "MACGREEK" },
+    { .code = 10007, .name = "MACCYRILLIC" },
+    { .code = 10010, .name = "MACROMANIA" },
+    { .code = 10017, .name = "MACUKRAINE" },
+    { .code = 10021, .name = "MACTHAI" },
+    { .code = 10029, .name = "MACCENTRALEUROPE" },
+    { .code = 10079, .name = "MACICELAND" },
+    { .code = 10081, .name = "MACTURKISH" },
+    { .code = 10082, .name = "MACCROATIAN" },
+};
+
+static int codepage_compare(const void *key, const void *value) {
+    const struct codepage_entry_t *cp1 = key;
+    const struct codepage_entry_t *cp2 = value;
+    return cp1->code - cp2->code;
 }
 
-#ifdef HAVE_ICONV
+static const char *encoding_for_codepage(WORD codepage) {
+    struct codepage_entry_t key = { .code = codepage };
+    struct codepage_entry_t *result = bsearch(&key, _codepage_entries,
+            sizeof(_codepage_entries)/sizeof(_codepage_entries[0]),
+            sizeof(_codepage_entries[0]), &codepage_compare);
+    if (result) {
+        return result->name;
+    }
+    return "WINDOWS-1252";
+}
+
 static char* unicode_decode_iconv(const char *s, size_t len, const char *from_enc, size_t *newlen, const char* to_enc) {
     char* outbuf = 0;
 
@@ -305,72 +320,48 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
 }
 #endif
 
-#ifdef HAVE_ICONV
-struct codepage_entry_t {
-    int code;
-    const char *name;
-};
-
-static struct codepage_entry_t _codepage_entries[] = {
-    { .code = 874, .name = "WINDOWS-874" },
-    { .code = 932, .name = "SHIFT-JIS" },
-    { .code = 936, .name = "WINDOWS-936" },
-    { .code = 950, .name = "BIG-5" },
-    { .code = 951, .name = "BIG5-HKSCS" },
-    { .code = 1250, .name = "WINDOWS-1250" },
-    { .code = 1251, .name = "WINDOWS-1251" },
-    { .code = 1252, .name = "WINDOWS-1252" },
-    { .code = 1253, .name = "WINDOWS-1253" },
-    { .code = 1254, .name = "WINDOWS-1254" },
-    { .code = 1255, .name = "WINDOWS-1255" },
-    { .code = 1256, .name = "WINDOWS-1256" },
-    { .code = 1257, .name = "WINDOWS-1257" },
-    { .code = 1258, .name = "WINDOWS-1258" },
-    { .code = 10000, .name = "MACROMAN" },
-    { .code = 10004, .name = "MACARABIC" },
-    { .code = 10005, .name = "MACHEBREW" },
-    { .code = 10006, .name = "MACGREEK" },
-    { .code = 10007, .name = "MACCYRILLIC" },
-    { .code = 10010, .name = "MACROMANIA" },
-    { .code = 10017, .name = "MACUKRAINE" },
-    { .code = 10021, .name = "MACTHAI" },
-    { .code = 10029, .name = "MACCENTRALEUROPE" },
-    { .code = 10079, .name = "MACICELAND" },
-    { .code = 10081, .name = "MACTURKISH" },
-    { .code = 10082, .name = "MACCROATIAN" },
-};
-
-static int codepage_compare(const void *key, const void *value) {
-    const struct codepage_entry_t *cp1 = key;
-    const struct codepage_entry_t *cp2 = value;
-    return cp1->code - cp2->code;
-}
-
-static const char *encoding_for_codepage(WORD codepage) {
-    struct codepage_entry_t key = { .code = codepage };
-    struct codepage_entry_t *result = bsearch(&key, _codepage_entries,
-            sizeof(_codepage_entries)/sizeof(_codepage_entries[0]),
-            sizeof(_codepage_entries[0]), &codepage_compare);
-    if (result) {
-        return result->name;
-    }
-    return "WINDOWS-1252";
-}
-#endif
-
-// Convert BIFF5 string to to_enc encoding
-// Returns a NUL-terminated string
-char* codepage_decode(const char *s, size_t len, WORD codepage, size_t *newlen, const char* to_enc)
+// Converts Latin-1 to UTF-8 the old-fashioned way
+static char *utf8_decode(const char *str, DWORD len)
 {
+	int utf8_chars = 0;
+	char *ret = NULL;
+    DWORD i;
+	
+    for(i=0; i<len; ++i) {
+        if(str[i] & (BYTE)0x80) {
+            ++utf8_chars;
+        }
+    }
+	
+    char *out = ret = malloc(len+utf8_chars+1);
+    // UTF-8 encoding inline
+    for(i=0; i<len; ++i) {
+        BYTE c = str[i];
+        if(c & (BYTE)0x80) {
+            *out++ = (BYTE)0xC0 | (c >> 6);
+            *out++ = (BYTE)0x80 | (c & 0x3F);
+        } else {
+            *out++ = c;
+        }
+    }
+    *out = 0;
+
+	return ret;
+}
+
+// Convert BIFF5 string or compressed BIFF8 string to to_enc encoding
+// Returns a NUL-terminated string
+char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
+    if (!pWB->is5ver && strcmp(pWB->charset, "UTF-8") == 0)
+        return utf8_decode(s, len);
+
 #ifdef HAVE_ICONV
-    const char *from_encoding = encoding_for_codepage(codepage);
-    return unicode_decode_iconv(s, len, from_encoding, newlen, to_enc);
+    const char *from_encoding = pWB->is5ver ? encoding_for_codepage(pWB->codepage) : "ISO-8859-1";
+    return unicode_decode_iconv(s, len, from_encoding, NULL, pWB->charset);
 #else
     char *ret = malloc(len+1);
     memcpy(ret, s, len);
     ret[len] = 0;
-    if (newlen)
-        *newlen = len;
     return ret;
 #endif
 }
@@ -442,11 +433,7 @@ char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook* pWB)
         if (ofs + ln > len) {
             return NULL;
         }
-        if (pWB->is5ver) {
-            ret = codepage_decode(str+ofs, ln, pWB->codepage, NULL, pWB->charset);
-        } else {
-            ret = utf8_decode(str+ofs, ln, pWB->charset);
-        }
+        ret = codepage_decode(str+ofs, ln, pWB);
     }
 
 #if 0	// debugging
@@ -684,15 +671,10 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     case XLS_RECORD_RSTRING:
         len = label[0] + (label[1] << 8);
         label += 2;
-		if(pWB->is5ver) {
-            ret = codepage_decode((char *)label, len, pWB->codepage, NULL, pWB->charset);
-			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
-		} else {
-            if ((*(label++) & 0x01) == 0) {
-                ret = utf8_decode((char *)label, len, pWB->charset);
-            } else {
-                ret = unicode_decode((char *)label, len*2, NULL, pWB->charset);
-            }
+        if (pWB->is5ver || (*(label++) & 0x01) == 0) {
+            ret = codepage_decode((char *)label, len, pWB);
+        } else {
+            ret = unicode_decode((char *)label, len*2, NULL, pWB->charset);
         }
         break;
     case XLS_RECORD_RK:
