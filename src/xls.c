@@ -40,6 +40,10 @@
 #include <stddef.h>
 #include <errno.h>
 
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
+
 #include <memory.h>
 #include <math.h>
 #include <sys/types.h>
@@ -222,17 +226,17 @@ static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
             if (flag & 0x1) {
                 size_t new_len = 0;
                 ln_toread = min((size-ofs)/2, ln);
-                ret=unicode_decode((char *)buf+ofs, ln_toread*2, &new_len, pWB->charset);
+                ret=unicode_decode((char *)buf+ofs, ln_toread*2, pWB);
 
                 if (ret == NULL) {
                     ret = strdup("*failed to decode utf16*");
-                    new_len = strlen(ret);
                 }
 
                 ln -= ln_toread;
                 ofs+=ln_toread*2;
 
                 if (xls_debug) {
+                    new_len = strlen(ret);
 	                printf("String16SST: %s(%lu)\n", ret, (unsigned long)new_len);
                 }
             } else {
@@ -873,7 +877,6 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
         case XLS_RECORD_BOF:	// BIFF5-8
             pWB->is5ver = (buf[0] + (buf[1] << 8) != 0x600);
             pWB->type = buf[2] + (buf[3] << 8);
-
             if(xls_debug) {
                 printf("version: %s\n", pWB->is5ver ? "BIFF5" : "BIFF8" );
                 printf("   type: %.2X\n", pWB->type);
@@ -1459,12 +1462,7 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     pWB->sheets.count=0;
     pWB->xfs.count=0;
     pWB->fonts.count=0;
-    if (charset) {
-        pWB->charset = malloc(strlen(charset) * sizeof(char)+1);
-        strcpy(pWB->charset, charset);
-    } else {
-        pWB->charset = strdup("UTF-8");
-    }
+    pWB->charset = strdup(charset ? charset : "UTF-8");
 
     retval = xls_parseWorkBook(pWB);
 
@@ -1598,6 +1596,13 @@ void xls_close_WB(xlsWorkBook* pWB)
     // buffers
 	if(pWB->summary)  free(pWB->summary);
 	if(pWB->docSummary) free(pWB->docSummary);
+
+#ifdef HAVE_ICONV
+    if (pWB->converter)
+        iconv_close((iconv_t)pWB->converter);
+    if (pWB->utf16_converter)
+        iconv_close((iconv_t)pWB->utf16_converter);
+#endif
 
 	// TODO - free other dynamically allocated objects like string table??
 	free(pWB);

@@ -42,10 +42,10 @@
 
 #ifdef HAVE_ICONV
 #include <iconv.h>
-#else
+#endif
+
 #include <locale.h>
 #include <limits.h>
-#endif
 
 #include <stdlib.h>
 #include <errno.h>
@@ -199,39 +199,17 @@ static const char *encoding_for_codepage(WORD codepage) {
     return "WINDOWS-1252";
 }
 
-static char* unicode_decode_iconv(const char *s, size_t len, const char *from_enc, size_t *newlen, const char* to_enc) {
+static char* unicode_decode_iconv(const char *s, size_t len, iconv_t ic) {
     char* outbuf = 0;
 
-    if(s && len && from_enc && to_enc)
+    if(s && len && ic)
     {
         size_t outlenleft = len;
         int outlen = len;
         size_t inlenleft = len;
-        iconv_t ic = iconv_open(to_enc, from_enc);
         const char* src_ptr = s;
         char* out_ptr = 0;
 
-        if(ic == (iconv_t)-1)
-        {
-            // Something went wrong.
-            if (errno == EINVAL)
-            {
-                if (!strcmp(to_enc, "ASCII"))
-                {
-                    ic = iconv_open("UTF-8", from_enc);
-                    if(ic == (iconv_t)-1)
-                    {
-                        printf("conversion from '%s' to '%s' not available", from_enc, to_enc);
-                        return outbuf;
-                    }
-                }
-            }
-            else
-            {
-                printf ("iconv_open: error=%d", errno);
-                return outbuf;
-            }
-        }
         size_t st; 
         outbuf = malloc(outlen + 1);
 
@@ -263,13 +241,8 @@ static char* unicode_decode_iconv(const char *s, size_t len, const char *from_en
                 }
             }
         }
-        iconv_close(ic);
         outlen -= outlenleft;
 
-        if (newlen)
-        {
-            *newlen = outbuf ? outlen : 0;
-        }
         if(outbuf)
         {
             outbuf[outlen] = 0;
@@ -278,9 +251,10 @@ static char* unicode_decode_iconv(const char *s, size_t len, const char *from_en
     return outbuf;
 }
 
-#else
+#endif
 
-static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) {
+// Convert UTF-16 to UTF-8 without iconv
+static char *unicode_decode_wcstombs(const char *s, size_t len) {
 	// Do wcstombs conversion
     char *converted = NULL;
     int count, count2;
@@ -302,7 +276,6 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
     count = wcstombs(NULL, w, INT_MAX);
 
     if (count <= 0) {
-        if (newlen) *newlen = 0;
         free(w);
         return NULL;
     }
@@ -312,16 +285,13 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
     free(w);
     if (count2 <= 0) {
         printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
-        if (newlen) *newlen = 0;
         return converted;
     }
-    if (newlen) *newlen = count2;
     return converted;
 }
-#endif
 
 // Converts Latin-1 to UTF-8 the old-fashioned way
-static char *utf8_decode(const char *str, DWORD len)
+static char *transcode_latin1_to_utf8(const char *str, DWORD len)
 {
 	int utf8_chars = 0;
 	char *ret = NULL;
@@ -349,15 +319,23 @@ static char *utf8_decode(const char *str, DWORD len)
 	return ret;
 }
 
-// Convert BIFF5 string or compressed BIFF8 string to to_enc encoding
-// Returns a NUL-terminated string
+// Convert BIFF5 string or compressed BIFF8 string to the encoding desired
+// by the workbook. Returns a NUL-terminated string
 char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
     if (!pWB->is5ver && strcmp(pWB->charset, "UTF-8") == 0)
-        return utf8_decode(s, len);
+        return transcode_latin1_to_utf8(s, len);
 
 #ifdef HAVE_ICONV
-    const char *from_encoding = pWB->is5ver ? encoding_for_codepage(pWB->codepage) : "ISO-8859-1";
-    return unicode_decode_iconv(s, len, from_encoding, NULL, pWB->charset);
+    if (!pWB->converter) {
+        const char *from_encoding = pWB->is5ver ? encoding_for_codepage(pWB->codepage) : "ISO-8859-1";
+        iconv_t converter = iconv_open(pWB->charset, from_encoding);
+        if (converter == (iconv_t)-1) {
+            printf("conversion from '%s' to '%s' not available", from_encoding, pWB->charset);
+            return NULL;
+        }
+        pWB->converter = (void *)converter;
+    }
+    return unicode_decode_iconv(s, len, pWB->charset);
 #else
     char *ret = malloc(len+1);
     memcpy(ret, s, len);
@@ -366,8 +344,13 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
 #endif
 }
 
-// Convert unicode string to to_enc encoding
-char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
+// Convert unicode string to UTF-8
+char* transcode_utf16_to_utf8(const char *s, size_t len) {
+    return unicode_decode_wcstombs(s, len);
+}
+
+// Convert unicode string to the encoding desired by the workbook
+char* unicode_decode(const char *s, size_t len, xlsWorkBook *pWB)
 {
 #ifdef HAVE_ICONV
 #if defined(_AIX) || defined(__sun)
@@ -375,9 +358,17 @@ char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_e
 #else
     const char *from_enc = "UTF-16LE";
 #endif
-    return unicode_decode_iconv(s, len, from_enc, newlen, to_enc);
+    if (!pWB->utf16_converter) {
+        iconv_t converter = iconv_open(pWB->charset, from_enc);
+        if (converter == (iconv_t)-1) {
+            printf("conversion from '%s' to '%s' not available", from_enc, pWB->charset);
+            return NULL;
+        }
+        pWB->utf16_converter = (void *)converter;
+    }
+    return unicode_decode_iconv(s, len, pWB->utf16_converter);
 #else
-    return unicode_decode_wcstombs(s, len, newlen);
+    return unicode_decode_wcstombs(s, len);
 #endif
 }
 
@@ -428,7 +419,7 @@ char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook* pWB)
         if (ofs + 2*ln > len) {
             return NULL;
         }
-        ret = unicode_decode(str+ofs, ln*2, NULL, pWB->charset);
+        ret = unicode_decode(str+ofs, ln*2, pWB);
     } else {
         if (ofs + ln > len) {
             return NULL;
@@ -674,7 +665,7 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
         if (pWB->is5ver || (*(label++) & 0x01) == 0) {
             ret = codepage_decode((char *)label, len, pWB);
         } else {
-            ret = unicode_decode((char *)label, len*2, NULL, pWB->charset);
+            ret = unicode_decode((char *)label, len*2, pWB);
         }
         break;
     case XLS_RECORD_RK:

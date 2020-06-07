@@ -500,6 +500,9 @@ typedef struct xlsWorkBook
 
 	char		*summary;		// ole file
 	char		*docSummary;	// ole file
+
+    void        *converter;
+    void        *utf16_converter;
 }
 xlsWorkBook;
 
