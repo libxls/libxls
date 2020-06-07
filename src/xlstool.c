@@ -306,19 +306,53 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
 #endif
 
 #ifdef HAVE_ICONV
+struct codepage_entry_t {
+    int code;
+    const char *name;
+};
+
+static struct codepage_entry_t _codepage_entries[] = {
+    { .code = 874, .name = "WINDOWS-874" },
+    { .code = 932, .name = "SHIFT-JIS" },
+    { .code = 936, .name = "WINDOWS-936" },
+    { .code = 950, .name = "BIG-5" },
+    { .code = 951, .name = "BIG5-HKSCS" },
+    { .code = 1250, .name = "WINDOWS-1250" },
+    { .code = 1251, .name = "WINDOWS-1251" },
+    { .code = 1252, .name = "WINDOWS-1252" },
+    { .code = 1253, .name = "WINDOWS-1253" },
+    { .code = 1254, .name = "WINDOWS-1254" },
+    { .code = 1255, .name = "WINDOWS-1255" },
+    { .code = 1256, .name = "WINDOWS-1256" },
+    { .code = 1257, .name = "WINDOWS-1257" },
+    { .code = 1258, .name = "WINDOWS-1258" },
+    { .code = 10000, .name = "MACROMAN" },
+    { .code = 10004, .name = "MACARABIC" },
+    { .code = 10005, .name = "MACHEBREW" },
+    { .code = 10006, .name = "MACGREEK" },
+    { .code = 10007, .name = "MACCYRILLIC" },
+    { .code = 10010, .name = "MACROMANIA" },
+    { .code = 10017, .name = "MACUKRAINE" },
+    { .code = 10021, .name = "MACTHAI" },
+    { .code = 10029, .name = "MACCENTRALEUROPE" },
+    { .code = 10079, .name = "MACICELAND" },
+    { .code = 10081, .name = "MACTURKISH" },
+    { .code = 10082, .name = "MACCROATIAN" },
+};
+
+static int codepage_compare(const void *key, const void *value) {
+    const struct codepage_entry_t *cp1 = key;
+    const struct codepage_entry_t *cp2 = value;
+    return cp1->code - cp2->code;
+}
+
 static const char *encoding_for_codepage(WORD codepage) {
-    switch (codepage) {
-        case 874:  return "WINDOWS-874";
-        case 936:  return "WINDOWS-936";
-        case 1250: return "WINDOWS-1250";
-        case 1251: return "WINDOWS-1251";
-        case 1252: return "WINDOWS-1252";
-        case 1253: return "WINDOWS-1253";
-        case 1254: return "WINDOWS-1254";
-        case 1255: return "WINDOWS-1255";
-        case 1256: return "WINDOWS-1256";
-        case 1257: return "WINDOWS-1257";
-        case 1258: return "WINDOWS-1258";
+    struct codepage_entry_t key = { .code = codepage };
+    struct codepage_entry_t *result = bsearch(&key, _codepage_entries,
+            sizeof(_codepage_entries)/sizeof(_codepage_entries[0]),
+            sizeof(_codepage_entries[0]), &codepage_compare);
+    if (result) {
+        return result->name;
     }
     return "WINDOWS-1252";
 }
