@@ -1608,8 +1608,8 @@ void xls_close_WB(xlsWorkBook* pWB)
     if (pWB->utf8_locale)
         xls_freelocale((xls_locale_t)pWB->utf8_locale);
 
-	// TODO - free other dynamically allocated objects like string table??
-	free(pWB);
+    // TODO - free other dynamically allocated objects like string table??
+    free(pWB);
 }
 
 void xls_close_WS(xlsWorkSheet* pWS)
