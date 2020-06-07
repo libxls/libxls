@@ -342,7 +342,7 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
 
 // Convert unicode string to UTF-8
 char* transcode_utf16_to_utf8(const char *s, size_t len) {
-    locale_t locale = xls_createlocale();
+    xls_locale_t locale = xls_createlocale();
     char *result = unicode_decode_wcstombs(s, len, locale);
     xls_freelocale(locale);
     return result;
@@ -368,7 +368,7 @@ char* unicode_decode(const char *s, size_t len, xlsWorkBook *pWB)
     return unicode_decode_iconv(s, len, pWB->utf16_converter);
 #else
     if (!pWB->utf8_locale) {
-        locale_t locale = newlocale(LC_CTYPE_MASK, utf8_locale_name, NULL);
+        xls_locale_t locale = xls_createlocale();
         if (locale == NULL) {
             printf("creation of '%s' locale failed\n", utf8_locale_name);
             return NULL;
