@@ -44,10 +44,6 @@
 #include <iconv.h>
 #endif
 
-#ifdef HAVE_XLOCALE_H
-#include <xlocale.h>
-#endif
-
 #include <memory.h>
 #include <math.h>
 #include <sys/types.h>
@@ -55,6 +51,7 @@
 #include <wchar.h>
 
 #include "../include/libxls/endian.h"
+#include "../include/libxls/locale.h"
 #include "../include/xls.h"
 
 #ifndef min
@@ -1609,7 +1606,7 @@ void xls_close_WB(xlsWorkBook* pWB)
 #endif
 
     if (pWB->utf8_locale)
-        freelocale((locale_t)pWB->utf8_locale);
+        xls_freelocale((xls_locale_t)pWB->utf8_locale);
 
 	// TODO - free other dynamically allocated objects like string table??
 	free(pWB);

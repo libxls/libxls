@@ -10,6 +10,7 @@ nobase_include_HEADERS = \
 	include/libxls/brdb.c.h	\
 	include/libxls/brdb.h \
 	include/libxls/endian.h	\
+	include/libxls/locale.h	\
 	include/libxls/ole.h \
 	include/libxls/xlsstruct.h \
 	include/libxls/xlstypes.h \
@@ -39,6 +40,7 @@ xls2csv_LDADD = libxlsreader.la
 libxlsreader_la_SOURCES = \
 	src/xlstool.c \
 	src/endian.c \
+	src/locale.c \
 	src/ole.c \
 	src/xls.c
 

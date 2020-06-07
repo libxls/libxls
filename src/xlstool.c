@@ -44,13 +44,7 @@
 #include <iconv.h>
 #endif
 
-#ifdef HAVE_XLOCALE_H
-#include <xlocale.h>
-#endif
-
-#include <locale.h>
 #include <limits.h>
-
 #include <stdlib.h>
 #include <errno.h>
 #include <memory.h>
@@ -62,6 +56,7 @@
 #include "../include/libxls/xlstool.h"
 #include "../include/libxls/brdb.h"
 #include "../include/libxls/endian.h"
+#include "../include/libxls/locale.h"
 
 extern int xls_debug;
 
@@ -258,14 +253,12 @@ static char* unicode_decode_iconv(const char *s, size_t len, iconv_t ic) {
 #endif
 
 // Convert UTF-16 to UTF-8 without iconv
-static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale) {
+static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t locale) {
 	// Do wcstombs conversion
     char *converted = NULL;
     int count, count2;
     size_t i;
     wchar_t *w = NULL;
-
-    locale_t oldlocale = uselocale(locale);
 
     w = malloc((len/2+1)*sizeof(wchar_t));
 
@@ -275,14 +268,14 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale)
     }
     w[len/2] = '\0';
 
-    count = wcstombs(NULL, w, INT_MAX);
+    count = xls_wcstombs_l(NULL, w, INT_MAX, locale);
 
     if (count <= 0) {
         goto cleanup;
     }
 
     converted = calloc(count+1, sizeof(char));
-    count2 = wcstombs(converted, w, count);
+    count2 = xls_wcstombs_l(converted, w, count, locale);
     if (count2 <= 0) {
         printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
         goto cleanup;
@@ -290,7 +283,6 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, locale_t locale)
 
 cleanup:
     free(w);
-    uselocale(oldlocale);
     return converted;
 }
 
@@ -339,7 +331,7 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
         }
         pWB->converter = (void *)converter;
     }
-    return unicode_decode_iconv(s, len, pWB->charset);
+    return unicode_decode_iconv(s, len, pWB->converter);
 #else
     char *ret = malloc(len+1);
     memcpy(ret, s, len);
@@ -348,17 +340,11 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
 #endif
 }
 
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(WINDOWS)
-static const char *utf8_locale_name = ".65001";
-#else
-static const char *utf8_locale_name = "UTF-8";
-#endif
-
 // Convert unicode string to UTF-8
 char* transcode_utf16_to_utf8(const char *s, size_t len) {
-    locale_t locale = newlocale(LC_CTYPE_MASK, utf8_locale_name, NULL);
+    locale_t locale = xls_createlocale();
     char *result = unicode_decode_wcstombs(s, len, locale);
-    freelocale(locale);
+    xls_freelocale(locale);
     return result;
 }
 
