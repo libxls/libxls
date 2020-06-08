@@ -42,7 +42,7 @@ AS_IF([test "x$HAVE_CXX11" != x1], [
 ])
 AM_CONDITIONAL([HAVE_CXX11], [test x$HAVE_CXX11 = x1])
 
-AC_CHECK_FUNCS([strdup])
+AC_CHECK_FUNCS([strdup wcstombs_l])
 AC_CHECK_HEADERS([wchar.h xlocale.h])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
