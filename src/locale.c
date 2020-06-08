@@ -25,7 +25,7 @@ size_t xls_wcstombs_l(char *restrict s, const wchar_t *restrict pwcs, size_t n, 
     return wcstombs_l(s, pwcs, n, loc);
 #else
     locale_t oldlocale = uselocale(loc);
-    size_t result = wcstombs(s, pwcs, n, loc);
+    size_t result = wcstombs(s, pwcs, n);
     uselocale(oldlocale);
     return result;
 #endif
