@@ -370,7 +370,7 @@ char* unicode_decode(const char *s, size_t len, xlsWorkBook *pWB)
     if (!pWB->utf8_locale) {
         xls_locale_t locale = xls_createlocale();
         if (locale == NULL) {
-            printf("creation of '%s' locale failed\n", utf8_locale_name);
+            printf("creation of UTF-8 locale failed\n");
             return NULL;
         }
         pWB->utf8_locale = (void *)locale;
