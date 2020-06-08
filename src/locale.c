@@ -6,11 +6,13 @@ xls_locale_t xls_createlocale() {
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(WINDOWS)
     return _create_locale(LC_CTYPE, ".65001");
 #else
-    return newlocale(LC_CTYPE_MASK, "UTF-8", NULL);
+    return newlocale(LC_CTYPE_MASK, "C.UTF-8", NULL);
 #endif
 }
 
 void xls_freelocale(xls_locale_t locale) {
+    if (!locale)
+        return;
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(WINDOWS)
     _free_locale(locale);
 #else
