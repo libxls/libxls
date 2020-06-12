@@ -1,9 +1,9 @@
-AC_INIT([libxls],[1.5.2],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
+AC_INIT([libxls],[1.5.3-rc0],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
 
 LIBXLS_MAJOR_VERSION=1
 LIBXLS_MINOR_VERSION=5
-LIBXLS_MICRO_VERSION=2
+LIBXLS_MICRO_VERSION=3
 
 VERSION=$LIBXLS_MAJOR_VERSION.$LIBXLS_MINOR_VERSION.$LIBXLS_MICRO_VERSION
 VERSION_INFO=`expr $LIBXLS_MAJOR_VERSION + $LIBXLS_MINOR_VERSION`:$LIBXLS_MICRO_VERSION:$LIBXLS_MINOR_VERSION
