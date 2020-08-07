@@ -40,6 +40,10 @@
 #include <stddef.h>
 #include <errno.h>
 
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
+
 #include <memory.h>
 #include <math.h>
 #include <sys/types.h>
@@ -47,6 +51,7 @@
 #include <wchar.h>
 
 #include "../include/libxls/endian.h"
+#include "../include/libxls/locale.h"
 #include "../include/xls.h"
 
 #ifndef min
@@ -222,27 +227,26 @@ static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
             if (flag & 0x1) {
                 size_t new_len = 0;
                 ln_toread = min((size-ofs)/2, ln);
-                ret=unicode_decode((char *)buf+ofs,ln_toread*2,&new_len,pWB->charset);
+                ret=unicode_decode((char *)buf+ofs, ln_toread*2, pWB);
 
-                if (ret == NULL)
-                {
+                if (ret == NULL) {
                     ret = strdup("*failed to decode utf16*");
-                    new_len = strlen(ret);
                 }
-
-                ret = realloc(ret,new_len+1);
-                ret[new_len]=0;
 
                 ln -= ln_toread;
                 ofs+=ln_toread*2;
 
                 if (xls_debug) {
+                    new_len = strlen(ret);
 	                printf("String16SST: %s(%lu)\n", ret, (unsigned long)new_len);
                 }
             } else {
                 ln_toread = min((size-ofs), ln);
 
-				ret = utf8_decode((char *)buf+ofs, ln_toread, pWB->charset);
+                ret = codepage_decode((char *)buf+ofs, ln_toread, pWB);
+                if (ret == NULL) {
+                    ret = strdup("*failed to decode BIFF5 string*");
+                }
 
                 ln  -= ln_toread;
                 ofs += ln_toread;
@@ -353,7 +357,7 @@ static char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 
 	// printf("charset=%s uni=%d\n", pWB->charset, unicode);
 	// printf("bs name %.*s\n", bs->name[0], bs->name+1);
-	name = get_string(bs->name, size - offsetof(BOUNDSHEET, name), 0, pWB->is5ver, pWB->charset);
+	name = get_string(bs->name, size - offsetof(BOUNDSHEET, name), 0, pWB);
 	// printf("name=%s\n", name);
 
 	if(xls_debug) {
@@ -643,7 +647,7 @@ static char *xls_addFont(xlsWorkBook* pWB, FONT* font, DWORD size)
 
     tmp=&pWB->fonts.font[pWB->fonts.count];
 
-    tmp->name = get_string(font->name, size - offsetof(FONT, name), 0, pWB->is5ver, pWB->charset);
+    tmp->name = get_string(font->name, size - offsetof(FONT, name), 0, pWB);
 
     tmp->height=font->height;
     tmp->flag=font->flag;
@@ -671,7 +675,7 @@ static xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size)
 
     tmp = &pWB->formats.format[pWB->formats.count];
     tmp->index = format->index;
-    tmp->value = get_string(format->value, size - offsetof(FORMAT, value), (BYTE)!pWB->is5ver, (BYTE)pWB->is5ver, pWB->charset);
+    tmp->value = get_string(format->value, size - offsetof(FORMAT, value), (BYTE)!pWB->is5ver, pWB);
     if(xls_debug) xls_showFormat(tmp);
     pWB->formats.count++;
 
@@ -874,7 +878,6 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
         case XLS_RECORD_BOF:	// BIFF5-8
             pWB->is5ver = (buf[0] + (buf[1] << 8) != 0x600);
             pWB->type = buf[2] + (buf[3] << 8);
-
             if(xls_debug) {
                 printf("version: %s\n", pWB->is5ver ? "BIFF5" : "BIFF8" );
                 printf("   type: %.2X\n", pWB->type);
@@ -883,7 +886,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 
         case XLS_RECORD_CODEPAGE:
             pWB->codepage = buf[0] + (buf[1] << 8);
-			if(xls_debug) printf("codepage=%x\n", pWB->codepage);
+			if(xls_debug) printf("codepage: %d\n", pWB->codepage);
             break;
 
         case XLS_RECORD_CONTINUE:
@@ -1010,7 +1013,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 					printf("  ident: 0x%x\n", styl->ident);
 					printf("  level: 0x%x\n", styl->lvl);
 				} else {
-					char *s = get_string((char *)&buf[2], bof1.size - 2, 1, pWB->is5ver, pWB->charset);
+					char *s = get_string((char *)&buf[2], bof1.size - 2, 1, pWB);
 					printf("  name=%s\n", s);
                     free(s);
 				}
@@ -1360,7 +1363,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
 		case XLS_RECORD_STRING:
 			if(cell && (cell->id == XLS_RECORD_FORMULA || cell->id == XLS_RECORD_FORMULA_ALT)) {
                 xls_cell_set_str(cell, get_string((char *)buf, tmp.size,
-                            (BYTE)!pWB->is5ver, pWB->is5ver, pWB->charset));
+                            (BYTE)!pWB->is5ver, pWB));
 				if (xls_debug) xls_showCell(cell);
 			}
 			break;
@@ -1460,12 +1463,7 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     pWB->sheets.count=0;
     pWB->xfs.count=0;
     pWB->fonts.count=0;
-    if (charset) {
-        pWB->charset = malloc(strlen(charset) * sizeof(char)+1);
-        strcpy(pWB->charset, charset);
-    } else {
-        pWB->charset = strdup("UTF-8");
-    }
+    pWB->charset = strdup(charset ? charset : "UTF-8");
 
     retval = xls_parseWorkBook(pWB);
 
@@ -1600,8 +1598,18 @@ void xls_close_WB(xlsWorkBook* pWB)
 	if(pWB->summary)  free(pWB->summary);
 	if(pWB->docSummary) free(pWB->docSummary);
 
-	// TODO - free other dynamically allocated objects like string table??
-	free(pWB);
+#ifdef HAVE_ICONV
+    if (pWB->converter)
+        iconv_close((iconv_t)pWB->converter);
+    if (pWB->utf16_converter)
+        iconv_close((iconv_t)pWB->utf16_converter);
+#endif
+
+    if (pWB->utf8_locale)
+        xls_freelocale((xls_locale_t)pWB->utf8_locale);
+
+    // TODO - free other dynamically allocated objects like string table??
+    free(pWB);
 }
 
 void xls_close_WS(xlsWorkSheet* pWS)

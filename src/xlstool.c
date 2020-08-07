@@ -42,18 +42,9 @@
 
 #ifdef HAVE_ICONV
 #include <iconv.h>
-
-#if defined(_AIX) || defined(__sun)
-static const char *from_enc = "UTF-16le";
-#else
-static const char *from_enc = "UTF-16LE";
 #endif
 
-#else
-#include <locale.h>
 #include <limits.h>
-#endif
-
 #include <stdlib.h>
 #include <errno.h>
 #include <memory.h>
@@ -65,6 +56,7 @@ static const char *from_enc = "UTF-16LE";
 #include "../include/libxls/xlstool.h"
 #include "../include/libxls/brdb.h"
 #include "../include/libxls/endian.h"
+#include "../include/libxls/locale.h"
 
 extern int xls_debug;
 
@@ -153,77 +145,70 @@ void verbose(char* str)
         printf("libxls : %s\n",str);
 }
 
-char *utf8_decode(const char *str, DWORD len, char *encoding)
-{
-	int utf8_chars = 0;
-	char *ret = NULL;
-    DWORD i;
-	
-	for(i=0; i<len; ++i) {
-		if(str[i] & (BYTE)0x80) {
-			++utf8_chars;
-		}
-	}
-	
-	if(utf8_chars == 0 || strcmp(encoding, "UTF-8")) {
-		ret = malloc(len+1);
-		memcpy(ret, str, len);
-		ret[len] = 0;
-	} else {
-        DWORD i;
-        char *out;
-		// UTF-8 encoding inline
-		ret = malloc(len+utf8_chars+1);
-		out = ret;
-		for(i=0; i<len; ++i) {
-			BYTE c = str[i];
-			if(c & (BYTE)0x80) {
-				*out++ = (BYTE)0xC0 | (c >> 6);
-				*out++ = (BYTE)0x80 | (c & 0x3F);
-			} else {
-				*out++ = c;
-			}
-		}
-		*out = 0;
-	}
+#ifdef HAVE_ICONV
 
-	return ret;
+struct codepage_entry_t {
+    int code;
+    const char *name;
+};
+
+static struct codepage_entry_t _codepage_entries[] = {
+    { .code = 874, .name = "WINDOWS-874" },
+    { .code = 932, .name = "SHIFT-JIS" },
+    { .code = 936, .name = "WINDOWS-936" },
+    { .code = 950, .name = "BIG-5" },
+    { .code = 951, .name = "BIG5-HKSCS" },
+    { .code = 1250, .name = "WINDOWS-1250" },
+    { .code = 1251, .name = "WINDOWS-1251" },
+    { .code = 1252, .name = "WINDOWS-1252" },
+    { .code = 1253, .name = "WINDOWS-1253" },
+    { .code = 1254, .name = "WINDOWS-1254" },
+    { .code = 1255, .name = "WINDOWS-1255" },
+    { .code = 1256, .name = "WINDOWS-1256" },
+    { .code = 1257, .name = "WINDOWS-1257" },
+    { .code = 1258, .name = "WINDOWS-1258" },
+    { .code = 10000, .name = "MACROMAN" },
+    { .code = 10004, .name = "MACARABIC" },
+    { .code = 10005, .name = "MACHEBREW" },
+    { .code = 10006, .name = "MACGREEK" },
+    { .code = 10007, .name = "MACCYRILLIC" },
+    { .code = 10010, .name = "MACROMANIA" },
+    { .code = 10017, .name = "MACUKRAINE" },
+    { .code = 10021, .name = "MACTHAI" },
+    { .code = 10029, .name = "MACCENTRALEUROPE" },
+    { .code = 10079, .name = "MACICELAND" },
+    { .code = 10081, .name = "MACTURKISH" },
+    { .code = 10082, .name = "MACCROATIAN" },
+};
+
+static int codepage_compare(const void *key, const void *value) {
+    const struct codepage_entry_t *cp1 = key;
+    const struct codepage_entry_t *cp2 = value;
+    return cp1->code - cp2->code;
 }
 
-#ifdef HAVE_ICONV
-static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, const char* to_enc) {
+static const char *encoding_for_codepage(WORD codepage) {
+    struct codepage_entry_t key = { .code = codepage };
+    struct codepage_entry_t *result = bsearch(&key, _codepage_entries,
+            sizeof(_codepage_entries)/sizeof(_codepage_entries[0]),
+            sizeof(_codepage_entries[0]), &codepage_compare);
+    if (result) {
+        return result->name;
+    }
+    return "WINDOWS-1252";
+}
+
+static char* unicode_decode_iconv(const char *s, size_t len, iconv_t ic) {
     char* outbuf = 0;
 
-    if(s && len && from_enc && to_enc)
+    if(s && len && ic)
     {
         size_t outlenleft = len;
         int outlen = len;
         size_t inlenleft = len;
-        iconv_t ic = iconv_open(to_enc, from_enc);
         const char* src_ptr = s;
         char* out_ptr = 0;
 
-        if(ic == (iconv_t)-1)
-        {
-            // Something went wrong.
-            if (errno == EINVAL)
-            {
-                if (!strcmp(to_enc, "ASCII"))
-                {
-                    ic = iconv_open("UTF-8", from_enc);
-                    if(ic == (iconv_t)-1)
-                    {
-                        printf("conversion from '%s' to '%s' not available", from_enc, to_enc);
-                        return outbuf;
-                    }
-                }
-            }
-            else
-            {
-                printf ("iconv_open: error=%d", errno);
-                return outbuf;
-            }
-        }
         size_t st; 
         outbuf = malloc(outlen + 1);
 
@@ -255,13 +240,8 @@ static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, con
                 }
             }
         }
-        iconv_close(ic);
         outlen -= outlenleft;
 
-        if (newlen)
-        {
-            *newlen = outbuf ? outlen : 0;
-        }
         if(outbuf)
         {
             outbuf[outlen] = 0;
@@ -270,18 +250,15 @@ static char* unicode_decode_iconv(const char *s, size_t len, size_t *newlen, con
     return outbuf;
 }
 
-#else
+#endif
 
-static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) {
+// Convert UTF-16 to UTF-8 without iconv
+static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t locale) {
 	// Do wcstombs conversion
     char *converted = NULL;
     int count, count2;
     size_t i;
-    wchar_t *w;
-    if (setlocale(LC_CTYPE, "") == NULL) {
-        printf("setlocale failed: %d\n", errno);
-        return NULL;
-    }
+    wchar_t *w = NULL;
 
     w = malloc((len/2+1)*sizeof(wchar_t));
 
@@ -291,39 +268,119 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, size_t *newlen) 
     }
     w[len/2] = '\0';
 
-    count = wcstombs(NULL, w, INT_MAX);
+    count = xls_wcstombs_l(NULL, w, INT_MAX, locale);
 
     if (count <= 0) {
-        if (newlen) *newlen = 0;
-        free(w);
-        return NULL;
+        goto cleanup;
     }
 
     converted = calloc(count+1, sizeof(char));
-    count2 = wcstombs(converted, w, count);
-    free(w);
+    count2 = xls_wcstombs_l(converted, w, count, locale);
     if (count2 <= 0) {
         printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
-        if (newlen) *newlen = 0;
-        return converted;
+        goto cleanup;
     }
-    if (newlen) *newlen = count2;
+
+cleanup:
+    free(w);
     return converted;
 }
-#endif
 
-// Convert unicode string to to_enc encoding
-char* unicode_decode(const char *s, size_t len, size_t *newlen, const char* to_enc)
+// Converts Latin-1 to UTF-8 the old-fashioned way
+static char *transcode_latin1_to_utf8(const char *str, DWORD len)
+{
+	int utf8_chars = 0;
+	char *ret = NULL;
+    DWORD i;
+	
+    for(i=0; i<len; ++i) {
+        if(str[i] & (BYTE)0x80) {
+            ++utf8_chars;
+        }
+    }
+	
+    char *out = ret = malloc(len+utf8_chars+1);
+    // UTF-8 encoding inline
+    for(i=0; i<len; ++i) {
+        BYTE c = str[i];
+        if(c & (BYTE)0x80) {
+            *out++ = (BYTE)0xC0 | (c >> 6);
+            *out++ = (BYTE)0x80 | (c & 0x3F);
+        } else {
+            *out++ = c;
+        }
+    }
+    *out = 0;
+
+	return ret;
+}
+
+// Convert BIFF5 string or compressed BIFF8 string to the encoding desired
+// by the workbook. Returns a NUL-terminated string
+char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
+    if (!pWB->is5ver && strcmp(pWB->charset, "UTF-8") == 0)
+        return transcode_latin1_to_utf8(s, len);
+
+#ifdef HAVE_ICONV
+    if (!pWB->converter) {
+        const char *from_encoding = pWB->is5ver ? encoding_for_codepage(pWB->codepage) : "ISO-8859-1";
+        iconv_t converter = iconv_open(pWB->charset, from_encoding);
+        if (converter == (iconv_t)-1) {
+            printf("conversion from '%s' to '%s' not available", from_encoding, pWB->charset);
+            return NULL;
+        }
+        pWB->converter = (void *)converter;
+    }
+    return unicode_decode_iconv(s, len, pWB->converter);
+#else
+    char *ret = malloc(len+1);
+    memcpy(ret, s, len);
+    ret[len] = 0;
+    return ret;
+#endif
+}
+
+// Convert unicode string to UTF-8
+char* transcode_utf16_to_utf8(const char *s, size_t len) {
+    xls_locale_t locale = xls_createlocale();
+    char *result = unicode_decode_wcstombs(s, len, locale);
+    xls_freelocale(locale);
+    return result;
+}
+
+// Convert unicode string to the encoding desired by the workbook
+char* unicode_decode(const char *s, size_t len, xlsWorkBook *pWB)
 {
 #ifdef HAVE_ICONV
-    return unicode_decode_iconv(s, len, newlen, to_enc);
+#if defined(_AIX) || defined(__sun)
+    const char *from_enc = "UTF-16le";
 #else
-    return unicode_decode_wcstombs(s, len, newlen);
+    const char *from_enc = "UTF-16LE";
+#endif
+    if (!pWB->utf16_converter) {
+        iconv_t converter = iconv_open(pWB->charset, from_enc);
+        if (converter == (iconv_t)-1) {
+            printf("conversion from '%s' to '%s' not available\n", from_enc, pWB->charset);
+            return NULL;
+        }
+        pWB->utf16_converter = (void *)converter;
+    }
+    return unicode_decode_iconv(s, len, pWB->utf16_converter);
+#else
+    if (!pWB->utf8_locale) {
+        xls_locale_t locale = xls_createlocale();
+        if (locale == NULL) {
+            printf("creation of UTF-8 locale failed\n");
+            return NULL;
+        }
+        pWB->utf8_locale = (void *)locale;
+    }
+    return unicode_decode_wcstombs(s, len, pWB->utf8_locale);
 #endif
 }
 
 // Read and decode string
-char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset)
+char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook* pWB)
 {
     WORD ln;
     DWORD ofs = 0;
@@ -347,7 +404,7 @@ char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset
         ofs++;
     }
 
-	if(!is5ver) {
+	if(!pWB->is5ver) {
 		// unicode strings have a format byte before the string
         if (ofs + 1 > len) {
             return NULL;
@@ -369,12 +426,12 @@ char *get_string(const char *s, size_t len, BYTE is2, BYTE is5ver, char *charset
         if (ofs + 2*ln > len) {
             return NULL;
         }
-        ret = unicode_decode(str+ofs, ln*2, NULL, charset);
+        ret = unicode_decode(str+ofs, ln*2, pWB);
     } else {
         if (ofs + ln > len) {
             return NULL;
         }
-		ret = utf8_decode(str+ofs, ln, charset);
+        ret = codepage_decode(str+ofs, ln, pWB);
     }
 
 #if 0	// debugging
@@ -612,17 +669,10 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     case XLS_RECORD_RSTRING:
         len = label[0] + (label[1] << 8);
         label += 2;
-		if(pWB->is5ver) {
-            ret = malloc(len+1);
-            memcpy(ret, label, len);
-            ret[len] = 0;
-			//printf("Found BIFF5 string of len=%d \"%s\"\n", len, ret);
-		} else {
-            if ((*(label++) & 0x01) == 0) {
-                ret = utf8_decode((char *)label, len, pWB->charset);
-            } else {
-                ret = unicode_decode((char *)label, len*2, NULL, pWB->charset);
-            }
+        if (pWB->is5ver || (*(label++) & 0x01) == 0) {
+            ret = codepage_decode((char *)label, len, pWB);
+        } else {
+            ret = unicode_decode((char *)label, len*2, pWB);
         }
         break;
     case XLS_RECORD_RK:
