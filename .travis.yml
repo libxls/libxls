@@ -10,12 +10,16 @@ jobs:
     os: linux
   - compiler: gcc-8
     os: linux
+  - compiler: gcc-9
+    os: linux
+  - compiler: gcc-10
+    os: linux
   - compiler: clang
     os: osx
-    osx_image: xcode11.2
+    osx_image: xcode11.4
   - compiler: gcc
     os: osx
-    osx_image: xcode11.2
+    osx_image: xcode11.4
 
 addons:
   apt:
@@ -25,6 +29,8 @@ addons:
     - autoconf-archive
     - gcc-7
     - gcc-8
+    - gcc-9
+    - gcc-10
     - libc++-dev
     - libc++abi-dev
   homebrew:
