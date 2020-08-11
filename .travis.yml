@@ -7,8 +7,6 @@ jobs:
     os: linux
   - compiler: gcc
     os: linux
-  - compiler: gcc-7
-    os: linux
   - compiler: gcc-8
     os: linux
   - compiler: gcc-9
@@ -28,7 +26,6 @@ addons:
     - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
     - autoconf-archive
-    - gcc-7
     - gcc-8
     - gcc-9
     - gcc-10
