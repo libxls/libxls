@@ -1,12 +1,16 @@
-AC_INIT([libxls],[1.6.0],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
+AC_INIT([libxls],[1.6.1-beta],[emmiller@gmail.com], [libxls], [https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
 
 LIBXLS_MAJOR_VERSION=1
 LIBXLS_MINOR_VERSION=6
-LIBXLS_MICRO_VERSION=0
+LIBXLS_MICRO_VERSION=1
 
 VERSION=$LIBXLS_MAJOR_VERSION.$LIBXLS_MINOR_VERSION.$LIBXLS_MICRO_VERSION
-VERSION_INFO=`expr $LIBXLS_MAJOR_VERSION + $LIBXLS_MINOR_VERSION`:$LIBXLS_MICRO_VERSION:$LIBXLS_MINOR_VERSION
+# if libxls ever goes to 2.0 you will need to change the following line to
+# start at whatever the ending value was in the 1.x series E.g. if the last
+# minor release was 1.9 then the value of "current" was 11 so the line should
+# be changed to `expr 12 + $LIBXLS_MINOR_VERSION`
+VERSION_INFO=`expr 2 + $LIBXLS_MINOR_VERSION`:$LIBXLS_MICRO_VERSION
 
 AC_SUBST(VERSION_INFO)
 AC_SUBST(LIBXLS_MAJOR_VERSION)
