@@ -244,6 +244,8 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 #endif
 
     olest = calloc(1, sizeof(OLE2Stream));
+    if (!olest)
+        return NULL;
     olest->ole=ole;
     olest->size=size;
     olest->fatpos=start;
@@ -404,6 +406,8 @@ static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t siz
 static ssize_t ole2_read_header(OLE2 *ole) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     OLE2Header *oleh = malloc(sizeof(OLE2Header));
+    if (!oleh)
+        return -1;
     if (ole2_fread(ole, oleh, sizeof(OLE2Header), sizeof(OLE2Header)) != 1) {
         total_bytes_read = -1;
         goto cleanup;
@@ -476,12 +480,17 @@ static ssize_t ole2_read_body(OLE2 *ole) {
     OLE2Stream *olest = NULL;
     char* name = NULL;
     ssize_t bytes_read = 0, total_bytes_read = 0;
+    struct st_olefiles_data *tmp_data = NULL;
 
     if ((olest = ole2_sopen(ole,ole->dirstart, -1)) == NULL) {
         total_bytes_read = -1;
         goto cleanup;
     }
     pss = malloc(sizeof(PSS));
+    if (!pss) {
+        total_bytes_read = -1;
+        goto cleanup;
+    }
     do {
         if ((bytes_read = ole2_read(pss,1,sizeof(PSS),olest)) == -1) {
             total_bytes_read = -1;
@@ -505,8 +514,14 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                     pss->type == PS_USER_ROOT ? "root" : "user",
                     (int)ole->files.count, (int)pss->size);
 #endif		
-            ole->files.file = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
+            tmp_data = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
+            if (!tmp_data) {
+                total_bytes_read = -1;
+                goto cleanup;
+            }
+            ole->files.file = tmp_data;
             ole->files.file[ole->files.count].name=name;
+            name = NULL;
             ole->files.file[ole->files.count].start=pss->sstart;
             ole->files.file[ole->files.count].size=pss->size;
             ole->files.count++;
@@ -568,7 +583,8 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				}
 			}	
 		} else {
-			free(name);
+            if (name)
+			    free(name);
 		}
     } while (!olest->eof);
 
@@ -577,6 +593,8 @@ cleanup:
         ole2_fclose(olest);
     if (pss)
         free(pss);
+    if (name)
+        free(name);
 
 #ifdef OLE_DEBUG
     fprintf(stderr, "----------------------------------------------\n");
@@ -603,6 +621,8 @@ OLE2 *ole2_read_header_and_body(OLE2 *ole) {
 // Open in-memory buffer
 OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
     OLE2 *ole = calloc(1, sizeof(OLE2));
+    if (!ole)
+        return NULL;
 
     ole->buffer = buffer;
     ole->buffer_len = len;
@@ -622,7 +642,8 @@ OLE2* ole2_open_file(const char *file)
 
 	if(xls_debug) printf("ole2_open: %s\n", file);
     ole = calloc(1, sizeof(OLE2));
-
+    if (!ole)
+        return NULL;
     if (!(ole->file=fopen(file, "rb"))) {
         if(xls_debug) fprintf(stderr, "File not found\n");
         free(ole);
@@ -635,23 +656,32 @@ OLE2* ole2_open_file(const char *file)
 void ole2_close(OLE2* ole2)
 {
     int i;
-    if (ole2->file)
-        fclose(ole2->file);
-
-    for(i=0; i<ole2->files.count; ++i) {
-        free(ole2->files.file[i].name);
+    if (ole2) {
+        if (ole2->file)
+            fclose(ole2->file);
+        if (ole2->files.file) {
+            for(i=0; i<ole2->files.count; ++i) {
+                free(ole2->files.file[i].name);
+            }
+            free(ole2->files.file);
+        }
+        if (ole2->SecID)
+            free(ole2->SecID);
+        if (ole2->SSecID)
+            free(ole2->SSecID);
+        if (ole2->SSAT)
+            free(ole2->SSAT);
+        free(ole2);
     }
-    free(ole2->files.file);
-    free(ole2->SecID);
-    free(ole2->SSecID);
-    free(ole2->SSAT);
-    free(ole2);
 }
 
 void ole2_fclose(OLE2Stream* ole2st)
 {
-	free(ole2st->buf);
-	free(ole2st);
+    if (ole2st) {
+        if (ole2st->buf)
+	        free(ole2st->buf);
+	    free(ole2st);
+    }
 }
 
 // Return offset in bytes of a sector from its sid
@@ -707,6 +737,8 @@ static ssize_t read_MSAT_body(OLE2 *ole2, DWORD sectorOffset, DWORD sectorCount)
     DWORD sectorNum = sectorOffset;
 
     DWORD *sector = ole_malloc(ole2->lsector);
+    if (!sector)
+        return -1;
     //printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
     while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
     {
