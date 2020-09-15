@@ -481,6 +481,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
     char* name = NULL;
     ssize_t bytes_read = 0, total_bytes_read = 0;
     struct st_olefiles_data *tmp_data = NULL;
+    BYTE*		tmp_SSAT = NULL;
 
     if ((olest = ole2_sopen(ole,ole->dirstart, -1)) == NULL) {
         total_bytes_read = -1;
@@ -555,10 +556,11 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                 fprintf(stderr, "OLE BLOCKS: %d = (%d + (%d - 1))/%d\n",
                         (int)blocks, (int)pss->size, (int)ole->lsector, (int)ole->lsector);
 #endif
-				if ((ole->SSAT = ole_realloc(ole->SSAT, blocks*ole->lsector)) == NULL) {
+				if ((tmp_SSAT = ole_realloc(ole->SSAT, blocks*ole->lsector)) == NULL) {
                     total_bytes_read = -1;
                     goto cleanup;
                 }
+                ole->SSAT = tmp_SSAT;
                 ole->SSATCount = blocks*ole->lsector;
 				// printf("blocks %d\n", blocks);
 

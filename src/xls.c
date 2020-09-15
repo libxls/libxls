@@ -280,6 +280,7 @@ static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size)
                     free(ret);
                     return LIBXLS_ERROR_MALLOC;
                 }
+                tmp = tmp_str;
                 pWB->sst.string[pWB->sst.lastid-1].str=tmp;
                 memcpy(tmp+strlen(tmp), ret, strlen(ret)+1);
 				free(ret);
@@ -862,6 +863,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = tmp_buf;
             if (ole2_read(buf, 1, bof1.size, pWB->olestr) != bof1.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
@@ -1101,6 +1103,7 @@ static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = tmp_buf;
             if((read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr)) != tmp.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
@@ -1273,6 +1276,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = tmp_buf;
             if((read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr)) != tmp.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
@@ -1580,7 +1584,7 @@ void xls_close_WB(xlsWorkBook* pWB)
     if (pWB->sheets.sheet) {
         DWORD i;
         for(i=0; i<pWB->sheets.count; ++i) {
-            if (pWB->sheets.sheet[i] && pWB->sheets.sheet[i].name)
+            if (pWB->sheets.sheet[i].name)
                 free(pWB->sheets.sheet[i].name);
         }
         free(pWB->sheets.sheet);
@@ -1605,7 +1609,7 @@ void xls_close_WB(xlsWorkBook* pWB)
     if (pWB->fonts.font) {
         DWORD i;
         for(i=0; i<pWB->fonts.count; ++i) {
-            if (pWB->fonts.font[i] && pWB->fonts.font[i].name)
+            if (pWB->fonts.font[i].name)
                 free(pWB->fonts.font[i].name);
         }
         free(pWB->fonts.font);
@@ -1615,7 +1619,7 @@ void xls_close_WB(xlsWorkBook* pWB)
     if (pWB->formats.format) {
         DWORD i;
         for(i=0; i<pWB->formats.count; ++i) {
-            if (pWB->formats.format[i] && pWB->formats.format[i].value)
+            if (pWB->formats.format[i].value)
                 free(pWB->formats.format[i].value);
         }
         free(pWB->formats.format);
