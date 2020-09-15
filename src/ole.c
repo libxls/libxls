@@ -557,7 +557,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                 fprintf(stderr, "OLE BLOCKS: %d = (%d + (%d - 1))/%d\n",
                         (int)blocks, (int)pss->size, (int)ole->lsector, (int)ole->lsector);
 #endif
-				if ((tmp_SSAT = ole_realloc(&ole->SSAT, blocks*ole->lsector)) == NULL) {
+				if ((tmp_SSAT = ole_realloc((void **)&ole->SSAT, blocks*ole->lsector)) == NULL) {
                     total_bytes_read = -1;
                     goto cleanup;
                 }
