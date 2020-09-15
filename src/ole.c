@@ -585,8 +585,10 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				}
 			}	
 		} else {
-            if (name)
+            if (name) {
 			    free(name);
+                name = NULL;
+            }
 		}
     } while (!olest->eof);
 
