@@ -1651,7 +1651,7 @@ void xls_close_WS(xlsWorkSheet* pWS)
         DWORD i, j;
         for(j=0; j<=pWS->rows.lastrow; ++j) {
             struct st_row_data *row = &pWS->rows.row[j];
-            if (!row->cells.cell) {
+            if (row->cells.cell) {
                 for(i=0; i<row->cells.count; ++i) {
                     if (row->cells.cell[i].str)
                         free(row->cells.cell[i].str);
