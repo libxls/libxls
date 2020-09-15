@@ -586,10 +586,8 @@ static ssize_t ole2_read_body(OLE2 *ole) {
 				}
 			}	
 		} else {
-            if (name) {
-			    free(name);
-                name = NULL;
-            }
+			free(name);
+            name = NULL;
 		}
     } while (!olest->eof);
 
@@ -598,8 +596,7 @@ cleanup:
         ole2_fclose(olest);
     if (pss)
         free(pss);
-    if (name)
-        free(name);
+    free(name);
 
 #ifdef OLE_DEBUG
     fprintf(stderr, "----------------------------------------------\n");
@@ -670,12 +667,9 @@ void ole2_close(OLE2* ole2)
             }
             free(ole2->files.file);
         }
-        if (ole2->SecID)
-            free(ole2->SecID);
-        if (ole2->SSecID)
-            free(ole2->SSecID);
-        if (ole2->SSAT)
-            free(ole2->SSAT);
+        free(ole2->SecID);
+        free(ole2->SSecID);
+        free(ole2->SSAT);
         free(ole2);
     }
 }

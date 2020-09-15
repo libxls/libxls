@@ -1578,7 +1578,7 @@ void xls_close_WB(xlsWorkBook* pWB)
     }
 
     // WorkBook
-    if (pWB->charset)   free(pWB->charset);
+    free(pWB->charset);
 
     // Sheets
     if (pWB->sheets.sheet) {
@@ -1601,7 +1601,7 @@ void xls_close_WB(xlsWorkBook* pWB)
     }
 
     // xfs
-    if (pWB->xfs.xf) {
+    {
         free(pWB->xfs.xf);
     }
 
@@ -1664,8 +1664,7 @@ void xls_close_WS(xlsWorkSheet* pWS)
 
     // COLINFO
     {
-        if (pWS->colinfo.col)
-            free(pWS->colinfo.col);
+        free(pWS->colinfo.col);
     }
     free(pWS);
 }
