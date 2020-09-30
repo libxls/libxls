@@ -25,8 +25,8 @@ Changes to libxls since 1.4:
 * Internals rewritten to return errors instead of exiting
 * Heavily fuzz-tested with clang's libFuzzer, fixing many memory leaks and CVEs
 * Improved compatibility with C++
-* Continuous integration tests on Mac, Linux, and Windows
-* Lots of other small fixes, see the commit history
+* Continuous integration tests on portals like Mac, Linux, and Windows
+* Lots of other small fixes, you can see the commit history
 
 The [C API](include/xls.h) is pretty simple, this will get you started:
 
@@ -73,7 +73,7 @@ The library also includes a CLI tool for converting Excel files to CSV:
 
 The man page for `xls2csv` has more details.
 
-Libxls should run fine on both little-endian and big-endian systems, but if not
+Libxls should run fine on both little-endian and big-endian systems, but if they not,
 please open an [issue](https://github.com/libxls/libxls/issues/new).
 
 If you want to hack on the source, you should first familiarize yourself with
