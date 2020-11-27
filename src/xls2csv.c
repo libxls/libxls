@@ -195,7 +195,7 @@ printf("FILE: %s\n", argv[1]);
 					if (cell->l == 0) // its a number
 					{
 						OutputNumber(cell->d);
-					} else {
+					} else if (cell->str) {
 						if (!strcmp((char *)cell->str, "bool")) // its boolean, and test cell->d
 						{
 							OutputString((int) cell->d ? "true" : "false");
@@ -207,7 +207,7 @@ printf("FILE: %s\n", argv[1]);
 							OutputString((char *)cell->str);
 						}
 					}
-				} else if (cell->str != NULL) {
+				} else if (cell->str) {
 					OutputString((char *)cell->str);
 				} else {
 					OutputString("");
