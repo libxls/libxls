@@ -261,6 +261,8 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t loc
     wchar_t *w = NULL;
 
     w = malloc((len/2+1)*sizeof(wchar_t));
+    if (!w)
+        return NULL;
 
     for(i=0; i<len/2; i++)
     {
@@ -275,6 +277,9 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t loc
     }
 
     converted = calloc(count+1, sizeof(char));
+    if (!converted) {
+         goto cleanup;
+    }
     count2 = xls_wcstombs_l(converted, w, count, locale);
     if (count2 <= 0) {
         printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
