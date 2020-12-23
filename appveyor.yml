@@ -6,7 +6,6 @@ platform: x64
 
 environment:
   matrix:
-  - TOOLCHAIN: "msys2"
   - TOOLCHAIN: "cygwin"
 
 branches:
@@ -19,44 +18,14 @@ clone_folder: c:\projects\libxls
 skip_tags: true
 
 build_script:
-  - ps: |
-      if ($env:TOOLCHAIN -eq "msys2")
-      {
-        $env:MSYSTEM="MINGW64"
-        C:\msys64\usr\bin\bash -l -c "pacman -S --noconfirm autoconf-archive"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./bootstrap"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./configure"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && make"
-      }
-      else
-      {
-        C:\cygwin64\setup-x86_64.exe -qP autoconf-archive
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./bootstrap"
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./configure"
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make"
-      }
+  - C:\cygwin64\setup-x86_64.exe -qP autoconf-archive
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./bootstrap"
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./configure"
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make"
 
 test_script:
-  - ps: |
-      if ($env:TOOLCHAIN -eq "msys2")
-      {
-        $env:MSYSTEM="MINGW64"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && make check"
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && ./test2_libxls test/files/test2.xls"
-      }
-      else
-      {
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make check"
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./test2_libxls test/files/test2.xls"
-      }
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && make check"
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && ./test2_libxls test/files/test2.xls"
 
 on_finish:
-  - ps: |
-      if ($env:TOOLCHAIN -eq "msys2")
-      {
-        C:\msys64\usr\bin\bash -l -c "cd /c/projects/libxls && cat ./test-suite.log"
-      }
-      else
-      {
-        C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && cat ./test-suite.log"
-      }
+  - C:\cygwin64\bin\sh -lc "cd /cygdrive/c/projects/libxls && cat ./test-suite.log"
