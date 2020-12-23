@@ -49,7 +49,6 @@ jobs:
         run: ./test2_libxls test/files/test2.xls
   windows:
     runs-on: windows-latest
-    steps:
     env:
       MSYSTEM: MINGW64
     steps:
