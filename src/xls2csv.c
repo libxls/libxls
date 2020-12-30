@@ -89,16 +89,16 @@ int main(int argc, char *argv[]) {
             justList = 1;
             break;
         case 'e':
-            encoding = strdup(optarg);
+            encoding = optarg;
             break;
         case 't':
-            sheetName = strdup(optarg);
+            sheetName = optarg;
             break;
         case 'q':
             stringSeparator = optarg[0];
             break;
         case 'f':
-            fieldSeparator = strdup(optarg);
+            fieldSeparator = optarg;
             break;
         case 'v':
             xls(1);
