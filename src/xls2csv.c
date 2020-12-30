@@ -140,7 +140,7 @@ printf("FILE: %s\n", argv[1]);
 
         // just looking for sheet names
         if (justList) {
-            printf("%s\n", pWB->sheets.sheet[i].name);
+            printf("%s\n", pWB->sheets.sheet[i].name ? pWB->sheets.sheet[i].name : "");
             continue;
         }
 
