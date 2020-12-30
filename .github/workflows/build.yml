@@ -11,7 +11,7 @@ jobs:
       - name: Add repository
         run: sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
       - name: Install packages
-        run: sudo apt install gettext libc++-dev libc++abi-dev autoconf-archive
+        run: sudo apt install gettext autoconf-archive
       - uses: actions/checkout@v2
       - name: Autoconf
         run: autoreconf -i -f
