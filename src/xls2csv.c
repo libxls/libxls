@@ -130,6 +130,7 @@ printf("FILE: %s\n", argv[1]);
 		if (i == pWB->sheets.count) {
 			fprintf(stderr, "Sheet \"%s\" not found", sheetName);
 			fprintf(stderr, "\n");
+			xls_close(pWB);
 			return EXIT_FAILURE;
 		}
 	}
