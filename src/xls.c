@@ -45,7 +45,6 @@
 #endif
 
 #include <memory.h>
-#include <math.h>
 #include <sys/types.h>
 #include <string.h>
 #include <wchar.h>
@@ -67,7 +66,7 @@ static xls_formula_handler formula_handler;
 static xls_error_t xls_addSST(xlsWorkBook* pWB, SST* sst, DWORD size);
 static xls_error_t xls_appendSST(xlsWorkBook* pWB, BYTE* buf, DWORD size);
 static xls_error_t xls_addFormat(xlsWorkBook* pWB, FORMAT* format, DWORD size);
-static char* xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET* bs, DWORD size);
+static xls_error_t xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET* bs, DWORD size);
 static xls_error_t xls_addRow(xlsWorkSheet* pWS,ROW* row);
 static xls_error_t xls_makeTable(xlsWorkSheet* pWS);
 static struct st_cell_data *xls_addCell(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
@@ -345,7 +344,7 @@ static double NumFromRk(DWORD drk)
     return ret;
 }
 
-static char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
+static xls_error_t xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 {
 	char * name;
 	DWORD filepos;
@@ -392,7 +391,7 @@ static char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 
     pWB->sheets.sheet = realloc(pWB->sheets.sheet,(pWB->sheets.count+1)*sizeof (struct st_sheet_data));
     if (pWB->sheets.sheet == NULL)
-        return NULL;
+        return LIBXLS_ERROR_MALLOC;
 
     pWB->sheets.sheet[pWB->sheets.count].name=name;
     pWB->sheets.sheet[pWB->sheets.count].filepos=filepos;
@@ -400,7 +399,7 @@ static char * xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
     pWB->sheets.sheet[pWB->sheets.count].type=type;
     pWB->sheets.count++;
 
-	return name;
+	return LIBXLS_OK;
 }
 
 
@@ -935,9 +934,10 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 				//printf("ADD SHEET\n");
 				BOUNDSHEET *bs = (BOUNDSHEET *)buf;
                 xlsConvertBoundsheet(bs);
-				//char *s;
 				// different for BIFF5 and BIFF8
-				/*s = */ xls_addSheet(pWB, bs, bof1.size);
+                if ((retval = xls_addSheet(pWB, bs, bof1.size)) != LIBXLS_OK) {
+                    goto cleanup;
+                }
 			}
             break;
 

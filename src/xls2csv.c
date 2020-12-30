@@ -120,9 +120,11 @@ printf("FILE: %s\n", argv[1]);
 	// check if the requested sheet (if any) exists
 	if (sheetName[0]) {
 		for (i = 0; i < pWB->sheets.count; i++) {
-			if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) == 0) {
-				break;
-			}
+            if (!pWB->sheets.sheet[i].name)
+                continue;
+            if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) == 0) {
+                break;
+            }
 		}
 
 		if (i == pWB->sheets.count) {
@@ -144,9 +146,11 @@ printf("FILE: %s\n", argv[1]);
 
 		// check if this the sheet we want
 		if (sheetName[0]) {
-			if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) != 0) {
-				continue;
-			}
+            if (!pWB->sheets.sheet[i].name)
+                continue;
+            if (strcmp(sheetName, (char *)pWB->sheets.sheet[i].name) != 0) {
+                continue;
+            }
 		}
 
 		// open and parse the sheet
