@@ -1039,6 +1039,10 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 				printf("   mode: 0x%x\n", pWB->is1904);
 			}
 			break;
+
+		case XLS_RECORD_FILEPASS:
+			retval = LIBXLS_ERROR_UNSUPPORTED_ENCRYPTION;
+			goto cleanup;
 		
 		case XLS_RECORD_DEFINEDNAME:
 			if(xls_debug) {
@@ -1053,7 +1057,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 			if(xls_debug)
 			{
 				//xls_showBOF(&bof1);
-				printf("    Not Processed in parseWoorkBook():  BOF=0x%4.4X size=%d\n", bof1.id, bof1.size);
+				printf("    Not Processed in parseWorkBook():  BOF=0x%4.4X size=%d\n", bof1.id, bof1.size);
 			}
             break;
         }
@@ -1653,6 +1657,8 @@ const char* xls_getError(xls_error_t code) {
         return "Unable to allocate memory";
     if (code == LIBXLS_ERROR_PARSE)
         return "Unable to parse file";
+    if (code == LIBXLS_ERROR_UNSUPPORTED_ENCRYPTION)
+        return "Unsupported encryption scheme";
 
     return "Unknown error";
 }

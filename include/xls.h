@@ -49,7 +49,8 @@ typedef enum {
     LIBXLS_ERROR_SEEK,
     LIBXLS_ERROR_READ,
     LIBXLS_ERROR_PARSE,
-    LIBXLS_ERROR_MALLOC
+    LIBXLS_ERROR_MALLOC,
+    LIBXLS_ERROR_UNSUPPORTED_ENCRYPTION
 } xls_error_t;
 
 const char* xls_getVersion(void);
