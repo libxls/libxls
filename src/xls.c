@@ -830,6 +830,8 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1) {
 
 xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 {
+    if(!pWB) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF bof1 = { .id = 0, .size = 0 };
     BOF bof2 = { .id = 0, .size = 0 };
     BYTE* buf = NULL;
@@ -1076,6 +1078,8 @@ cleanup:
 
 static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
 {
+    if(!pWS) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF tmp;
     BYTE* buf = NULL;
     xls_error_t retval = LIBXLS_OK;
@@ -1225,6 +1229,8 @@ static xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
 
 xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
 {
+    if(!pWS) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF tmp;
     BYTE* buf = NULL;
 	long offset = pWS->filepos;
