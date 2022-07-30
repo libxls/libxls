@@ -117,4 +117,5 @@ If C is not your cup of tea, you can make use of libxls in several other languag
 * [Haskell](https://hackage.haskell.org/package/xls)
 * [R](https://readxl.tidyverse.org)
 * [Rust](https://github.com/evanmiller/rust-xls)
+* [Go](https://github.com/godzie44/go-xls)
 * [Crystal](https://github.com/mdwagner/xls.cr)

@@ -66,6 +66,8 @@ int main(int argc, char *argv[])
         printf("Sheet N%i (%s) pos %i\n",i,pWB->sheets.sheet[i].name,pWB->sheets.sheet[i].filepos);
 
     pWS=xls_getWorkSheet(pWB,0);
+    if(!pWS) return 1;
+    
     if ((code = xls_parseWorkSheet(pWS)) != LIBXLS_OK) {
         fprintf(stderr, "Error parsing worksheet: %s\n", xls_getError(code));
         return 1;

@@ -830,6 +830,8 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1) {
 
 xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 {
+    if(!pWB) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF bof1 = { .id = 0, .size = 0 };
     BOF bof2 = { .id = 0, .size = 0 };
     BYTE* buf = NULL;
@@ -1039,6 +1041,10 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 				printf("   mode: 0x%x\n", pWB->is1904);
 			}
 			break;
+
+		case XLS_RECORD_FILEPASS:
+			retval = LIBXLS_ERROR_UNSUPPORTED_ENCRYPTION;
+			goto cleanup;
 		
 		case XLS_RECORD_DEFINEDNAME:
 			if(xls_debug) {
@@ -1053,7 +1059,7 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
 			if(xls_debug)
 			{
 				//xls_showBOF(&bof1);
-				printf("    Not Processed in parseWoorkBook():  BOF=0x%4.4X size=%d\n", bof1.id, bof1.size);
+				printf("    Not Processed in parseWorkBook():  BOF=0x%4.4X size=%d\n", bof1.id, bof1.size);
 			}
             break;
         }
@@ -1072,6 +1078,8 @@ cleanup:
 
 static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
 {
+    if(!pWS) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF tmp;
     BYTE* buf = NULL;
     xls_error_t retval = LIBXLS_OK;
@@ -1221,6 +1229,8 @@ static xls_error_t xls_formatColumn(xlsWorkSheet* pWS)
 
 xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
 {
+    if(!pWS) return LIBXLS_ERROR_NULL_ARGUMENT;
+
     BOF tmp;
     BYTE* buf = NULL;
 	long offset = pWS->filepos;
@@ -1653,6 +1663,8 @@ const char* xls_getError(xls_error_t code) {
         return "Unable to allocate memory";
     if (code == LIBXLS_ERROR_PARSE)
         return "Unable to parse file";
+    if (code == LIBXLS_ERROR_UNSUPPORTED_ENCRYPTION)
+        return "Unsupported encryption scheme";
 
     return "Unknown error";
 }
