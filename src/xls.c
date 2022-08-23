@@ -1508,6 +1508,18 @@ xlsWorkBook* xls_open_file(const char *file, const char* charset, xls_error_t *o
     return xls_open_ole(ole, charset, outError);
 }
 
+xlsWorkBook* xls_open_stream(const xlsStream* stream, const char* charset, xls_error_t* outError) {
+    OLE2* ole = NULL;
+
+    if (!(ole = ole2_open_stream(stream)))
+    {
+        if (outError) *outError = LIBXLS_ERROR_OPEN;
+        return NULL;
+    }
+
+    return xls_open_ole(ole, charset, outError);
+}
+
 xlsWorkBook *xls_open_buffer(const unsigned char *buffer, size_t len,
         const char *charset, xls_error_t *outError) {
     OLE2* ole = NULL;
