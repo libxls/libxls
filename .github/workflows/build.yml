@@ -6,12 +6,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ clang, gcc, gcc-9, gcc-10 ]
+        compiler: [ clang, gcc, gcc-9, gcc-10, gcc-11, gcc-12 ]
     steps:
       - name: Add repository
         run: sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
       - name: Install packages
-        run: sudo apt install gettext autoconf-archive
+        run: sudo apt install gettext autoconf-archive gcc-11 gcc-12
       - uses: actions/checkout@v2
       - name: Autoconf
         run: autoreconf -i -f
@@ -49,21 +49,28 @@ jobs:
         run: ./test2_libxls test/files/test2.xls
   windows:
     runs-on: windows-latest
-    env:
-      MSYSTEM: MINGW64
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            autotools
+            base-devel
+            gcc
+            libiconv-devel
       - uses: actions/checkout@v2
-      - name: Install packages
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && pacman -S --noconfirm autoconf-archive'
       - name: Autoconf
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && autoreconf -i -f'
+        run: autoreconf -i -f
       - name: Configure
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && ./configure'
+        run: ./configure
       - name: Make
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && make'
+        run: make
       - name: Test
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && make check'
-      - name: Test
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && ./test2_libxls test/files/test2.xls'
+        run: make check
+      - name: Test 2
+        run: ./test2_libxls test/files/test2.xls
       - name: Log
-        run: C:\msys64\usr\bin\bash -c -l 'cd "$GITHUB_WORKSPACE" && cat ./test-suite.log'
+        run: cat ./test-suite.log
