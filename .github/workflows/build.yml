@@ -58,6 +58,7 @@ jobs:
           update: true
           install: >-
             autotools
+            autoconf-archive
             base-devel
             gcc
             libiconv-devel
