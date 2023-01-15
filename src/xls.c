@@ -390,8 +390,10 @@ static xls_error_t xls_addSheet(xlsWorkBook* pWB, BOUNDSHEET *bs, DWORD size)
 	}
 
     pWB->sheets.sheet = realloc(pWB->sheets.sheet,(pWB->sheets.count+1)*sizeof (struct st_sheet_data));
-    if (pWB->sheets.sheet == NULL)
+    if (pWB->sheets.sheet == NULL) {
+        free(name);
         return LIBXLS_ERROR_MALLOC;
+    }
 
     pWB->sheets.sheet[pWB->sheets.count].name=name;
     pWB->sheets.sheet[pWB->sheets.count].filepos=filepos;
