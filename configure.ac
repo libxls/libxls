@@ -71,6 +71,10 @@ AS_CASE([$host],
         [*mingw*|*cygwin*], [EXTRA_LDFLAGS="-no-undefined"], [EXTRA_LDFLAGS=""])
 AC_SUBST([EXTRA_LDFLAGS])
 
+AS_CASE([$host],
+	[*mingw*], [CFLAGS="$CFLAGS -D_spawnv=spawnv"],
+	[CFLAGS="$CFLAGS"])
+
 AM_ICONV
 
 m4_ifdef([PKG_INSTALLDIR], [
