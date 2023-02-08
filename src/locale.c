@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include "../include/libxls/locale.h"
 
-xls_locale_t xls_createlocale() {
+xls_locale_t xls_createlocale(void) {
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(WINDOWS)
     return _create_locale(LC_CTYPE, ".65001");
 #else

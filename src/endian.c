@@ -35,7 +35,7 @@
 #include "../include/libxls/endian.h"
 #include "../include/libxls/ole.h"
 
-int xls_is_bigendian()
+int xls_is_bigendian(void)
 {
 #if defined (__BIG_ENDIAN__)
     return 1;
