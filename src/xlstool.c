@@ -737,7 +737,8 @@ char* xls_getCSS(xlsWorkBook* pWB)
     DWORD i;
 
     char *ret = malloc(65535);
-    char *buf = malloc(4096);
+    size_t buf_len = 4096;
+    char *buf = malloc(buf_len);
 	ret[0] = '\0';
 
     for (i=0;i<pWB->xfs.count;i++)
@@ -848,7 +849,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
             snprintf(fontname, sizeof(fontname),"Arial");
 
         background=xls_getColor((WORD)(xf->groundcolor & 0x7f),1);
-        snprintf(buf, 4096, ".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6X;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
+        snprintf(buf, buf_len, ".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6X;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
                 i,size,fontname,background,align,valign,borderleft,borderright,bordertop,borderbottom,color,italic,bold,underline);
 
 		strcat(ret,buf);
