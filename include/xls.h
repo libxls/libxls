@@ -68,6 +68,7 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS);
 xlsWorkBook *xls_open_file(const char *file, const char *charset, xls_error_t *outError);
 xlsWorkBook *xls_open_buffer(const unsigned char *data, size_t data_len,
         const char *charset, xls_error_t *outError);
+xlsWorkBook* xls_open_stream(const xlsStream* stream, const char* charset, xls_error_t* outError);
 void xls_close_WB(xlsWorkBook* pWB);
 
 // Historical API

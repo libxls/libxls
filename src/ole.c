@@ -366,8 +366,8 @@ OLE2Stream*  ole2_fopen(OLE2* ole, const char *file)
 }
 
 static int ole2_fseek(OLE2 *ole2, size_t pos) {
-    if (ole2->file)
-        return fseek(ole2->file, pos, SEEK_SET);
+    if (ole2->stream.stream)
+        return ole2->stream.seek(ole2->stream.stream, pos, SEEK_SET);
 
     if (pos > ole2->buffer_len)
         return -1;
@@ -384,8 +384,8 @@ static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t siz
 
     memset(buffer, 0, size);
 
-    if (ole2->file)
-        return fread(buffer, 1, size, ole2->file) > 0;
+    if (ole2->stream.stream)
+        return ole2->stream.read(buffer, size, ole2->stream.stream) > 0;
 
     if (ole2->buffer_pos >= ole2->buffer_len)
         return 0;
@@ -609,10 +609,22 @@ OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
     return ole2_read_header_and_body(ole);
 }
 
+static size_t ole2_file_stream_read(void* buffer, size_t size, void* stream) {
+    return fread(buffer, 1, size, (FILE*)stream);
+}
+
+static int ole2_file_stream_seek(void* stream, long offset, int origin) {
+    return fseek((FILE*)stream, offset, origin);
+}
+
+static void ole2_file_stream_close(void* stream) {
+    fclose((FILE*)stream);
+}
+
 // Open physical file
 OLE2* ole2_open_file(const char *file)
 {
-    OLE2* ole = NULL;
+    FILE* file_handle = NULL;
 
 #ifdef OLE_DEBUG
     fprintf(stderr, "----------------------------------------------\n");
@@ -620,13 +632,34 @@ OLE2* ole2_open_file(const char *file)
 #endif
 
 	if(xls_debug) printf("ole2_open: %s\n", file);
-    ole = calloc(1, sizeof(OLE2));
 
-    if (!(ole->file=fopen(file, "rb"))) {
+    file_handle = fopen(file, "rb");
+
+    if (!file_handle) {
         if(xls_debug) fprintf(stderr, "File not found\n");
-        free(ole);
         return NULL;
     }
+
+    xlsStream stream;
+    stream.stream = file_handle;
+    stream.read = ole2_file_stream_read;
+    stream.seek = ole2_file_stream_seek;
+    stream.close = ole2_file_stream_close;
+
+    return ole2_open_stream(&stream);
+}
+
+// Open physical file
+OLE2* ole2_open_stream(const xlsStream* stream)
+{
+    OLE2* ole = NULL;
+
+    ole = calloc(1, sizeof(OLE2));
+
+    ole->stream.stream = stream->stream;
+    ole->stream.read = stream->read;
+    ole->stream.seek = stream->seek;
+    ole->stream.close = stream->close;
 
     return ole2_read_header_and_body(ole);
 }
@@ -634,8 +667,10 @@ OLE2* ole2_open_file(const char *file)
 void ole2_close(OLE2* ole2)
 {
     int i;
-    if (ole2->file)
-        fclose(ole2->file);
+    if (ole2->stream.stream) {
+        if (ole2->stream.close)
+            ole2->stream.close(ole2->stream.stream);
+    }
 
     for(i=0; i<ole2->files.count; ++i) {
         free(ole2->files.file[i].name);

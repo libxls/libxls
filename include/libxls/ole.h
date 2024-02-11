@@ -108,7 +108,8 @@ st_olefiles;
 
 typedef struct OLE2
 {
-    FILE*		file;
+    xlsStream   stream;
+
     const void *buffer;
     size_t      buffer_len;
     size_t      buffer_pos;
@@ -189,6 +190,7 @@ int ole2_seek(OLE2Stream* olest,DWORD ofs);
 OLE2Stream*  ole2_fopen(OLE2* ole, const char *file);
 void ole2_fclose(OLE2Stream* ole2st);
 OLE2* ole2_open_file(const char *file);
+OLE2* ole2_open_stream(const xlsStream* stream);
 OLE2* ole2_open_buffer(const void *buffer, size_t len);
 void ole2_close(OLE2* ole2);
 
