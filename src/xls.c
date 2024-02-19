@@ -829,11 +829,11 @@ int xls_isRecordTooSmall(xlsWorkBook *pWB, BOF *bof1, const BYTE* buf) {
                     unsigned char ident;
                     unsigned char lvl;
                 } *styl;
-                styl = (void *)buf;
                 if(bof1->size < 2) {
                     return 1;
                 }
-                if(styl->idx & 0x8000) {
+                styl = (void *)buf;
+                if(xlsShortVal(styl->idx) & 0x8000) {
                     return bof1->size < 4;
                 } else {
                     if(bof1->size < 3) return 1;
