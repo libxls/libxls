@@ -10,12 +10,15 @@ aclocal.m4
 compile
 config.h*
 config.guess
+config.guess~
 config.log
 config.status
 config.sub
+config.sub~
 configure
 depcomp
 install-sh
+install-sh~
 libtool
 ltmain.sh
 missing
