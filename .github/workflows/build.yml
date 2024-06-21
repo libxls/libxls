@@ -33,7 +33,7 @@ jobs:
         compiler: [ clang, gcc ]
     steps:
       - name: Install packages
-        run: brew install automake autoconf-archive
+        run: brew install automake autoconf-archive libtool
       - uses: actions/checkout@v2
       - name: Autoconf
         run: autoreconf -i -f
