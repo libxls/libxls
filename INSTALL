@@ -14,7 +14,7 @@ BUILD AND INSTALL
 * If you've cloned the git repository, instead of downloading a release,
   do this first:
 
-    ./bootstrap 
+    ./autogen.sh
     
 
 MAINTENANCE
@@ -27,7 +27,7 @@ MAINTENANCE
 * When you update configure.ac, or when there is an upgrade of autoconf/libtool
   versions, do this:
 
-    ./bootstrap
+    ./autogen.sh
 
   Then:
 

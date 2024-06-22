@@ -102,7 +102,7 @@ make install
 If you've cloned the git repository, you'll need to run this first:
 
 ```
-./bootstrap
+./autogen.sh
 ```
 
 That will generate all the supporting files. It assumes autotools is already
