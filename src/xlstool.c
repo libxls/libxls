@@ -614,10 +614,10 @@ typedef struct st_format
 	st_format;
 #endif
 
-void xls_showFormat(struct st_format_data* frmt)
+void xls_showFormat(struct st_format_data* format)
 {
-	printf("    index : %u\n", frmt->index);
-    printf("     value: %s\n", frmt->value);
+	printf("    index : %u\n", format->index);
+    printf("     value: %s\n", format->value);
 }
 
 void xls_showXF(XF8* xf)
