@@ -243,6 +243,9 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 #endif
 
     olest = calloc(1, sizeof(OLE2Stream));
+    if (olest == NULL) {
+        return NULL;
+    }
     olest->ole=ole;
     olest->size=size;
     olest->fatpos=start;
@@ -403,6 +406,10 @@ static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t siz
 static ssize_t ole2_read_header(OLE2 *ole) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     OLE2Header *oleh = malloc(sizeof(OLE2Header));
+    if (ole == NULL || oleh == NULL) {
+        free(oleh);
+        return -1;
+    }
     if (ole2_fread(ole, oleh, sizeof(OLE2Header), sizeof(OLE2Header)) != 1) {
         total_bytes_read = -1;
         goto cleanup;
