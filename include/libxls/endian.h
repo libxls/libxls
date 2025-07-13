@@ -29,6 +29,9 @@
  *
  */
 
+#ifndef ENDIAN_INCLUDE
+#define ENDIAN_INCLUDE
+
 #include "../libxls/xlsstruct.h"
 
 int xls_is_bigendian(void);
@@ -59,3 +62,5 @@ void xlsConvertPss(PSS* pss);
 
 #define W_ENDIAN(a) a=xlsShortVal(a)
 #define D_ENDIAN(a) a=xlsIntVal(a)
+
+#endif // ENDIAN_INCLUDE

@@ -89,5 +89,5 @@ xlsCell	*xls_cell(xlsWorkSheet* pWS, WORD cellRow, WORD cellCol);
 } // namespace
 #endif
 
-#endif
+#endif // XLS_INCLUDE
 

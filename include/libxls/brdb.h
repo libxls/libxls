@@ -33,6 +33,9 @@
  *
  */
 
+#ifndef BRDB_INCLUDE
+#define BRDB_INCLUDE
+
 struct str_brdb
 {
     WORD opcode;
@@ -60,3 +63,5 @@ static int get_brbdnum(int id)
     while (brdb[i].opcode!=0xFFF);
     return 0;
 }
+
+#endif // BRDB_INCLUDE

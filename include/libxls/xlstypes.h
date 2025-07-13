@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef XLS_TYPES_INC
-#define XLS_TYPES_INC
+#ifndef XLS_TYPES_INCLUDE
+#define XLS_TYPES_INCLUDE
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -49,4 +49,4 @@ typedef unsigned __int64	unsigned64_t;
 typedef uint64_t			unsigned64_t;
 #endif
 
-#endif
+#endif // XLS_TYPES_INCLUDE
