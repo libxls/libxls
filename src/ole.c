@@ -63,7 +63,7 @@ static void *ole_malloc(size_t len) {
     if (len > (1<<24) || len == 0) {
         return NULL;
     }
-    return malloc(len);
+    return calloc(1, len);
 }
 
 static void *ole_realloc(void *ptr, size_t len) {
@@ -402,7 +402,7 @@ static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t siz
 // read header and check magic numbers
 static ssize_t ole2_read_header(OLE2 *ole) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
-    OLE2Header *oleh = malloc(sizeof(OLE2Header));
+    OLE2Header *oleh = calloc(1, sizeof(OLE2Header));
     if (ole2_fread(ole, oleh, sizeof(OLE2Header), sizeof(OLE2Header)) != 1) {
         total_bytes_read = -1;
         goto cleanup;
@@ -480,7 +480,7 @@ static ssize_t ole2_read_body(OLE2 *ole) {
         total_bytes_read = -1;
         goto cleanup;
     }
-    pss = malloc(sizeof(PSS));
+    pss = calloc(1, sizeof(PSS));
     do {
         if ((bytes_read = ole2_read(pss,1,sizeof(PSS),olest)) == -1) {
             total_bytes_read = -1;
@@ -779,6 +779,7 @@ static ssize_t read_MSAT_trailer(OLE2 *ole2) {
         return -1;
     }
     ole2->SSecIDCount = ole2->csfat*(size_t)ole2->lsector/4;
+    memset(ole2->SSecID, 0xFF, ole2->SSecIDCount * sizeof(DWORD));
     sector = ole2->sfatstart;
     wptr=(BYTE*)ole2->SSecID;
     bytes_left = ole2->SSecIDCount * sizeof(DWORD);
@@ -828,6 +829,7 @@ static ssize_t read_MSAT(OLE2* ole2, OLE2Header* oleh)
         total_bytes_read = -1;
         goto cleanup;
     }
+    memset(ole2->SecID, 0xFF, ole2->SecIDCount * sizeof(DWORD));
 
     if ((bytes_read = read_MSAT_header(ole2, oleh, count)) == -1) {
         total_bytes_read = -1;
