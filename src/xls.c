@@ -875,11 +875,14 @@ xls_error_t xls_parseWorkBook(xlsWorkBook* pWB)
  		if(xls_debug) xls_showBOF(&bof1);
 
         if (bof1.size) {
-            if ((buf = realloc(buf, bof1.size)) == NULL) {
+            BYTE *new_buf = realloc(buf, bof1.size);
+            if (new_buf == NULL) {
                 if (xls_debug) fprintf(stderr, "Error: failed to allocate buffer of size %d\n", (int)bof1.size);
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = new_buf;
+            memset(buf, 0, bof1.size);
             if (ole2_read(buf, 1, bof1.size, pWB->olestr) != bof1.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
@@ -1120,11 +1123,14 @@ static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS)
         }
         xlsConvertBof(&tmp);
         if (tmp.size) {
-            if ((buf = realloc(buf, tmp.size)) == NULL) {
+            BYTE *new_buf = realloc(buf, tmp.size);
+            if (new_buf == NULL) {
                 if (xls_debug) fprintf(stderr, "Error: failed to allocate buffer of size %d\n", (int)tmp.size);
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = new_buf;
+            memset(buf, 0, tmp.size);
             if((read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr)) != tmp.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
@@ -1293,11 +1299,14 @@ xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS)
         }
         xlsConvertBof((BOF *)&tmp);
         if (tmp.size) {
-            if ((buf = realloc(buf, tmp.size)) == NULL) {
+            BYTE *new_buf = realloc(buf, tmp.size);
+            if (new_buf == NULL) {
                 if (xls_debug) fprintf(stderr, "Error: failed to allocate buffer of size %d\n", (int)tmp.size);
                 retval = LIBXLS_ERROR_MALLOC;
                 goto cleanup;
             }
+            buf = new_buf;
+            memset(buf, 0, tmp.size);
             if((read = ole2_read(buf, 1, tmp.size, pWS->workbook->olestr)) != tmp.size) {
                 if (xls_debug) fprintf(stderr, "Error: failed to read OLE block\n");
                 retval = LIBXLS_ERROR_READ;
