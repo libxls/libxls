@@ -57,7 +57,6 @@ static size_t sector_pos(OLE2* ole2, DWORD sid);
 static ssize_t sector_read(OLE2* ole2, void *buffer, size_t buffer_len, DWORD sid);
 static ssize_t read_MSAT(OLE2* ole2, OLE2Header *oleh);
 static void *ole_malloc(size_t len);
-static void *ole_realloc(void *ptr, size_t len);
 
 static void *ole_malloc(size_t len) {
     if (len > (1<<24) || len == 0) {
@@ -66,15 +65,26 @@ static void *ole_malloc(size_t len) {
     return calloc(1, len);
 }
 
-static void *ole_realloc(void *ptr, size_t len) {
-    if (len > (1<<24) || len == 0) {
+/* Reallocates memory and zero-fills only the newly grown region (from old_len to new_len). Frees ptr on failure. */
+static void *ole_realloc_zero(void *ptr, size_t old_len, size_t new_len) {
+    if (new_len > (1<<24) || new_len == 0) {
         free(ptr);
         return NULL;
     }
-    return realloc(ptr, len);
+    void *new_ptr = realloc(ptr, new_len);
+    if (!new_ptr) {
+        free(ptr);
+        return NULL;
+    }
+    if (new_len > old_len) {
+        memset((char *)new_ptr + old_len, 0, new_len - old_len);
+    }
+    return new_ptr;
 }
 
 static int ole2_validate_sector_chain(DWORD *chain, DWORD chain_count, DWORD chain_start) {
+    if (chain == NULL || chain_count == 0)
+        return 0;
     DWORD count = 0;
     DWORD sector = chain_start;
     while (sector != ENDOFCHAIN) {
@@ -535,11 +545,16 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                 size_t bytes_left;
 				
 				blocks = (pss->size + (ole->lsector - 1)) / ole->lsector;	// count partial
+				if (ole->lsector == 0 || blocks > (1u << 24) / ole->lsector) {
+					total_bytes_read = -1;
+					goto cleanup;
+				}
 #ifdef OLE_DEBUG
                 fprintf(stderr, "OLE BLOCKS: %d = (%d + (%d - 1))/%d\n",
                         (int)blocks, (int)pss->size, (int)ole->lsector, (int)ole->lsector);
 #endif
-				if ((ole->SSAT = ole_realloc(ole->SSAT, blocks*ole->lsector)) == NULL) {
+				size_t old_ssat_bytes = ole->SSATCount;
+				if ((ole->SSAT = ole_realloc_zero(ole->SSAT, old_ssat_bytes, blocks*ole->lsector)) == NULL) {
                     total_bytes_read = -1;
                     goto cleanup;
                 }
@@ -688,8 +703,11 @@ static ssize_t read_MSAT_header(OLE2* ole2, OLE2Header* oleh, DWORD sectorCount)
 
     for (sectorNum = 0; sectorNum < sectorCount && sectorNum < 109; sectorNum++)
     {
-        if ((bytes_read = sector_read(ole2, sector, bytes_left, oleh->MSAT[sectorNum])) == -1) {
-            if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", oleh->MSAT[sectorNum]);
+        DWORD s = oleh->MSAT[sectorNum];
+        if (s == ENDOFCHAIN || s == FREESECT)
+            break;
+        if ((bytes_read = sector_read(ole2, sector, bytes_left, s)) == -1) {
+            if (xls_debug) fprintf(stderr, "Error: Unable to read sector #%d\n", s);
             return -1;
         }
         sector += ole2->lsector;
