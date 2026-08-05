@@ -172,6 +172,9 @@ ssize_t ole2_read(void* buf, size_t size, size_t count, OLE2Stream* olest)
     size_t totalReadCount;
 
 	totalReadCount=size*count;
+    if (buf && totalReadCount > 0) {
+        memset(buf, 0, totalReadCount);
+    }
 
 	// olest->size inited to -1
 	// printf("===== ole2_read(%ld bytes)\n", totalReadCount);
