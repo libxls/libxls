@@ -49,4 +49,17 @@ typedef unsigned __int64	unsigned64_t;
 typedef uint64_t			unsigned64_t;
 #endif
 
+typedef size_t(*xls_stream_read)(void* buffer, size_t size, void* stream);
+typedef int (*xls_stream_seek)(void* stream, long offset, int origin);
+typedef void (*xls_stream_close)(void* stream);
+
+typedef struct xls_stream
+{
+    void               *stream;
+    xls_stream_read     read;
+    xls_stream_seek     seek;
+    xls_stream_close    close;
+}
+xlsStream;
+
 #endif
