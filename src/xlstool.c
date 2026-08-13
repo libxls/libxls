@@ -260,6 +260,9 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t loc
     wchar_t *w = NULL;
 
     w = malloc((len/2+1)*sizeof(wchar_t));
+    if (w == NULL) {
+        goto cleanup;
+    }
 
     for(i=0; i<len/2; i++)
     {
@@ -274,6 +277,9 @@ static char *unicode_decode_wcstombs(const char *s, size_t len, xls_locale_t loc
     }
 
     converted = calloc(count+1, sizeof(char));
+    if (converted == NULL) {
+        goto cleanup;
+    }
     count2 = xls_wcstombs_l(converted, w, count, locale);
     if (count2 <= 0) {
         printf("wcstombs failed (%lu)\n", (unsigned long)len/2);
@@ -299,6 +305,8 @@ static char *transcode_latin1_to_utf8(const char *str, DWORD len)
     }
 	
     char *out = ret = malloc(len+utf8_chars+1);
+    if (ret == NULL)
+        return NULL;
     // UTF-8 encoding inline
     for(i=0; i<len; ++i) {
         BYTE c = str[i];
@@ -333,6 +341,8 @@ char* codepage_decode(const char *s, size_t len, xlsWorkBook *pWB) {
     return unicode_decode_iconv(s, len, pWB->converter);
 #else
     char *ret = malloc(len+1);
+    if (ret == NULL)
+        return NULL;
     memcpy(ret, s, len);
     ret[len] = 0;
     return ret;
@@ -677,6 +687,8 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     case XLS_RECORD_RK:
     case XLS_RECORD_NUMBER:
         ret = malloc(retlen);
+        if (ret == NULL)
+            return NULL;
         snprintf(ret, retlen, "%lf", cell->d);
 		break;
 		//		if( RK || MULRK || NUMBER || FORMULA)
@@ -684,6 +696,8 @@ char *xls_getfcell(xlsWorkBook* pWB, struct st_cell_data* cell, BYTE *label)
     default:
         if (xf) {
             ret = malloc(retlen);
+            if (ret == NULL)
+                return NULL;
             switch (xf->format)
             {
                 case XLS_FORMAT_GENERAL:
@@ -738,7 +752,14 @@ char* xls_getCSS(xlsWorkBook* pWB)
 
     char *ret = malloc(65535);
     size_t buf_len = 4096;
-    char *buf = malloc(buf_len);
+    char *buf;
+    if (ret == NULL)
+        return NULL;
+    buf = malloc(buf_len);
+    if (buf == NULL) {
+        free(ret);
+        return NULL;
+    }
 	ret[0] = '\0';
 
     for (i=0;i<pWB->xfs.count;i++)
@@ -854,7 +875,11 @@ char* xls_getCSS(xlsWorkBook* pWB)
 
 		strcat(ret,buf);
     }
-	ret = realloc(ret, strlen(ret)+1);
+	{
+		char *shrunk = realloc(ret, strlen(ret)+1);
+		if (shrunk != NULL)
+			ret = shrunk;
+	}
 	free(buf);
 
     return ret;
