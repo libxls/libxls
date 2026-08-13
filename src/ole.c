@@ -256,6 +256,8 @@ OLE2Stream* ole2_sopen(OLE2* ole,DWORD start, size_t size)
 #endif
 
     olest = calloc(1, sizeof(OLE2Stream));
+    if (olest == NULL)
+        return NULL;
     olest->ole=ole;
     olest->size=size;
     olest->fatpos=start;
@@ -416,6 +418,8 @@ static size_t ole2_fread(OLE2 *ole2, void *buffer, size_t buffer_len, size_t siz
 static ssize_t ole2_read_header(OLE2 *ole) {
     ssize_t bytes_read = 0, total_bytes_read = 0;
     OLE2Header *oleh = calloc(1, sizeof(OLE2Header));
+    if (oleh == NULL)
+        return -1;
     if (ole2_fread(ole, oleh, sizeof(OLE2Header), sizeof(OLE2Header)) != 1) {
         total_bytes_read = -1;
         goto cleanup;
@@ -494,6 +498,10 @@ static ssize_t ole2_read_body(OLE2 *ole) {
         goto cleanup;
     }
     pss = calloc(1, sizeof(PSS));
+    if (pss == NULL) {
+        total_bytes_read = -1;
+        goto cleanup;
+    }
     do {
         if ((bytes_read = ole2_read(pss,1,sizeof(PSS),olest)) == -1) {
             total_bytes_read = -1;
@@ -517,7 +525,14 @@ static ssize_t ole2_read_body(OLE2 *ole) {
                     pss->type == PS_USER_ROOT ? "root" : "user",
                     (int)ole->files.count, (int)pss->size);
 #endif		
-            ole->files.file = realloc(ole->files.file,(ole->files.count+1)*sizeof(struct st_olefiles_data));
+            struct st_olefiles_data *new_files = realloc(ole->files.file,
+                    (ole->files.count+1)*sizeof(struct st_olefiles_data));
+            if (new_files == NULL) {
+                free(name);
+                total_bytes_read = -1;
+                goto cleanup;
+            }
+            ole->files.file = new_files;
             ole->files.file[ole->files.count].name=name;
             ole->files.file[ole->files.count].start=pss->sstart;
             ole->files.file[ole->files.count].size=pss->size;
@@ -620,6 +635,8 @@ OLE2 *ole2_read_header_and_body(OLE2 *ole) {
 // Open in-memory buffer
 OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
     OLE2 *ole = calloc(1, sizeof(OLE2));
+    if (ole == NULL)
+        return NULL;
 
     ole->buffer = buffer;
     ole->buffer_len = len;
@@ -639,6 +656,8 @@ OLE2* ole2_open_file(const char *file)
 
 	if(xls_debug) printf("ole2_open: %s\n", file);
     ole = calloc(1, sizeof(OLE2));
+    if (ole == NULL)
+        return NULL;
 
     if (!(ole->file=fopen(file, "rb"))) {
         if(xls_debug) fprintf(stderr, "File not found\n");
@@ -727,6 +746,8 @@ static ssize_t read_MSAT_body(OLE2 *ole2, DWORD sectorOffset, DWORD sectorCount)
     DWORD sectorNum = sectorOffset;
 
     DWORD *sector = ole_malloc(ole2->lsector);
+    if (sector == NULL)
+        return -1;
     //printf("sid=%u (0x%x) sector=%u\n", sid, sid, ole2->lsector);
     while (sid != ENDOFCHAIN && sid != FREESECT) // FREESECT only here due to an actual file that requires it (old Apple Numbers bug)
     {
