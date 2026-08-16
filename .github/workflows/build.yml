@@ -6,13 +6,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [ clang, gcc, gcc-9, gcc-10, gcc-11, gcc-12 ]
+        compiler: [ clang, gcc, gcc-11, gcc-12 ]
     steps:
       - name: Add repository
         run: sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
       - name: Install packages
         run: sudo apt install gettext autoconf-archive gcc-11 gcc-12
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Autoconf
         run: autoreconf -i -f
       - name: Configure
@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Install packages
         run: brew install automake autoconf-archive libtool
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Autoconf
         run: autoreconf -i -f
       - name: Configure
@@ -62,7 +62,7 @@ jobs:
             base-devel
             gcc
             libiconv-devel
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Autoconf
         run: autoreconf -i -f
       - name: Configure
