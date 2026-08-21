@@ -747,6 +747,7 @@ char* xls_getCSS(xlsWorkBook* pWB)
     WORD size;
     char fontname[255];
     struct st_xf_data* xf;
+    struct st_font_data* font;
     DWORD background;
     DWORD i;
 
@@ -765,6 +766,9 @@ char* xls_getCSS(xlsWorkBook* pWB)
     for (i=0;i<pWB->xfs.count;i++)
     {
         xf=&pWB->xfs.xf[i];
+        font = NULL;
+        if (xf->font && xf->font <= pWB->fonts.count)
+            font = &pWB->fonts.font[xf->font-1];
         switch ((xf->align & 0x70)>>4)
         {
         case 0:
@@ -839,33 +843,33 @@ char* xls_getCSS(xlsWorkBook* pWB)
             break;
         }
 
-        if (xf->font)
-            snprintf(color, sizeof(color), "color:#%.6X;",xls_getColor(pWB->fonts.font[xf->font-1].color,0));
+        if (font)
+            snprintf(color, sizeof(color), "color:#%.6X;",xls_getColor(font->color,0));
         else
             snprintf(color, sizeof(color), "%s", "");
 
-        if (xf->font && (pWB->fonts.font[xf->font-1].flag & 2))
+        if (font && (font->flag & 2))
             snprintf(italic, sizeof(italic), "font-style: italic;");
         else
             snprintf(italic, sizeof(italic), "%s", "");
 
-        if (xf->font && (pWB->fonts.font[xf->font-1].bold>400))
+        if (font && (font->bold>400))
             snprintf(bold, sizeof(bold), "font-weight: bold;");
         else
             snprintf(bold, sizeof(bold), "%s", "");
 
-        if (xf->font && (pWB->fonts.font[xf->font-1].underline))
+        if (font && font->underline)
             snprintf(underline, sizeof(underline), "text-decoration: underline;");
         else
             snprintf(underline, sizeof(underline), "%s", "");
 
-        if (xf->font)
-            size=pWB->fonts.font[xf->font-1].height/20;
+        if (font)
+            size=font->height/20;
         else
             size=10;
 
-        if (xf->font)
-            snprintf(fontname, sizeof(fontname),"%s",pWB->fonts.font[xf->font-1].name);
+        if (font && font->name)
+            snprintf(fontname, sizeof(fontname),"%s",font->name);
         else
             snprintf(fontname, sizeof(fontname),"Arial");
 
