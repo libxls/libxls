@@ -77,7 +77,9 @@ static xls_error_t xls_addColinfo(xlsWorkSheet* pWS, COLINFO* colinfo);
 static xls_error_t xls_mergedCells(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
 static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS);
 static xls_error_t xls_formatColumn(xlsWorkSheet* pWS);
-static void xls_dumpSummary(char *buf, int isSummary, xlsSummaryInfo *pSI);
+static void xls_dumpSummary(char *buf, size_t size, int isSummary, xlsSummaryInfo *pSI);
+
+#define XLS_SUMMARY_BUFFER_SIZE 4096
 
 #if defined(_AIX) || defined(__sun)
 #pragma pack(1)
@@ -1473,12 +1475,12 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
 
     if ((pWB->olestr=ole2_fopen(ole, "\005SummaryInformation")))
     {
-        pWB->summary = calloc(1,4096);
+        pWB->summary = calloc(1, XLS_SUMMARY_BUFFER_SIZE);
         if (pWB->summary == NULL) {
             retval = LIBXLS_ERROR_MALLOC;
             goto cleanup;
         }
-		if (ole2_read(pWB->summary, 4096, 1, pWB->olestr) == -1) {
+		if (ole2_read(pWB->summary, XLS_SUMMARY_BUFFER_SIZE, 1, pWB->olestr) == -1) {
             if (xls_debug) fprintf(stderr, "SummaryInformation not found\n");
             retval = LIBXLS_ERROR_READ;
             goto cleanup;
@@ -1488,12 +1490,12 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
 
     if ((pWB->olestr=ole2_fopen(ole, "\005DocumentSummaryInformation")))
     {
-        pWB->docSummary = calloc(1, 4096);
+        pWB->docSummary = calloc(1, XLS_SUMMARY_BUFFER_SIZE);
         if (pWB->docSummary == NULL) {
             retval = LIBXLS_ERROR_MALLOC;
             goto cleanup;
         }
-		if (ole2_read(pWB->docSummary, 4096, 1, pWB->olestr) == -1) {
+		if (ole2_read(pWB->docSummary, XLS_SUMMARY_BUFFER_SIZE, 1, pWB->olestr) == -1) {
             if (xls_debug) fprintf(stderr, "DocumentSummaryInformation not found\n");
             retval = LIBXLS_ERROR_READ;
             goto cleanup;
@@ -1743,8 +1745,8 @@ xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
 	xlsSummaryInfo	*pSI;
 
 	pSI = (xlsSummaryInfo *)calloc(1, sizeof(xlsSummaryInfo));
-	xls_dumpSummary(pWB->summary, 1, pSI);
-	xls_dumpSummary(pWB->docSummary, 0, pSI);
+	xls_dumpSummary(pWB->summary, XLS_SUMMARY_BUFFER_SIZE, 1, pSI);
+	xls_dumpSummary(pWB->docSummary, XLS_SUMMARY_BUFFER_SIZE, 0, pSI);
 
 	return pSI;
 }
@@ -1767,15 +1769,16 @@ void xls_close_summaryInfo(xlsSummaryInfo *pSI)
 	free(pSI);
 }
 
-static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
+static void xls_dumpSummary(char *buf, size_t size, int isSummary, xlsSummaryInfo *pSI) {
 	header			*head;
 	sectionList		*secList;
 	propertyList	*plist;
 	sectionHeader	*secHead;
 	property		*prop;
+	size_t			sectionOffset, sectionLength, propertyOffset, propertyDataSize;
 	uint32_t i, j;
 
-	if(!buf) return;	// perhaps the document was missing??
+	if(!buf || size < offsetof(header, secList)) return;	// perhaps the document was missing??
 
 	head = (header *)buf;
 	//printf("header: \n");
@@ -1784,6 +1787,8 @@ static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 	//printf("  class=%8.8x%8.8x%8.8x%8.8x\n", head->format[0], head->format[1], head->format[2], head->format[3]);
 	//printf("  count=%x\n", head->count);
 
+	if (head->count > (size - offsetof(header, secList)) / sizeof(sectionList)) return;
+
 	for(i=0; i<head->count; ++i) {
 		secList = &head->secList[i];
 		//printf("Section %d:\n", i);
@@ -1791,7 +1796,18 @@ static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 		//printf("  offset=%d (now at %ld\n", secList->offset, (char *)secList - (char *)buf + sizeof(sectionList));
 
 
-		secHead = (sectionHeader *)((char *)head + secList->offset);
+		sectionOffset = secList->offset;
+		if (sectionOffset > size ||
+			offsetof(sectionHeader, properties) > size - sectionOffset)
+			continue;
+
+		secHead = (sectionHeader *)((char *)head + sectionOffset);
+		sectionLength = secHead->length;
+		if (sectionLength < offsetof(sectionHeader, properties) ||
+			sectionLength > size - sectionOffset ||
+			secHead->numProperties >
+				(sectionLength - offsetof(sectionHeader, properties)) / sizeof(propertyList))
+			continue;
 		//printf("  len=%d\n", secHead->length);
 		//printf("  properties=%d\n", secHead->numProperties);
 		for(j=0; j<secHead->numProperties; ++j) {
@@ -1800,7 +1816,13 @@ static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 			plist = &secHead->properties[j];
 			//printf("      ---------\n");
 			//printf("      propID=%d offset=%d\n", plist->propertyID, plist->sectionOffset);
-			prop = (property *)((char *)secHead + plist->sectionOffset);
+			propertyOffset = plist->sectionOffset;
+			if (propertyOffset > sectionLength ||
+				offsetof(property, data) > sectionLength - propertyOffset)
+				continue;
+
+			prop = (property *)((char *)secHead + propertyOffset);
+			propertyDataSize = sectionLength - propertyOffset - offsetof(property, data);
 			//printf("      propType=%d\n", prop->propertyID);
 
 			switch(prop->propertyID) {
@@ -1832,7 +1854,14 @@ static void xls_dumpSummary(char *buf,int isSummary,xlsSummaryInfo *pSI) {
 					default:	s = NULL;				break;
 					}
 				}
-				if(s) *s = (BYTE *)strdup((char *)prop->data + 4);
+				if (s && propertyDataSize >= sizeof(uint32_t)) {
+					uint32_t stringLength = prop->data[0];
+					char *string = (char *)prop->data + sizeof(uint32_t);
+					if (stringLength &&
+						stringLength <= propertyDataSize - sizeof(uint32_t) &&
+						string[stringLength - 1] == '\0')
+						*s = (BYTE *)strdup(string);
+				}
 				break;
 			case 64:
 				//printf("      longVal=%llx\n", *(uint64_t *)prop->data);
