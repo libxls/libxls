@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef XLS_STRUCT_INC
-#define XLS_STRUCT_INC
+#ifndef XLS_STRUCT_INCLUDE
+#define XLS_STRUCT_INCLUDE
 
 #include "../libxls/ole.h"
 
@@ -543,4 +543,4 @@ xlsSummaryInfo;
 
 typedef void (*xls_formula_handler)(WORD bof, WORD len, BYTE *formula);
 
-#endif
+#endif // XLS_STRUCT_INCLUDE

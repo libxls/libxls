@@ -188,4 +188,4 @@ OLE2* ole2_open_file(const char *file);
 OLE2* ole2_open_buffer(const void *buffer, size_t len);
 void ole2_close(OLE2* ole2);
 
-#endif
+#endif // OLE_INCLUDE

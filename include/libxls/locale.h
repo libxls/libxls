@@ -28,6 +28,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#ifndef LOCALE_INCLUDE
+#define LOCALE_INCLUDE
+
 #ifdef HAVE_XLOCALE_H
 #include <xlocale.h>
 #endif
@@ -42,3 +45,5 @@ typedef locale_t xls_locale_t;
 xls_locale_t xls_createlocale(void);
 void xls_freelocale(xls_locale_t locale);
 size_t xls_wcstombs_l(char *restrict s, const wchar_t *restrict pwcs, size_t n, xls_locale_t loc);
+
+#endif // LOCALE_INCLUDE
