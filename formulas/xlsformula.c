@@ -33,6 +33,8 @@
  *
  */
 #include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 #include <assert.h>
 
 #include "xlsformula.h"
@@ -41,13 +43,17 @@
 
 static void dump_formula_formula(WORD len, BYTE *buf);
 static void dump_formula_array(WORD len, BYTE *buf);
-static void dump_formula_data(WORD len, BYTE *buf);
+static void dump_formula_data(WORD len, BYTE *buf, size_t avail);
 static WORD func_len(WORD func);
-static WORD get_token_size(BYTE *buf);
+static WORD get_token_size(BYTE *buf, size_t avail);
+
+#define NUM_TOKEN_NAMES     128
+#define NUM_FUNCTION_NAMES  368
 
 typedef struct { const char *xlsName; const char *excelName; } excelNames;
-static const excelNames tokenNames[128];
-static const excelNames functionNames[368];
+static const excelNames tokenNames[NUM_TOKEN_NAMES];
+static const excelNames functionNames[NUM_FUNCTION_NAMES];
+static const excelNames unknownName = { "OP_UNKNOWN", "ptgUnknown" };
 
 static unsigned short xlsShortVal (short s);
 
@@ -63,13 +69,18 @@ void dump_formula(WORD bof, WORD len, BYTE *buf)
 static void dump_formula_formula(WORD len, BYTE *buf)
 {
 	FORMULA *f = (FORMULA *)buf;
+	BYTE *num = buf + offsetof(FORMULA, resid);	// 8-byte cached result
 
 	printf("FORMULA LEN: %d\n", len);
+	if(len < offsetof(FORMULA, value)) {
+		printf("YIKES: FORMULA record too short (%d bytes, need %d)\n", len, (int)offsetof(FORMULA, value));
+		return;
+	}
 	printf("ROW: %d\n", f->row);
 	printf("COL: %d\n", f->col);
-	printf("NUM: "); for(int i=-1; i<7; ++i) printf("%2.2x ", f->resdata[i]); printf("\n");
+	printf("NUM: "); for(int i=0; i<8; ++i) printf("%2.2x ", num[i]); printf("\n");
 	printf("OPTIONS: 0x%x\n", f->flags);
-	dump_formula_data(f->len, f->value);
+	dump_formula_data(f->len, f->value, len - offsetof(FORMULA, value));
 }
 
 static void dump_formula_array(WORD len, BYTE *buf)
@@ -77,15 +88,33 @@ static void dump_formula_array(WORD len, BYTE *buf)
 	FARRAY *f = (FARRAY *)buf;
 
 	printf("FORMULA ARRAY LEN: %d\n", len);
+	if(len < offsetof(FARRAY, value)) {
+		printf("YIKES: ARRAY record too short (%d bytes, need %d)\n", len, (int)offsetof(FARRAY, value));
+		return;
+	}
 	printf("ROW: %d->%d\n", f->row1, f->row2);
 	printf("COL: %d->%d\n", f->col1, f->col2);
 	printf("OPTIONS: 0x%x\n", f->flags);
-	dump_formula_data(f->len, f->value);
+	dump_formula_data(f->len, f->value, len - offsetof(FARRAY, value));
 }
 
-static void dump_formula_data(WORD flen, BYTE *buf)
+static unsigned short read_short(BYTE *b)
+{
+	short s;
+	memcpy(&s, b, sizeof(s));
+	return xlsShortVal(s);
+}
+
+/* `avail' is the number of bytes actually present in `buf', as opposed to
+ * `flen', which is the formula length claimed by the record. Nothing past
+ * `avail' is ever read. */
+static void dump_formula_data(WORD flen, BYTE *buf, size_t avail)
 {
 	printf("FORMULA LEN: %d\n", flen);
+	if(flen > avail) {
+		printf("YIKES: formula length %d exceeds the %d bytes left in the record\n", flen, (int)avail);
+		flen = avail;
+	}
 	if(flen) {
 #if 0
 		printf("   ");
@@ -94,9 +123,20 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 #endif
 		BYTE *b = buf;
 		while((b-buf) < flen) {
-			WORD len = get_token_size(b);
+			size_t remaining = flen - (b - buf);
+			WORD len;
+
+			if(b[0] >= NUM_TOKEN_NAMES) {
+				printf("YIKES: unknown token 0x%2.2x!\n", b[0]);
+				return;
+			}
+			len = get_token_size(b, remaining);
 			if(len == 0) {
 				printf("YIKES: token 0x%2.2x no len!\n", b[0]);
+				return;
+			}
+			if(len > remaining) {
+				printf("YIKES: token 0x%2.2x needs %d bytes but only %d remain!\n", b[0], len, (int)remaining);
 				return;
 			}
 			
@@ -105,10 +145,7 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			switch(b[0]) {
 			case 0x17:
 			{
-				WORD sLen = b[1];
-				BYTE options = b[2];
-				if(options & 1) sLen *= 2;
-				len = 3 + sLen; // token, len, options
+				// token, len, options; total length already computed by get_token_size()
 				//printf("len=%u opts=%u total=%u\n", b[1], b[2], len);
 				printf("%s (0x%x): ", tn.xlsName, b[0]);
 			}	break;
@@ -116,8 +153,8 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			case 0x41:
 			case 0x61:
 			{
-				unsigned short func = xlsShortVal(*(short *)&b[1]);
-				excelNames fn = functionNames[ func ];
+				unsigned short func = read_short(&b[1]);
+				excelNames fn = func < NUM_FUNCTION_NAMES ? functionNames[ func ] : unknownName;
 				printf("%s (0x%x) %s  ", tn.xlsName, b[0], fn.xlsName);
 				switch(func) {
 				default:
@@ -128,8 +165,8 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			case 0x42:
 			case 0x62:
 			{
-				unsigned short func = xlsShortVal(*(short *)&b[2]);
-				excelNames fn = functionNames[ func ];
+				unsigned short func = read_short(&b[2]);
+				excelNames fn = func < NUM_FUNCTION_NAMES ? functionNames[ func ] : unknownName;
 				printf("%s (0x%x) %s arguments=%d  ", tn.xlsName, b[0], fn.xlsName, b[1]);
 				switch(func) {
 				case 0x00FF:		// FUNC_UDF:
@@ -144,10 +181,10 @@ static void dump_formula_data(WORD flen, BYTE *buf)
 			case 0x44:
 			case 0x64:
 			{
-				unsigned short col = xlsShortVal(*(short *)&b[3]);
+				unsigned short col = read_short(&b[3]);
 				unsigned short flags = col & 0xC000;
 				col &= ~0xC000;
-				printf("%s (0x%x) ROW=%d COL=%d FLAGS=0x%x", tn.xlsName, b[0], xlsShortVal(*(short *)&b[1]), col, flags );
+				printf("%s (0x%x) ROW=%d COL=%d FLAGS=0x%x", tn.xlsName, b[0], read_short(&b[1]), col, flags );
 				printBytes = 0;
 			}	break;
 			
@@ -192,7 +229,7 @@ static WORD token_size[128] = {
 	1,
 	1,
 	1,
-	0xFF,	// string
+	0,		// string (0x17), variable length, see get_token_size()
 	0,
 	4,		// tExpr = 0x19
 	0,
@@ -302,14 +339,30 @@ static WORD token_size[128] = {
 	0,
 };
 
-static WORD get_token_size(BYTE *buf)
+/* Returns the size of the token at `buf', or 0 if it is unknown or if the
+ * `avail' bytes left in the formula are too few to even read its header. */
+static WORD get_token_size(BYTE *buf, size_t avail)
 {
-	WORD len = token_size[buf[0]];
+	WORD len;
+	if(avail == 0 || buf[0] >= NUM_TOKEN_NAMES)
+		return 0;
+	len = token_size[buf[0]];
 	if(!len) {
 		switch(buf[0]) {
+		case 0x17:	// string: token, length byte, options byte, characters
+		{
+			if(avail < 3)
+				break;
+			len = 3 + buf[1];
+			if(buf[2] & 1)		// 16-bit characters
+				len += buf[1];
+		}	break;
 		case 0x19:
 		{
-			BYTE flag = buf[1];
+			BYTE flag;
+			if(avail < 2)
+				break;
+			flag = buf[1];
 			switch(flag) {
 			case 0x00:	// only in original OSX Excel circa 2001
 			case 0x01:
