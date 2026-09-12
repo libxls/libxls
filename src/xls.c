@@ -98,7 +98,7 @@ typedef struct {
 	uint32_t		os;
 	uint32_t		format[4];
 	uint32_t		count;
-	sectionList		secList[1];
+	sectionList		secList[];
 } header;
 
 typedef struct {
@@ -109,12 +109,12 @@ typedef struct {
 typedef struct {
 	uint32_t		length;
 	uint32_t		numProperties;
-	propertyList	properties[1];
+	propertyList	properties[];
 } sectionHeader;
 
 typedef struct {
 	uint32_t		propertyID;
-	uint32_t		data[1];
+	uint32_t		data[];
 } property;
 
 #pragma pack(pop)
@@ -471,7 +471,7 @@ int xls_isCellTooSmall(xlsWorkBook* pWB, BOF* bof, BYTE* buf) {
         return 1;
 
     if (bof->id == XLS_RECORD_FORMULA || bof->id == XLS_RECORD_FORMULA_ALT)
-        return (bof->size < sizeof(FORMULA));
+        return (bof->size < offsetof(FORMULA, value));
 
     if (bof->id == XLS_RECORD_MULRK)
         return (bof->size < offsetof(MULRK, rk));
