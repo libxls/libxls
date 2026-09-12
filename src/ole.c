@@ -645,6 +645,78 @@ OLE2 *ole2_open_buffer(const void *buffer, size_t len) {
 }
 
 // Open physical file
+#ifdef _WIN32
+/* Convert a UTF-8 string to UTF-16 for _wfopen(). Returns NULL if the input
+ * is not well-formed UTF-8 (the path is probably in the ANSI code page then).
+ * Written by hand so that ole.c does not need <windows.h>, whose DWORD typedef
+ * conflicts with the one in xlstypes.h. */
+static wchar_t *ole2_utf8_to_utf16(const char *str) {
+    const unsigned char *in = (const unsigned char *)str;
+    size_t n = strlen(str);
+    wchar_t *out = malloc((n + 1) * sizeof(wchar_t));
+    size_t i = 0, o = 0;
+
+    if (out == NULL)
+        return NULL;
+
+    while (i < n) {
+        uint32_t cp;
+        size_t extra;
+        if (in[i] < 0x80) {
+            cp = in[i]; extra = 0;
+        } else if ((in[i] & 0xE0) == 0xC0 && in[i] >= 0xC2) {
+            cp = in[i] & 0x1F; extra = 1;
+        } else if ((in[i] & 0xF0) == 0xE0) {
+            cp = in[i] & 0x0F; extra = 2;
+        } else if ((in[i] & 0xF8) == 0xF0 && in[i] <= 0xF4) {
+            cp = in[i] & 0x07; extra = 3;
+        } else {
+            goto invalid;
+        }
+        for (size_t k = 1; k <= extra; k++) {
+            if (i + k >= n || (in[i + k] & 0xC0) != 0x80)
+                goto invalid;
+            cp = (cp << 6) | (in[i + k] & 0x3F);
+        }
+        if ((extra == 2 && cp < 0x800) || (extra == 3 && cp < 0x10000) ||
+                cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
+            goto invalid;
+        i += extra + 1;
+        if (cp >= 0x10000) {
+            cp -= 0x10000;
+            out[o++] = (wchar_t)(0xD800 | (cp >> 10));
+            out[o++] = (wchar_t)(0xDC00 | (cp & 0x3FF));
+        } else {
+            out[o++] = (wchar_t)cp;
+        }
+    }
+    out[o] = L'\0';
+    return out;
+
+invalid:
+    free(out);
+    return NULL;
+}
+#endif
+
+/* Open a file by path. On Windows fopen() interprets the path in the ANSI code
+ * page, so a UTF-8 path with non-ASCII characters fails; retry it as UTF-16.
+ * See https://github.com/libxls/libxls/issues/146 */
+static FILE *ole2_fopen_path(const char *file)
+{
+    FILE *fp = fopen(file, "rb");
+#ifdef _WIN32
+    if (fp == NULL) {
+        wchar_t *wfile = ole2_utf8_to_utf16(file);
+        if (wfile) {
+            fp = _wfopen(wfile, L"rb");
+            free(wfile);
+        }
+    }
+#endif
+    return fp;
+}
+
 OLE2* ole2_open_file(const char *file)
 {
     OLE2* ole = NULL;
@@ -659,7 +731,7 @@ OLE2* ole2_open_file(const char *file)
     if (ole == NULL)
         return NULL;
 
-    if (!(ole->file=fopen(file, "rb"))) {
+    if (!(ole->file=ole2_fopen_path(file))) {
         if(xls_debug) fprintf(stderr, "File not found\n");
         free(ole);
         return NULL;
