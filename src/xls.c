@@ -78,8 +78,7 @@ static xls_error_t xls_mergedCells(xlsWorkSheet* pWS, BOF* bof, BYTE* buf);
 static xls_error_t xls_preparseWorkSheet(xlsWorkSheet* pWS);
 static xls_error_t xls_formatColumn(xlsWorkSheet* pWS);
 static void xls_dumpSummary(char *buf, size_t size, int isSummary, xlsSummaryInfo *pSI);
-
-#define XLS_SUMMARY_BUFFER_SIZE 4096
+static xls_error_t xls_readSummaryStream(xlsWorkBook *pWB, OLE2 *ole, const char *name, char **out, size_t *out_len);
 
 #if defined(_AIX) || defined(__sun)
 #pragma pack(1)
@@ -1460,6 +1459,46 @@ xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num)
     return pWS;
 }
 
+/* Streams larger than this are not plausible property sets; skip them rather
+ * than let a corrupt directory entry drive a huge allocation. */
+#define XLS_MAX_SUMMARY_STREAM_SIZE (16 * 1024 * 1024)
+
+/* Read an optional property-set stream (SummaryInformation or
+ * DocumentSummaryInformation) into a buffer sized to the stream. A missing
+ * stream is not an error. See https://github.com/libxls/libxls/issues/121 */
+static xls_error_t xls_readSummaryStream(xlsWorkBook *pWB, OLE2 *ole,
+        const char *name, char **out, size_t *out_len) {
+    ssize_t bytes_read;
+
+    *out = NULL;
+    *out_len = 0;
+
+    if (!(pWB->olestr = ole2_fopen(ole, name)))
+        return LIBXLS_OK;
+
+    if (pWB->olestr->size == 0 || pWB->olestr->size > XLS_MAX_SUMMARY_STREAM_SIZE) {
+        if (xls_debug) fprintf(stderr, "Skipping %s stream of %zu bytes\n",
+                name + 1, pWB->olestr->size);
+        ole2_fclose(pWB->olestr);
+        pWB->olestr = NULL;
+        return LIBXLS_OK;
+    }
+
+    if ((*out = calloc(1, pWB->olestr->size)) == NULL)
+        return LIBXLS_ERROR_MALLOC;
+
+    bytes_read = ole2_read(*out, 1, pWB->olestr->size, pWB->olestr);
+    if (bytes_read == -1) {
+        if (xls_debug) fprintf(stderr, "%s not found\n", name + 1);
+        return LIBXLS_ERROR_READ;
+    }
+    *out_len = bytes_read;
+
+    ole2_fclose(pWB->olestr);
+    pWB->olestr = NULL;
+    return LIBXLS_OK;
+}
+
 static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *outError) {
     xlsWorkBook* pWB;
     xls_error_t retval = LIBXLS_OK;
@@ -1473,35 +1512,15 @@ static xlsWorkBook *xls_open_ole(OLE2 *ole, const char *charset, xls_error_t *ou
     }
     verbose ("xls_open_ole");
 
-    if ((pWB->olestr=ole2_fopen(ole, "\005SummaryInformation")))
-    {
-        pWB->summary = calloc(1, XLS_SUMMARY_BUFFER_SIZE);
-        if (pWB->summary == NULL) {
-            retval = LIBXLS_ERROR_MALLOC;
-            goto cleanup;
-        }
-		if (ole2_read(pWB->summary, XLS_SUMMARY_BUFFER_SIZE, 1, pWB->olestr) == -1) {
-            if (xls_debug) fprintf(stderr, "SummaryInformation not found\n");
-            retval = LIBXLS_ERROR_READ;
-            goto cleanup;
-        }
-		ole2_fclose(pWB->olestr);
-	}
+    retval = xls_readSummaryStream(pWB, ole, "\005SummaryInformation",
+            &pWB->summary, &pWB->summary_len);
+    if (retval != LIBXLS_OK)
+        goto cleanup;
 
-    if ((pWB->olestr=ole2_fopen(ole, "\005DocumentSummaryInformation")))
-    {
-        pWB->docSummary = calloc(1, XLS_SUMMARY_BUFFER_SIZE);
-        if (pWB->docSummary == NULL) {
-            retval = LIBXLS_ERROR_MALLOC;
-            goto cleanup;
-        }
-		if (ole2_read(pWB->docSummary, XLS_SUMMARY_BUFFER_SIZE, 1, pWB->olestr) == -1) {
-            if (xls_debug) fprintf(stderr, "DocumentSummaryInformation not found\n");
-            retval = LIBXLS_ERROR_READ;
-            goto cleanup;
-        }
-		ole2_fclose(pWB->olestr);
-	}
+    retval = xls_readSummaryStream(pWB, ole, "\005DocumentSummaryInformation",
+            &pWB->docSummary, &pWB->docSummary_len);
+    if (retval != LIBXLS_OK)
+        goto cleanup;
 
 #if 0
 	if(xls_debug) {
@@ -1745,8 +1764,10 @@ xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB)
 	xlsSummaryInfo	*pSI;
 
 	pSI = (xlsSummaryInfo *)calloc(1, sizeof(xlsSummaryInfo));
-	xls_dumpSummary(pWB->summary, XLS_SUMMARY_BUFFER_SIZE, 1, pSI);
-	xls_dumpSummary(pWB->docSummary, XLS_SUMMARY_BUFFER_SIZE, 0, pSI);
+	if (pSI == NULL)
+		return NULL;
+	xls_dumpSummary(pWB->summary, pWB->summary_len, 1, pSI);
+	xls_dumpSummary(pWB->docSummary, pWB->docSummary_len, 0, pSI);
 
 	return pSI;
 }
@@ -1859,8 +1880,10 @@ static void xls_dumpSummary(char *buf, size_t size, int isSummary, xlsSummaryInf
 					char *string = (char *)prop->data + sizeof(uint32_t);
 					if (stringLength &&
 						stringLength <= propertyDataSize - sizeof(uint32_t) &&
-						string[stringLength - 1] == '\0')
+						string[stringLength - 1] == '\0') {
+						free(*s);
 						*s = (BYTE *)strdup(string);
+					}
 				}
 				break;
 			case 64:

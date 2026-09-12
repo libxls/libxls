@@ -505,6 +505,9 @@ typedef struct xlsWorkBook
     void        *converter;
     void        *utf16_converter;
     void        *utf8_locale;
+
+    size_t      summary_len;    // bytes in summary
+    size_t      docSummary_len; // bytes in docSummary
 }
 xlsWorkBook;
 
