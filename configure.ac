@@ -1,9 +1,9 @@
-AC_INIT([libxls],[1.6.3],[https://github.com/libxls/libxls/issues],[libxls],[https://github.com/libxls/libxls])
+AC_INIT([libxls],[1.6.4],[https://github.com/libxls/libxls/issues],[libxls],[https://github.com/libxls/libxls])
 AC_CONFIG_SRCDIR([test/test.c])
 
 LIBXLS_MAJOR_VERSION=1
 LIBXLS_MINOR_VERSION=6
-LIBXLS_MICRO_VERSION=3
+LIBXLS_MICRO_VERSION=4
 
 VERSION=$LIBXLS_MAJOR_VERSION.$LIBXLS_MINOR_VERSION.$LIBXLS_MICRO_VERSION
 # if libxls ever goes to 2.0 you will need to change the following line to
