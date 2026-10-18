@@ -53,6 +53,8 @@ int main(int argc, char *argv[])
     WORD t,tt;
     char *srcdir = getenv("srcdir");
     char path[2048];
+    char *css;
+    char rule[32];
     snprintf(path, sizeof(path), "%s/test/files/test2.xls", srcdir ? srcdir : ".");
     pWB=xls_open_file(path, "UTF-8", &code);
 
@@ -132,6 +134,24 @@ int main(int argc, char *argv[])
         return 1;
     }
     xls_close_WS(pWS);
+    xls_close_WB(pWB);
+
+    /* Regression test for xls_getCSS, which writes one rule per XF record
+     * and used to append them all to a fixed 65535-byte buffer:
+     * many_styles.xls has enough distinct cell styles to outgrow it. */
+    snprintf(path, sizeof(path), "%s/test/files/many_styles.xls", srcdir ? srcdir : ".");
+    pWB=xls_open_file(path, "UTF-8", &code);
+    if (pWB == NULL) {
+        fprintf(stderr, "Unable to open %s: %s\n", path, xls_getError(code));
+        return 1;
+    }
+    css=xls_getCSS(pWB);
+    snprintf(rule, sizeof(rule), ".xf%i{", (int)pWB->xfs.count - 1);
+    if (css == NULL || strlen(css) < 65535 || strstr(css, rule) == NULL) {
+        fprintf(stderr, "Unexpected style sheet for %s\n", path);
+        return 1;
+    }
+    free(css);
     xls_close_WB(pWB);
 
     return 0;
