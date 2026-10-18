@@ -732,18 +732,22 @@ static xls_error_t xls_addXF5(xlsWorkBook* pWB,XF5* xf)
     pWB->xfs.xf = new_xfs5;
 
     tmp=&pWB->xfs.xf[pWB->xfs.count];
+    /* BIFF5 lays out the rest of the record differently: clear the fields
+     * it doesn't set, as xls_getCSS reads them */
+    memset(tmp, 0, sizeof(*tmp));
 
     tmp->font=xf->font;
     tmp->format=xf->format;
     tmp->type=xf->type;
     tmp->align=(BYTE)xf->align;
+    /* Pattern colours sit in the low bits, as in BIFF8 */
+    tmp->groundcolor=xf->color;
 /*
     tmp->rotation=xf->rotation;
     tmp->ident=xf->ident;
     tmp->usedattr=xf->usedattr;
     tmp->linestyle=xf->linestyle;
     tmp->linecolor=xf->linecolor;
-    tmp->groundcolor=xf->groundcolor;
 */
 
     //	xls_showXF(tmp);
