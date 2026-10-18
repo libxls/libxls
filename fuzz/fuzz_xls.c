@@ -1,4 +1,5 @@
 
+#include <stdlib.h>
 #include "xls.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
@@ -9,6 +10,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
             xls_parseWorkSheet(work_sheet);
             xls_close_WS(work_sheet);
         }
+        free(xls_getCSS(work_book));
         xls_close_WB(work_book);
     }
     return 0;
