@@ -753,9 +753,12 @@ char* xls_getCSS(xlsWorkBook* pWB)
     DWORD background;
     DWORD i;
 
-    char *ret = malloc(65535);
+    size_t ret_size = 65535;
+    size_t ret_len = 0;
+    char *ret = malloc(ret_size);
     size_t buf_len = 4096;
     char *buf;
+    size_t len;
     if (ret == NULL)
         return NULL;
     buf = malloc(buf_len);
@@ -879,10 +882,26 @@ char* xls_getCSS(xlsWorkBook* pWB)
         snprintf(buf, buf_len, ".xf%i{ font-size:%ipt;font-family: \"%s\";background:#%.6X;text-align:%s;vertical-align:%s;%s%s%s%s%s%s%s%s}\n",
                 i,size,fontname,background,align,valign,borderleft,borderright,bordertop,borderbottom,color,italic,bold,underline);
 
-		strcat(ret,buf);
+        /* One rule per XF record, so the style sheet can outgrow any fixed
+         * buffer: grow it before appending */
+        len = strlen(buf);
+        if (ret_len + len + 1 > ret_size) {
+            char *grown;
+            while (ret_len + len + 1 > ret_size)
+                ret_size *= 2;
+            grown = realloc(ret, ret_size);
+            if (grown == NULL) {
+                free(ret);
+                free(buf);
+                return NULL;
+            }
+            ret = grown;
+        }
+        memcpy(ret + ret_len, buf, len + 1);
+        ret_len += len;
     }
 	{
-		char *shrunk = realloc(ret, strlen(ret)+1);
+		char *shrunk = realloc(ret, ret_len+1);
 		if (shrunk != NULL)
 			ret = shrunk;
 	}

@@ -65,7 +65,7 @@ endif
 
 TESTS = test_libxls
 
-EXTRA_DIST = README.md LICENSE test/files/test2.xls test/files/test2_empty_ministream.xls
+EXTRA_DIST = README.md LICENSE test/files/test2.xls test/files/test2_empty_ministream.xls test/files/many_styles.xls
 
 distclean-local:
 	-rm -f $(builddir)/test.htm
