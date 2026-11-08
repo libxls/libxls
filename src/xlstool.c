@@ -464,18 +464,16 @@ char *get_string(const char *s, size_t len, BYTE is2, xlsWorkBook* pWB)
 
 DWORD xls_getColor(const WORD color,WORD def)
 {
-    int cor=8;
-    int size = 64 - cor;
-    int max = size;
-    WORD idx=color;
-    if( idx >= cor)
+    const size_t num_colors = sizeof(colors)/sizeof(colors[0]);
+    const WORD cor = 8;
+    WORD idx = color;
+    if (idx >= cor)
         idx -= cor;
-    if( idx < max )
-    {
+    if (idx < num_colors)
         return colors[idx];
-    }
-    else
+    if (def < num_colors)
         return colors[def];
+    return 0;
 }
 
 
