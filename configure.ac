@@ -36,7 +36,7 @@ AC_PREFIX_DEFAULT(/usr/local)
 AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11([], [optional])
+#AX_CXX_COMPILE_STDCXX_11([], [optional])
 
 AS_IF([test "x$HAVE_CXX11" != x1], [
     AC_MSG_NOTICE([---])
