@@ -108,7 +108,6 @@ int main(int argc, char *argv[]) {
             break;
         }
      }
-printf("FILE: %s\n", argv[1]);
 
 	// open workbook, choose standard conversion
 	pWB = xls_open_file(argv[1], encoding, &error);
@@ -211,6 +210,13 @@ printf("FILE: %s\n", argv[1]);
 						{
 							OutputString((char *)cell->str);
 						}
+					}
+				} else if (cell->id == XLS_RECORD_BOOLERR && cell->str) {
+					// a TRUE/FALSE or error constant: cell->str only says which
+					if (!strcmp((char *)cell->str, "error")) {
+						OutputString("*error*");
+					} else {
+						OutputString((int) cell->d ? "true" : "false");
 					}
 				} else if (cell->str) {
 					OutputString((char *)cell->str);
