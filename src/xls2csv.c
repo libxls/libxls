@@ -137,8 +137,6 @@ printf("FILE: %s\n", argv[1]);
 
 	// process all sheets
 	for (i = 0; i < pWB->sheets.count; i++) {
-		int isFirstLine = 1;
-
         // just looking for sheet names
         if (justList) {
             printf("%s\n", pWB->sheets.sheet[i].name ? pWB->sheets.sheet[i].name : "");
@@ -165,12 +163,6 @@ printf("FILE: %s\n", argv[1]);
 			//struct st_row_data* row = xls_row(pWS, cellRow);
 
 			// process cells
-			if (!isFirstLine) {
-				printf("%s", lineSeparator);
-			} else {
-				isFirstLine = 0;
-			}
-
 			WORD cellCol;
 			for (cellCol = 0; cellCol <= pWS->rows.lastcol; cellCol++) {
                 //printf("Processing row=%d col=%d\n", cellRow+1, cellCol+1);
@@ -218,6 +210,8 @@ printf("FILE: %s\n", argv[1]);
 					OutputString("");
 				}
 			}
+			// end every row, so sheets don't run into each other
+			printf("%s", lineSeparator);
 		}
 		xls_close_WS(pWS);
 	}
